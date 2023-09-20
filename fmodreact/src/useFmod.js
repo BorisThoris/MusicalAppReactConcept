@@ -1,38 +1,25 @@
 import { useEffect } from 'react'
+import { FMOD } from '.'
 
 const useFMOD = () => {
   useEffect(() => {
-    // Access FMOD object from the global window object
-    const FMOD = window.FMODModule
-
-    console.log(window.FMOD)
-
-    if (FMOD) {
-      FMOD()
-        .then((FMOD) => {
-          // Now FMOD should contain the methods and properties
-          // provided by the FMOD library
-          console.log(FMOD)
-
-          // You can call methods and use properties like this:
-          // FMOD.someMethod();
-          // const result = FMOD.someProperty;
-        })
-        .catch((error) => {
-          // Handle any errors that occur during initialization
-          console.error('FMOD initialization failed:', error)
-        })
-    }
-
-    return () => {
-      // Clean up FMOD resources if FMOD is available
-      if (FMOD) {
-        // FMOD.close()
-      }
-    }
-  }, [window.FMOD])
-
-  // FMOD-related functions can be defined here
+    // const initializeFMOD = async () => {
+    //   console.log(FMOD)
+    //   if (FMOD) {
+    //     const FMODInstance = FMOD
+    //     console.log(FMODInstance)
+    //     var outval = {}
+    //     var system
+    //     console.log('Creating FMOD System object\n')
+    //     // Create the system and check the result
+    //     system = FMOD.Studio_System_Create(outval)
+    //     console.log('system')
+    //     console.log(system)
+    //     console.log(outval)
+    //   }
+    // }
+    // initializeFMOD()
+  }, []) // No dependencies, this should run once when the component mounts
 
   return {
     // Export FMOD-related functions here

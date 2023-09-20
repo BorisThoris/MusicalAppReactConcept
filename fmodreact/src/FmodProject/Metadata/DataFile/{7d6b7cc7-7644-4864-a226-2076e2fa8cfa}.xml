@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="DataFile" id="{7d6b7cc7-7644-4864-a226-2076e2fa8cfa}">
+		<property name="assetPath">
+			<value>Piano/Piano Note C Sound Effect (1).mp3</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{03fa523f-bacc-4a11-9802-bf158ce1b17e}</destination>
+		</relationship>
+	</object>
+</objects>

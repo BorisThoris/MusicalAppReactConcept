@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{59cf14a6-f68c-4b52-b8b2-dca7ed68b4ec}">
+		<property name="assetPath">
+			<value>17568__danglada__b-major.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>7.1227664399092969</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{03fa523f-bacc-4a11-9802-bf158ce1b17e}</destination>
+		</relationship>
+	</object>
+</objects>

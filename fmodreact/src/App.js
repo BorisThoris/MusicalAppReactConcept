@@ -1,20 +1,24 @@
+import { CHECK_RESULT, gSystem } from '.'
 import './App.css'
-import useFMOD from './useFmod'
 
 function App() {
-  const fmod = useFMOD()
+  const onButtonPress = () => {
+    var eventDescription = {}
+
+    console.log('Lol?')
+
+    CHECK_RESULT(gSystem.getEvent('event:/Guitar/E', eventDescription))
+
+    var eventInstance = {}
+    CHECK_RESULT(eventDescription.val.createInstance(eventInstance))
+    console.log(eventInstance)
+    CHECK_RESULT(eventInstance.val.start())
+  }
 
   return (
     <div className="App">
       <header className="App-header">
-        <button
-          onClick={() => {
-            // Use FMOD-related functions from the hook
-            alert('sadec')
-          }}
-        >
-          Play Sound
-        </button>
+        <button onClick={onButtonPress}>Play Sound</button>
       </header>
     </div>
   )

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="DataFile" id="{954ed0f5-d871-4c10-8135-065e80c557b4}">
+		<property name="assetPath">
+			<value>442980__pacway__do-c.m4a</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{03fa523f-bacc-4a11-9802-bf158ce1b17e}</destination>
+		</relationship>
+	</object>
+</objects>
