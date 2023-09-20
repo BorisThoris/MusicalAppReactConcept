@@ -126,7 +126,42 @@ function main() {
   CHECK_RESULT(eventDescription.val.createInstance(eventInstance))
   CHECK_RESULT(eventInstance.val.start())
 
+  window.setInterval(updateApplication, 20)
+
   return FMOD.OK
+}
+
+// Called from main, on an interval that updates at a regular rate (like in a game loop).
+// Prints out information, about the system, and importantly calles System::udpate().
+function updateApplication() {
+  var result
+  var cpu = {}
+
+  result = gSystemCore.getCPUUsage(cpu)
+  CHECK_RESULT(result)
+
+  var channelsplaying = {}
+  result = gSystemCore.getChannelsPlaying(channelsplaying, null)
+  CHECK_RESULT(result)
+
+  var numbuffers = {}
+  var buffersize = {}
+  result = gSystemCore.getDSPBufferSize(buffersize, numbuffers)
+  CHECK_RESULT(result)
+
+  var rate = {}
+  result = gSystemCore.getSoftwareFormat(rate, null, null)
+  CHECK_RESULT(result)
+
+  var sysrate = {}
+  result = gSystemCore.getDriverInfo(0, null, null, sysrate, null, null)
+  CHECK_RESULT(result)
+
+  var ms = (numbuffers.val * buffersize.val * 1000) / rate.val
+
+  // Update FMOD
+  result = gSystem.update()
+  CHECK_RESULT(result)
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
