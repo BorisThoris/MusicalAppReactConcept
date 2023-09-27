@@ -1,1 +1,1 @@
-export { Guitar } from './Guitar'
+export { Guitar } from './Guitar';

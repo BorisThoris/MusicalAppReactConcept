@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { FMOD } from '.'
+import { useEffect } from 'react';
+import { FMOD } from '.';
 
 const useFMOD = () => {
   useEffect(() => {
@@ -19,11 +19,11 @@ const useFMOD = () => {
     //   }
     // }
     // initializeFMOD()
-  }, []) // No dependencies, this should run once when the component mounts
+  }, []); // No dependencies, this should run once when the component mounts
 
   return {
     // Export FMOD-related functions here
-  }
-}
+  };
+};
 
-export default useFMOD
+export default useFMOD;

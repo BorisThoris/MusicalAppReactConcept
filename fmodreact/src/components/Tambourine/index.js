@@ -1,1 +1,1 @@
-export { Tambourine } from './Tambourine'
+export { Tambourine } from './Tambourine';

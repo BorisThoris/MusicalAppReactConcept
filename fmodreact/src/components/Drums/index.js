@@ -1,1 +1,1 @@
-export { Drums } from './Drums'
+export { Drums } from './Drums';
