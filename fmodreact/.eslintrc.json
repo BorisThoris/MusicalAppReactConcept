@@ -11,7 +11,6 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:jsx-a11y/recommended",
-    "prettier",
     "airbnb-base"
   ],
   "parserOptions": {
