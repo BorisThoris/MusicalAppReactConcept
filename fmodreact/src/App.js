@@ -3,17 +3,28 @@ import React from 'react';
 import {
   BrowserRouter as Router, Link, Route, Routes,
 } from 'react-router-dom';
+import styled from 'styled-components';
 import Drums from './components/Drums/Drums';
+import Editor from './components/Editor/Editor';
 import Guitar from './components/Guitar/Guitar';
 import Piano from './components/Piano/Piano';
 import Tambourine from './components/Tambourine/Tambourine';
 
+const NavContainer = styled.nav`
+background-color:yellow;
+display:flex;
+flex-direction:row;
+font-size:40px;
+`;
+
 const TopNav = () => {
   return (
-    <nav>
-      <ul>
+    <NavContainer>
         <li>
           <Link to="/">Starting Screen</Link>
+        </li>
+        <li>
+          <Link to="/editor">Editor</Link>
         </li>
         <li>
           <Link to="/guitar">Guitar</Link>
@@ -27,8 +38,8 @@ const TopNav = () => {
         <li>
           <Link to="/drums">Drums</Link>
         </li>
-      </ul>
-    </nav>
+
+    </NavContainer>
   );
 };
 
@@ -43,6 +54,7 @@ function App() {
         <Route path="/piano" element={<Piano />} />
         <Route path="/tambourine" element={<Tambourine />} />
         <Route path="/drums" element={<Drums />} />
+        <Route path="/editor" element={<Editor />} />
       </Routes>
     </Router>
   );
