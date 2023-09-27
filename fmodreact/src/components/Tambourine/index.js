@@ -1,1 +1,0 @@
-export { Tambourine } from './Tambourine';

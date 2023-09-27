@@ -29,7 +29,7 @@ const playSound = (instrument) => {
   playEventInstance(`Drum/${instrument}`);
 };
 
-export const Drums = () => {
+const Drums = () => {
   return (
     <DrumSetContainer>
       {instruments.map((instrument) => (
@@ -40,3 +40,5 @@ export const Drums = () => {
     </DrumSetContainer>
   );
 };
+
+export default Drums;

@@ -16,14 +16,16 @@ const StyledGuitarNeck = styled.rect`
   fill: green;
 `;
 
-export const Guitar = () => {
+const Guitar = () => {
   const guitarSvgRef = useRef(null);
 
   useGuitarDrawing(guitarSvgRef);
 
   return (
-    <StyledGuitarSvg ref={guitarSvgRef} xmlns='http://www.w3.org/2000/svg'>
+    <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
       <StyledGuitarNeck />
     </StyledGuitarSvg>
   );
 };
+
+export default Guitar;

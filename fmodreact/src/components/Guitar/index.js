@@ -1,1 +1,0 @@
-export { Guitar } from './Guitar';

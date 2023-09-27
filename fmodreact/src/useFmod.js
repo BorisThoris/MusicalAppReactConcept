@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { FMOD } from '.';
 
 const useFMOD = () => {
   useEffect(() => {

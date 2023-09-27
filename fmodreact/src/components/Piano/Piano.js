@@ -44,7 +44,7 @@ const playSound = (event) => {
   playEventInstance(`Piano/${event}`);
 };
 
-export const Piano = () => {
+const Piano = () => {
   return (
     <PianoContainer>
       {pianoKeys.map((key, index) => {
@@ -58,3 +58,5 @@ export const Piano = () => {
     </PianoContainer>
   );
 };
+
+export default Piano;

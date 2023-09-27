@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 // fmodLogic.js
 
 export const FMODConfig = {
@@ -5,13 +6,16 @@ export const FMODConfig = {
 };
 
 export const FMOD = {};
+// eslint-disable-next-line import/no-mutable-exports, no-var
 export var gSystem;
 
 // Create an initialization function
 export function initializeApp() {
-  FMOD['preRun'] = prerun;
-  FMOD['onRuntimeInitialized'] = initializeFMOD;
-  FMOD['INITIAL_MEMORY'] = FMODConfig.INITIAL_MEMORY;
+  // eslint-disable-next-line no-use-before-define
+  FMOD.preRun = prerun;
+  // eslint-disable-next-line no-use-before-define
+  FMOD.onRuntimeInitialized = initializeFMOD;
+  FMOD.INITIAL_MEMORY = FMODConfig.INITIAL_MEMORY;
   window.FMODModule(FMOD);
 }
 
@@ -68,6 +72,32 @@ function setupAudioWorkaround() {
   }
 }
 
+function updateApplication() {
+  const cpu = {};
+  const result1 = gSystemCore.getCPUUsage(cpu);
+  CHECK_RESULT(result1);
+
+  const channelsplaying = {};
+  const result2 = gSystemCore.getChannelsPlaying(channelsplaying, null);
+  CHECK_RESULT(result2);
+
+  const numbuffers = {};
+  const buffersize = {};
+  const result3 = gSystemCore.getDSPBufferSize(buffersize, numbuffers);
+  CHECK_RESULT(result3);
+
+  const rate = {};
+  const result4 = gSystemCore.getSoftwareFormat(rate, null, null);
+  CHECK_RESULT(result4);
+
+  const sysrate = {};
+  const result5 = gSystemCore.getDriverInfo(0, null, null, sysrate, null, null);
+  CHECK_RESULT(result5);
+
+  const result6 = gSystem.update();
+  CHECK_RESULT(result6);
+}
+
 export function initializeFMOD() {
   const outval = {};
   let result;
@@ -103,32 +133,6 @@ export function initializeFMOD() {
   window.setInterval(updateApplication, 20);
 
   return FMOD.OK;
-}
-
-function updateApplication() {
-  const cpu = {};
-  const result1 = gSystemCore.getCPUUsage(cpu);
-  CHECK_RESULT(result1);
-
-  const channelsplaying = {};
-  const result2 = gSystemCore.getChannelsPlaying(channelsplaying, null);
-  CHECK_RESULT(result2);
-
-  const numbuffers = {};
-  const buffersize = {};
-  const result3 = gSystemCore.getDSPBufferSize(buffersize, numbuffers);
-  CHECK_RESULT(result3);
-
-  const rate = {};
-  const result4 = gSystemCore.getSoftwareFormat(rate, null, null);
-  CHECK_RESULT(result4);
-
-  const sysrate = {};
-  const result5 = gSystemCore.getDriverInfo(0, null, null, sysrate, null, null);
-  CHECK_RESULT(result5);
-
-  const result6 = gSystem.update();
-  CHECK_RESULT(result6);
 }
 
 /**

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { playEventInstance } from '../../fmodLogic';
 
-export const Tambourine = () => {
+const Tambourine = () => {
   const [soundPlayed, setSoundPlayed] = useState(false);
   const [wasPositive, setWasPositive] = useState(false);
 
@@ -43,3 +43,5 @@ export const Tambourine = () => {
     </div>
   );
 };
+
+export default Tambourine;
