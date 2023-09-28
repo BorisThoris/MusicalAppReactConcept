@@ -28,8 +28,8 @@ const useMusicalInstrument = (instrumentName) => {
   const recordEvent = (musicalEvent) => {
     if (shouldRecord) {
       const sound = {
+        eventName: musicalEvent,
         instrumentName,
-        musicalEvent,
         time: (Date.now() - startTime) / 1000,
       };
       setPlayedSounds([...playedSounds, sound]);

@@ -13,12 +13,13 @@ const useRecordingPlayer = (instrumentName) => {
   };
 
   const scheduleSoundPlayback = (sound, delay) => {
-    console.log(delay);
-
-    const timeoutId = setTimeout(() => {
-      console.log(sound);
-      playEventInstance(sound.musicalEvent);
-    }, delay);
+    const timeoutId = setTimeout(
+      () => {
+        playEventInstance(sound.eventName);
+      },
+      // Transforming seconds to ms
+      delay * 1000,
+    );
 
     timeoutIds.current.push(timeoutId);
     return sound.time + sound.length;
@@ -38,13 +39,13 @@ const useRecordingPlayer = (instrumentName) => {
       }
     });
 
-    const finalTimeoutId = setTimeout(() => {
-      setIsPlaying(false);
-      startTrackerUpdates?.();
-      clearAllTimeouts();
-    }, biggestEndTime * 1000);
+    // const finalTimeoutId = setTimeout(() => {
+    //   setIsPlaying(false);
+    //   startTrackerUpdates?.();
+    //   clearAllTimeouts();
+    // }, biggestEndTime * 1000);
 
-    timeoutIds.current.push(finalTimeoutId);
+    // timeoutIds.current.push(finalTimeoutId);
   };
 
   const handlePlaybackToggle = (startTrackerUpdates) => {
