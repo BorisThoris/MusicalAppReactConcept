@@ -12,7 +12,7 @@ const cleanUpSvg = (guitarSvgRef) => {
 };
 
 // eslint-disable-next-line import/prefer-default-export
-export const useGuitarDrawing = (guitarSvgRef) => {
+export const useGuitarDrawing = (guitarSvgRef, handlePlayEvent) => {
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
 
   const renderGuitar = useCallback(() => {
@@ -37,13 +37,14 @@ export const useGuitarDrawing = (guitarSvgRef) => {
       createString(svgElement, {
         endX,
         endY,
+        handlePlayEvent,
         note: GUITAR_CONFIG.STRINGS[stringIndex],
         startX,
         startY,
         strokeWidth,
       });
     });
-  }, [guitarSvgRef, screenHeight, screenWidth]);
+  }, [guitarSvgRef, handlePlayEvent, screenHeight, screenWidth]);
 
   useEffect(() => {
     renderGuitar();

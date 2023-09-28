@@ -32,15 +32,15 @@ const Tambourine = () => {
   }, [handleMotion, soundPlayed, wasPositive]);
 
   return (
-    <div>
-      <button
-        onClick={() => {
-          playEventInstance('Guitar/E'); // Assuming this is the tambourine sound.
-        }}
-      >
-        Play Tambourine Sound
-      </button>
-    </div>
+      <div>
+          <button
+              onClick={() => {
+                playEventInstance('Guitar/E'); // Assuming this is the tambourine sound.
+              }}
+          >
+              Play Tambourine Sound
+          </button>
+      </div>
   );
 };
 

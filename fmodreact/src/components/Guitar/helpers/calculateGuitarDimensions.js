@@ -1,9 +1,8 @@
 import GUITAR_CONFIG from '../guitarConfig';
 
 const calculateGuitarDimensions = ({ svgElement }) => {
-  const {
-    NECK_OFFSET, STRING_END_Y_OFFSET, STRING_START_X_OFFSET, STRING_WIDTH_PERCENT, STRINGS,
-  } = GUITAR_CONFIG;
+  // eslint-disable-next-line max-len
+  const { NECK_OFFSET, STRING_END_Y_OFFSET, STRING_START_X_OFFSET, STRING_WIDTH_PERCENT, STRINGS } = GUITAR_CONFIG;
 
   const { height: svgHeight, width: svgWidth } = svgElement.getBoundingClientRect();
 

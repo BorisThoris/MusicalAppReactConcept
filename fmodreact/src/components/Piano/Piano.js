@@ -46,16 +46,16 @@ const playSound = (event) => {
 
 const Piano = () => {
   return (
-    <PianoContainer>
-      {pianoKeys.map((key, index) => {
-        const isSharp = key.includes('#');
-        return isSharp ? (
-          <BlackKey key={index} onClick={() => playSound(key)} />
-        ) : (
-          <WhiteKey key={index} onClick={() => playSound(key)} />
-        );
-      })}
-    </PianoContainer>
+      <PianoContainer>
+          {pianoKeys.map((key, index) => {
+            const isSharp = key.includes('#');
+            return isSharp ? (
+                <BlackKey key={index} onClick={() => playSound(key)} />
+            ) : (
+                <WhiteKey key={index} onClick={() => playSound(key)} />
+            );
+          })}
+      </PianoContainer>
   );
 };
 

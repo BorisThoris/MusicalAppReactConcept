@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
+import useMusicalInstrument from '../../hooks/useMusicalInstrument';
 import { useGuitarDrawing } from './useGuitarDrawing';
 
 const StyledGuitarSvg = styled.svg`
@@ -16,15 +17,32 @@ const StyledGuitarNeck = styled.rect`
   fill: green;
 `;
 
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: collumn;
+`;
+
 const Guitar = () => {
+  const { playEvent, recordEvent, replayEvents, toggleRecording } = useMusicalInstrument('Guitar');
+
   const guitarSvgRef = useRef(null);
 
-  useGuitarDrawing(guitarSvgRef);
+  const handlePlayEvent = (musicalEvent) => {
+    recordEvent(musicalEvent);
+    playEvent(musicalEvent);
+  };
+
+  useGuitarDrawing(guitarSvgRef, handlePlayEvent);
 
   return (
-    <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
-      <StyledGuitarNeck />
-    </StyledGuitarSvg>
+      <Wrapper>
+          <button onClick={toggleRecording}>Toggle Recording</button>
+          <button onClick={replayEvents}>Replay Events</button>
+
+          <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
+              <StyledGuitarNeck />
+          </StyledGuitarSvg>
+      </Wrapper>
   );
 };
 
