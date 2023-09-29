@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../fmodLogic';
+import useMusicalInstrument from '../../hooks/useMusicalInstrument';
 
 const PianoContainer = styled.div`
   display: flex;
@@ -45,6 +46,8 @@ const playSound = (event) => {
 };
 
 const Piano = () => {
+  const { playEvent, recordEvent, replayEvents, toggleRecording } = useMusicalInstrument('Piano');
+
   return (
       <PianoContainer>
           {pianoKeys.map((key, index) => {

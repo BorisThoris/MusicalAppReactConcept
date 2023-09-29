@@ -23,12 +23,11 @@ const Wrapper = styled.div`
 `;
 
 const Guitar = () => {
-  const { playEvent, recordEvent, replayEvents, toggleRecording } = useMusicalInstrument('Guitar');
+  const { playEvent, replayEvents, toggleRecording } = useMusicalInstrument('Guitar');
 
   const guitarSvgRef = useRef(null);
 
   const handlePlayEvent = (musicalEvent) => {
-    recordEvent(musicalEvent);
     playEvent(musicalEvent);
   };
 

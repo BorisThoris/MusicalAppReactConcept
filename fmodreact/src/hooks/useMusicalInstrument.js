@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic';
+import createSound from '../globalHelpers/createSound';
+import getElapsedTime from '../globalHelpers/getElapsedTime';
 import useRecordingPlayer from './useRecordingPlayer';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
@@ -25,29 +27,26 @@ const useMusicalInstrument = (instrumentName) => {
     setPlayedSounds(playedSounds.filter((playedSound) => playedSound !== sound));
   };
 
-  const recordEvent = (musicalEvent) => {
-    if (shouldRecord) {
-      const sound = {
-        eventName: musicalEvent,
-        instrumentName,
-        time: (Date.now() - startTime) / 1000,
-      };
-      setPlayedSounds([...playedSounds, sound]);
-    }
-  };
-
   const replayEvents = () => {
     playRecordedSounds(playedSounds);
   };
 
   const playEvent = (musicalEvent) => {
+    if (shouldRecord) {
+      const sound = createSound(musicalEvent, instrumentName, getElapsedTime(startTime));
+
+      setPlayedSounds([...playedSounds, sound]);
+      setPlayedSounds([...playedSounds, sound]);
+    }
+
     playEventInstance(musicalEvent);
   };
 
   useEffect(() => {
     const checkRecordingTimeout = () => {
       if (shouldRecord && !isRecordingTimeout) {
-        const elapsedTime = (Date.now() - startTime) / 1000;
+        const elapsedTime = getElapsedTime(startTime);
+
         if (elapsedTime >= RECORDING_TIME_LIMIT_SECONDS) {
           toggleRecording();
           setIsRecordingTimeout(true);
@@ -65,7 +64,6 @@ const useMusicalInstrument = (instrumentName) => {
     instrumentName,
     playedSounds,
     playEvent,
-    recordEvent,
     replayEvents,
     shouldRecord,
     toggleRecording,
