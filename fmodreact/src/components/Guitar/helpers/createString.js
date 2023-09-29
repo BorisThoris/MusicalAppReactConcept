@@ -8,7 +8,9 @@ const calculateWaveOffset = (i) => {
   return i % 2 === 0 ? WAVE_HEIGHT : -WAVE_HEIGHT;
 };
 
-const drawWavePath = ({ endX, endY, startX, startY }) => {
+const drawWavePath = ({
+  endX, endY, startX, startY,
+}) => {
   const { TOTAL_WAVES } = GUITAR_CONFIG;
 
   const deltaX = endX - startX;
@@ -26,7 +28,9 @@ const drawWavePath = ({ endX, endY, startX, startY }) => {
   return pathData;
 };
 
-const createString = (svgElement, { endX, endY, handlePlayEvent, note, startX, startY, waveHeight }) => {
+const createString = (svgElement, {
+  endX, endY, handlePlayEvent, note, startX, startY, waveHeight,
+}) => {
   const pathElement = createSvgElement('path');
   const pathData = drawWavePath({
     endX,

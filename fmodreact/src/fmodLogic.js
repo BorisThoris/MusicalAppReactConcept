@@ -1,12 +1,9 @@
 /* eslint-disable prefer-const */
 // fmodLogic.js
 
-export const FMODConfig = {
-  INITIAL_MEMORY: 80 * 1024 * 1024,
-};
+export const FMODConfig = { INITIAL_MEMORY: 80 * 1024 * 1024 };
 
-export const FMOD = {
-};
+export const FMOD = {};
 // eslint-disable-next-line import/no-mutable-exports, no-var
 export var gSystem;
 
@@ -44,8 +41,7 @@ export function prerun() {
 }
 
 function loadBank(name) {
-  const bankhandle = {
-  };
+  const bankhandle = {};
   CHECK_RESULT(gSystem.loadBankFile(`/${name}`, FMOD.STUDIO_LOAD_BANK_NORMAL, bankhandle));
 }
 
@@ -75,30 +71,24 @@ function setupAudioWorkaround() {
 }
 
 function updateApplication() {
-  const cpu = {
-  };
+  const cpu = {};
   const result1 = gSystemCore.getCPUUsage(cpu);
   CHECK_RESULT(result1);
 
-  const channelsplaying = {
-  };
+  const channelsplaying = {};
   const result2 = gSystemCore.getChannelsPlaying(channelsplaying, null);
   CHECK_RESULT(result2);
 
-  const numbuffers = {
-  };
-  const buffersize = {
-  };
+  const numbuffers = {};
+  const buffersize = {};
   const result3 = gSystemCore.getDSPBufferSize(buffersize, numbuffers);
   CHECK_RESULT(result3);
 
-  const rate = {
-  };
+  const rate = {};
   const result4 = gSystemCore.getSoftwareFormat(rate, null, null);
   CHECK_RESULT(result4);
 
-  const sysrate = {
-  };
+  const sysrate = {};
   const result5 = gSystemCore.getDriverInfo(0, null, null, sysrate, null, null);
   CHECK_RESULT(result5);
 
@@ -107,8 +97,7 @@ function updateApplication() {
 }
 
 export function initializeFMOD() {
-  const outval = {
-  };
+  const outval = {};
   let result;
 
   setupAudioWorkaround();
@@ -156,14 +145,12 @@ export function playEventInstance(eventPath) {
   }
 
   // Get the event description
-  const eventDescription = {
-  };
+  const eventDescription = {};
   const result1 = gSystem.getEvent(`event:/${eventPath}`, eventDescription);
   CHECK_RESULT(result1);
 
   // Create an instance of the event
-  const eventInstance = {
-  };
+  const eventInstance = {};
   const result2 = eventDescription.val.createInstance(eventInstance);
   CHECK_RESULT(result2);
 

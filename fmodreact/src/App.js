@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
-import { BrowserRouter as Router, Link, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter as Router, Link, Route, Routes,
+} from 'react-router-dom';
 import styled from 'styled-components';
 import Drums from './components/Drums/Drums';
 import Editor from './components/Editor/Editor';

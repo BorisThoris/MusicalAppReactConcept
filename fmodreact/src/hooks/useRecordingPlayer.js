@@ -1,42 +1,28 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { playEventInstance } from '../fmodLogic';
+import {
+  useContext, useEffect, useState,
+} from 'react';
 import { RecordedInstrumentsContext } from '../providers/InstrumentsProvider';
+import usePlayback from './usePlayback';
 
 const useRecordingPlayer = (instrumentName) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const instruments = useContext(RecordedInstrumentsContext);
-  const timeoutIds = useRef([]);
+  const { clearAllTimeouts, scheduleSoundPlayback } = usePlayback();
+  const { instruments } = useContext(RecordedInstrumentsContext);
 
-  const clearAllTimeouts = () => {
-    timeoutIds.current.forEach(clearTimeout);
-    timeoutIds.current = [];
-  };
-
-  const scheduleSoundPlayback = (sound, delay) => {
-    const timeoutId = setTimeout(
-      () => {
-        playEventInstance(sound.eventName);
-      },
-      // Transforming seconds to ms
-      delay * 1000,
-    );
-
-    timeoutIds.current.push(timeoutId);
-    return sound.time + sound.length;
-  };
-
-  const replayEvents = (playedSounds, startTrackerUpdates = null) => {
+  const replayEvents = () => {
     let previousNoteStart = 0;
     let biggestEndTime = 0;
 
-    playedSounds.forEach((sound) => {
-      if (sound.instrumentName === instrumentName) {
+    Object.keys(instruments).forEach((instrument) => {
+      const arrayOfSounds = instruments[instrument];
+
+      arrayOfSounds.forEach((sound) => {
         const delay = sound.time - previousNoteStart;
         previousNoteStart = sound.time;
 
         const soundEndTime = scheduleSoundPlayback(sound, delay);
         biggestEndTime = Math.max(biggestEndTime, soundEndTime);
-      }
+      });
     });
 
     // const finalTimeoutId = setTimeout(() => {
@@ -60,16 +46,18 @@ const useRecordingPlayer = (instrumentName) => {
 
   const replayAllRecordedSounds = (startTrackerUpdates) => {
     handlePlaybackToggle(startTrackerUpdates);
+
     if (!isPlaying) {
       const allSounds = instruments.getAllRecordedSounds();
       replayEvents(allSounds, null);
     }
   };
 
-  const playRecordedSounds = (playedSounds) => {
+  const playRecordedSounds = () => {
     handlePlaybackToggle();
+
     if (!isPlaying) {
-      replayEvents(playedSounds);
+      replayEvents();
     }
   };
 
@@ -77,7 +65,7 @@ const useRecordingPlayer = (instrumentName) => {
     return () => {
       clearAllTimeouts();
     };
-  }, []);
+  }, [clearAllTimeouts]);
 
   return {
     isPlaying,

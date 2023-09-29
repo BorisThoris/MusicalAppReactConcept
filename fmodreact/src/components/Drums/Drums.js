@@ -31,13 +31,13 @@ const playSound = (instrument) => {
 
 const Drums = () => {
   return (
-    <DrumSetContainer>
-      {instruments.map((instrument) => (
-        <DrumButton key={instrument} onClick={() => playSound(instrument)}>
-          {instrument}
-        </DrumButton>
-      ))}
-    </DrumSetContainer>
+      <DrumSetContainer>
+          {instruments.map((instrument) => (
+              <DrumButton key={instrument} onClick={() => playSound(instrument)}>
+                  {instrument}
+              </DrumButton>
+          ))}
+      </DrumSetContainer>
   );
 };
 

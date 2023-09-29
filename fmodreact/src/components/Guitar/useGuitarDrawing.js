@@ -17,9 +17,7 @@ export const useGuitarDrawing = (guitarSvgRef, handlePlayEvent) => {
 
   const renderGuitar = useCallback(() => {
     const svgElement = guitarSvgRef.current;
-    const dimensions = calculateGuitarDimensions({
-      svgElement,
-    });
+    const dimensions = calculateGuitarDimensions({ svgElement });
 
     const stringIndices = Object.keys(GUITAR_CONFIG.STRINGS);
 

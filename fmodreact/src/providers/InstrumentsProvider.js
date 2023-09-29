@@ -1,5 +1,7 @@
 import { node } from 'prop-types';
-import React, { createContext, useContext } from 'react'; // Import PropTypes
+import React, {
+  createContext, useContext, useState,
+} from 'react';
 
 export const RecordedInstrumentsContext = createContext();
 
@@ -8,15 +10,23 @@ export const useInstruments = () => {
 };
 
 export const RecordedInstrumentsProvider = ({ children }) => {
-  const instruments = [
-    {
-      name: 'guitar',
-    },
-  ];
+  const [instruments, setInstruments] = useState({});
 
-  return <RecordedInstrumentsContext.Provider value={instruments}>{children}</RecordedInstrumentsContext.Provider>;
+  const addInstrument = (instrument) => {
+    setInstruments((prevInstruments) => ({ ...prevInstruments, [instrument.name]: instrument }));
+  };
+
+  const value = {
+
+    instruments,
+    setInstruments,
+  };
+
+  return (
+      <RecordedInstrumentsContext.Provider value={value}>
+          {children}
+      </RecordedInstrumentsContext.Provider>
+  );
 };
 
-RecordedInstrumentsProvider.propTypes = {
-  children: node.isRequired,
-};
+RecordedInstrumentsProvider.propTypes = { children: node.isRequired };

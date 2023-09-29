@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
-import useMusicalInstrument from '../../hooks/useMusicalInstrument';
+import { playEventInstance } from '../../fmodLogic';
+import useRecorder from '../../hooks/useRecorder';
+import useRecordingPlayer from '../../hooks/useRecordingPlayer';
 import { useGuitarDrawing } from './useGuitarDrawing';
 
 const StyledGuitarSvg = styled.svg`
@@ -22,21 +24,28 @@ const Wrapper = styled.div`
   flex-direction: collumn;
 `;
 
+const instrumentName = 'Guitar';
 const Guitar = () => {
-  const { playEvent, replayEvents, toggleRecording } = useMusicalInstrument('Guitar');
+  const { playRecordedSounds } = useRecordingPlayer(instrumentName);
+  const { recordEvent, toggleRecording } = useRecorder();
 
-  const guitarSvgRef = useRef(null);
+  const playEvent = (musicalEvent) => {
+    recordEvent(musicalEvent, instrumentName);
+    playEventInstance(musicalEvent);
+  };
 
   const handlePlayEvent = (musicalEvent) => {
     playEvent(musicalEvent);
   };
+
+  const guitarSvgRef = useRef(null);
 
   useGuitarDrawing(guitarSvgRef, handlePlayEvent);
 
   return (
       <Wrapper>
           <button onClick={toggleRecording}>Toggle Recording</button>
-          <button onClick={replayEvents}>Replay Events</button>
+          <button onClick={playRecordedSounds}>Replay Events</button>
 
           <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
               <StyledGuitarNeck />
