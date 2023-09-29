@@ -4,7 +4,7 @@ import {
 import { RecordedInstrumentsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
 
-const useRecordingPlayer = (instrumentName) => {
+const useRecordingsPlayer = (instrumentName) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const { clearAllTimeouts, scheduleSoundPlayback } = usePlayback();
   const { instruments } = useContext(RecordedInstrumentsContext);
@@ -74,4 +74,4 @@ const useRecordingPlayer = (instrumentName) => {
   };
 };
 
-export default useRecordingPlayer;
+export default useRecordingsPlayer;

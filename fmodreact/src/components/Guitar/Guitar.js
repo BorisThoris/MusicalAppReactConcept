@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../fmodLogic';
 import useRecorder from '../../hooks/useRecorder';
-import useRecordingPlayer from '../../hooks/useRecordingPlayer';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import { useGuitarDrawing } from './useGuitarDrawing';
 
 const StyledGuitarSvg = styled.svg`
@@ -26,7 +26,7 @@ const Wrapper = styled.div`
 
 const instrumentName = 'Guitar';
 const Guitar = () => {
-  const { playRecordedSounds } = useRecordingPlayer(instrumentName);
+  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
   const { recordEvent, toggleRecording } = useRecorder();
 
   const playEvent = (musicalEvent) => {
