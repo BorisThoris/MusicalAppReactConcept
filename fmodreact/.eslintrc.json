@@ -69,7 +69,7 @@
     "max-len": "warn",
     "linebreak-style": [
       "warn",
-      "unix"
+      "windows"
     ],
     "jsx-quotes": 1,
     "react/display-name": 0,
