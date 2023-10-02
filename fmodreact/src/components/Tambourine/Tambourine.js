@@ -2,46 +2,29 @@ import React, {
   useCallback, useEffect, useState,
 } from 'react';
 import { playEventInstance } from '../../fmodLogic';
+import Instruments from '../../globalConstants/instrumentNames';
+import useRecorder from '../../hooks/useRecorder';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import useTambourine from './useTambourine';
 
 const Tambourine = () => {
-  const [soundPlayed, setSoundPlayed] = useState(false);
-  const [wasPositive, setWasPositive] = useState(false);
+  const instrumentName = Instruments.Tambourine;
+  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+  const { recordEvent, toggleRecording } = useRecorder(instrumentName);
 
-  const handleMotion = useCallback(
-    (event) => {
-      const xAccel = event.rotationRate.beta * 10;
-      if (soundPlayed) {
-        if (xAccel < -3 && wasPositive) {
-          setSoundPlayed(false);
-        }
-        if (xAccel > 3 && !wasPositive) {
-          setSoundPlayed(false);
-        }
-      } else if (xAccel > 15 && !soundPlayed) {
-        playEventInstance('Guitar/E'); // Assuming this is the tambourine sound.
-        setSoundPlayed(true);
-        setWasPositive(true);
-      }
-    },
-    [soundPlayed, wasPositive],
-  );
+  const playEvent = () => {
+    const tambourineEvent = `${instrumentName}/Parameter test`;
 
-  useEffect(() => {
-    window.addEventListener('devicemotion', handleMotion);
-    return () => {
-      window.removeEventListener('devicemotion', handleMotion);
-    };
-  }, [handleMotion, soundPlayed, wasPositive]);
+    recordEvent(tambourineEvent);
+    playEventInstance(tambourineEvent);
+  };
+
+  useTambourine({ playEvent });
 
   return (
       <div>
-          <button
-              onClick={() => {
-                playEventInstance('Guitar/E'); // Assuming this is the tambourine sound.
-              }}
-          >
-              Play Tambourine Sound
-          </button>
+          <button onClick={toggleRecording}>Toggle Recording</button>
+          <button onClick={playRecordedSounds}>Replay Events</button>
       </div>
   );
 };

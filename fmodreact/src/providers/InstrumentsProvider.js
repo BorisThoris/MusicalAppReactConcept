@@ -1,6 +1,6 @@
 import { node } from 'prop-types';
 import React, {
-  createContext, useContext, useState,
+  createContext, useContext, useEffect, useState,
 } from 'react';
 
 export const RecordedInstrumentsContext = createContext();
@@ -12,13 +12,21 @@ export const useInstruments = () => {
 export const RecordedInstrumentsProvider = ({ children }) => {
   const [instruments, setInstruments] = useState({});
 
-  const addInstrument = (instrument) => {
-    setInstruments((prevInstruments) => ({ ...prevInstruments, [instrument.name]: instrument }));
+  useEffect(() => { console.log(instruments); }, [instruments]);
+
+  const resetInstrumentStorageState = (instrumentName) => {
+    const modifiedInstruments = {
+      ...instruments,
+      [instrumentName]: [],
+    };
   };
 
-  const value = {
+  const resetAllInstrumentsStorageState = () => setInstruments({});
 
+  const value = {
     instruments,
+    resetAllInstrumentsStorageState,
+    resetInstrumentStorageState,
     setInstruments,
   };
 

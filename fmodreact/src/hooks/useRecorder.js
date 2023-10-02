@@ -7,29 +7,31 @@ import { RecordedInstrumentsContext } from '../providers/InstrumentsProvider';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 
-const useRecorder = () => {
+const useRecorder = ({ instrumentName }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const { instruments, setInstruments } = useContext(RecordedInstrumentsContext);
+  const {
+    instruments, resetInstrumentStorageState, setInstruments,
+  } = useContext(RecordedInstrumentsContext);
 
   const toggleRecording = useCallback(() => {
     setIsRecording((prevIsRecording) => !prevIsRecording);
 
     if (!isRecording) {
       setStartTime(Date.now());
-      setInstruments({}); // Reset the instruments state
+      resetInstrumentStorageState(instrumentName); // Reset the instruments state
     }
-  }, [isRecording, setInstruments]);
+  }, [instrumentName, isRecording, resetInstrumentStorageState]);
 
-  const recordEvent = (event, instrumentName) => {
+  const recordEvent = (event, currentInstrumentName) => {
     if (isRecording) {
       const elapsedTime = getElapsedTime(startTime);
-      const sound = createSound(event, instrumentName, elapsedTime);
+      const sound = createSound(event, currentInstrumentName, elapsedTime);
 
       setInstruments((prevInstruments) => {
-        const existingSounds = prevInstruments[instrumentName] || [];
+        const existingSounds = prevInstruments[currentInstrumentName] || [];
         const updatedSounds = [...existingSounds, sound];
-        return { ...prevInstruments, [instrumentName]: updatedSounds };
+        return { ...prevInstruments, [currentInstrumentName]: updatedSounds };
       });
     }
   };

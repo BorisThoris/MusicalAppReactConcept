@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../fmodLogic';
+import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
 import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import { useGuitarDrawing } from './useGuitarDrawing';
@@ -24,10 +25,10 @@ const Wrapper = styled.div`
   flex-direction: collumn;
 `;
 
-const instrumentName = 'Guitar';
 const Guitar = () => {
+  const instrumentName = Instruments.Guitar;
   const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
-  const { recordEvent, toggleRecording } = useRecorder();
+  const { recordEvent, toggleRecording } = useRecorder(instrumentName);
 
   const playEvent = (musicalEvent) => {
     recordEvent(musicalEvent, instrumentName);

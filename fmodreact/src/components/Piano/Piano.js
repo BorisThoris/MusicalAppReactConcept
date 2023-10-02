@@ -1,6 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../fmodLogic';
+import Instruments from '../../globalConstants/instrumentNames';
+import useRecorder from '../../hooks/useRecorder';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 
 const PianoContainer = styled.div`
   display: flex;
@@ -8,7 +11,7 @@ const PianoContainer = styled.div`
   justify-content: center;
 `;
 
-const WhiteKey = styled.button`
+const NormalKey = styled.button`
   width: 40px;
   height: 200px;
   background-color: white;
@@ -16,7 +19,7 @@ const WhiteKey = styled.button`
   border-right: none;
 `;
 
-const BlackKey = styled.button`
+const SharpKey = styled.button`
   width: 30px;
   height: 130px;
   background-color: black;
@@ -40,21 +43,30 @@ const pianoKeys = [
   'pianoB',
 ];
 
-const playSound = (event) => {
-  playEventInstance(`Piano/${event}`);
-};
-
 const Piano = () => {
+  const instrumentName = Instruments.Piano;
+  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+  const { recordEvent, toggleRecording } = useRecorder(instrumentName);
+
+  const playEvent = (musicalEvent) => {
+    recordEvent(musicalEvent, instrumentName);
+    playEventInstance(musicalEvent);
+  };
+
+  const renderKey = (key, index) => {
+    const isSharp = key.includes('#');
+    const KeyComponent = isSharp ? SharpKey : NormalKey;
+
+    return (
+        <KeyComponent key={index} onClick={() => playEvent(`${instrumentName}/${key}`)} />
+    );
+  };
+
   return (
       <PianoContainer>
-          {pianoKeys.map((key, index) => {
-            const isSharp = key.includes('#');
-            return isSharp ? (
-                <BlackKey key={index} onClick={() => playSound(key)} />
-            ) : (
-                <WhiteKey key={index} onClick={() => playSound(key)} />
-            );
-          })}
+          <button onClick={toggleRecording}>Toggle Recording</button>
+          <button onClick={playRecordedSounds}>Replay Events</button>
+          {pianoKeys.map((key, index) => renderKey(key, index))}
       </PianoContainer>
   );
 };

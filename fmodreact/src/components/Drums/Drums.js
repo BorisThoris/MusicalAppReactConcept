@@ -1,6 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../fmodLogic';
+import Instruments from '../../globalConstants/instrumentNames';
+import useRecorder from '../../hooks/useRecorder';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 
 const DrumSetContainer = styled.div`
   display: flex;
@@ -23,19 +26,31 @@ const DrumButton = styled.button`
   }
 `;
 
-const instruments = ['CrashCymbal', 'FloorTom', 'RideCymbal', 'Snare', 'SnareDrum', 'Tom1'];
-
-const playSound = (instrument) => {
-  playEventInstance(`Drum/${instrument}`);
-};
+const drums = ['CrashCymbal', 'FloorTom', 'RideCymbal', 'Snare', 'SnareDrum', 'Tom1'];
 
 const Drums = () => {
+  const instrumentName = Instruments.Drum;
+  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+  const { recordEvent, toggleRecording } = useRecorder(instrumentName);
+
+  const playEvent = (musicalEvent) => {
+    console.log(musicalEvent);
+    recordEvent(musicalEvent, instrumentName);
+    playEventInstance(musicalEvent);
+  };
+
+  const renderDrum = (key, index) => (
+      <DrumButton key={index} onClick={() => playEvent(`${instrumentName}/${key}`)}>
+          {key}
+      </DrumButton>
+  );
+
   return (
       <DrumSetContainer>
-          {instruments.map((instrument) => (
-              <DrumButton key={instrument} onClick={() => playSound(instrument)}>
-                  {instrument}
-              </DrumButton>
+          <button onClick={toggleRecording}>Toggle Recording</button>
+          <button onClick={playRecordedSounds}>Replay Events</button>
+          {drums.map((key, index) => (
+            renderDrum(key, index)
           ))}
       </DrumSetContainer>
   );
