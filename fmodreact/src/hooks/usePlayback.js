@@ -3,23 +3,24 @@ import { playEventInstance } from '../fmodLogic';
 import scheduleSoundPlayback from '../globalHelpers/scheduleSoundPlayback';
 
 const usePlayback = () => {
-  const timeoutIds = useRef([]);
+    const timeoutIds = useRef([]);
 
-  const clearAllTimeouts = () => {
-    timeoutIds.current.forEach(clearTimeout);
-    timeoutIds.current = [];
-  };
-
-  useEffect(() => {
-    return () => {
-      clearAllTimeouts();
+    const clearAllTimeouts = () => {
+        timeoutIds.current.forEach(clearTimeout);
+        timeoutIds.current = [];
     };
-  }, []);
 
-  return {
-    clearAllTimeouts,
-    scheduleSoundPlayback: (sound, delay) => scheduleSoundPlayback(sound, delay, playEventInstance),
-  };
+    useEffect(() => {
+        return () => {
+            clearAllTimeouts();
+        };
+    }, []);
+
+    return {
+        clearAllTimeouts,
+        scheduleSoundPlayback: (sound, delay) =>
+            scheduleSoundPlayback(sound, delay, playEventInstance),
+    };
 };
 
 export default usePlayback;
