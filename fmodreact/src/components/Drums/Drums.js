@@ -38,7 +38,7 @@ const drums = [
 const Drums = () => {
     const instrumentName = Instruments.Drum;
     const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
-    const { recordEvent, toggleRecording } = useRecorder(instrumentName);
+    const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = (musicalEvent) => {
         recordEvent(musicalEvent, instrumentName);

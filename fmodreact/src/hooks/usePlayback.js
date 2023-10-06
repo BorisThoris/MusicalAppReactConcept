@@ -1,6 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { playEventInstance } from '../fmodLogic';
-import scheduleSoundPlayback from '../globalHelpers/scheduleSoundPlayback';
+
+const scheduleSoundPlayback = (sound, delay, playEventFunc) => {
+    const timeoutId = setTimeout(
+        () => {
+            console.log(sound.eventName);
+            // playEventFunc(sound.eventName);
+        },
+        // Transforming seconds to ms
+        delay * 1000
+    );
+    return timeoutId;
+};
 
 const usePlayback = () => {
     const timeoutIds = useRef([]);

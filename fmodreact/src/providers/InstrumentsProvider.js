@@ -6,236 +6,236 @@ const initialRecordings = {
         {
             eventName: 'Drum/CrashCymbal',
             instrumentName: 'Drum',
-            time: 0.582,
+            startTime: 0.582,
         },
         {
             eventName: 'Drum/FloorTom',
             instrumentName: 'Drum',
-            time: 2.396,
+            startTime: 2.396,
         },
         {
             eventName: 'Drum/RideCymbal',
             instrumentName: 'Drum',
-            time: 4.195,
+            startTime: 4.195,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 11.791,
+            startTime: 11.791,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 12.6,
+            startTime: 12.6,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 13.463,
+            startTime: 13.463,
         },
         {
             eventName: 'Drum/RideCymbal',
             instrumentName: 'Drum',
-            time: 14.309,
+            startTime: 14.309,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 15.431,
+            startTime: 15.431,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 16.161,
+            startTime: 16.161,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 16.413,
+            startTime: 16.413,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 16.987,
+            startTime: 16.987,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 17.666,
+            startTime: 17.666,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 17.952,
+            startTime: 17.952,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 18.468,
+            startTime: 18.468,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 19.003,
+            startTime: 19.003,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 19.551,
+            startTime: 19.551,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 20.377,
+            startTime: 20.377,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 20.707,
+            startTime: 20.707,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 21.381,
+            startTime: 21.381,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 22.326,
+            startTime: 22.326,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 22.643,
+            startTime: 22.643,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 23.516,
+            startTime: 23.516,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 23.895,
+            startTime: 23.895,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 24.313,
+            startTime: 24.313,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 24.792,
+            startTime: 24.792,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 25.067,
+            startTime: 25.067,
         },
         {
             eventName: 'Drum/Tom1',
             instrumentName: 'Drum',
-            time: 25.483,
+            startTime: 25.483,
         },
         {
             eventName: 'Drum/SnareDrum',
             instrumentName: 'Drum',
-            time: 25.83,
+            startTime: 25.83,
         },
         {
             eventName: 'Drum/Snare',
             instrumentName: 'Drum',
-            time: 26.244,
+            startTime: 26.244,
         },
     ],
     Guitar: [
         {
             eventName: 'Guitar/A',
             instrumentName: 'Guitar',
-            time: 0.575,
+            startTime: 0.575,
         },
         {
             eventName: 'Guitar/B',
             instrumentName: 'Guitar',
-            time: 1.227,
+            startTime: 1.227,
         },
         {
             eventName: 'Guitar/D',
             instrumentName: 'Guitar',
-            time: 1.836,
+            startTime: 1.836,
         },
         {
             eventName: 'Guitar/E',
             instrumentName: 'Guitar',
-            time: 2.356,
+            startTime: 2.356,
         },
         {
             eventName: 'Guitar/G',
             instrumentName: 'Guitar',
-            time: 2.911,
+            startTime: 2.911,
         },
         {
             eventName: 'Guitar/A',
             instrumentName: 'Guitar',
-            time: 0.549,
+            startTime: 0.549,
         },
         {
             eventName: 'Guitar/B',
             instrumentName: 'Guitar',
-            time: 1.374,
+            startTime: 1.374,
         },
         {
             eventName: 'Guitar/D',
             instrumentName: 'Guitar',
-            time: 2.267,
+            startTime: 2.267,
         },
     ],
     Piano: [
         {
             eventName: 'Piano/pianoC',
             instrumentName: 'Piano',
-            time: 0.706,
+            startTime: 0.706,
         },
         {
             eventName: 'Piano/pianoD',
             instrumentName: 'Piano',
-            time: 1.279,
+            startTime: 1.279,
         },
         {
             eventName: 'Piano/pianoE',
             instrumentName: 'Piano',
-            time: 1.638,
+            startTime: 1.638,
         },
         {
             eventName: 'Piano/pianoF#',
             instrumentName: 'Piano',
-            time: 2.996,
+            startTime: 2.996,
         },
         {
             eventName: 'Piano/pianoG',
             instrumentName: 'Piano',
-            time: 3.461,
+            startTime: 3.461,
         },
         {
             eventName: 'Piano/pianoA',
             instrumentName: 'Piano',
-            time: 3.819,
+            startTime: 3.819,
         },
         {
             eventName: 'Piano/pianoA#',
             instrumentName: 'Piano',
-            time: 4.265,
+            startTime: 4.265,
         },
         {
             eventName: 'Piano/pianoB',
             instrumentName: 'Piano',
-            time: 4.795,
+            startTime: 4.795,
         },
         {
             eventName: 'Piano/pianoC',
             instrumentName: 'Piano',
-            time: 6.42,
+            startTime: 6.42,
         },
     ],
 };
@@ -258,11 +258,32 @@ export const InstrumentRecordingsProvider = ({ children }) => {
 
     const resetAllRecordings = () => setRecordings({});
 
+    const updateStartTime = ({ index, instrumentName, newStartTime }) => {
+        setRecordings((prevRecordings) => {
+            const updatedRecordings = { ...prevRecordings };
+            const instrumentRecordings = updatedRecordings[instrumentName];
+
+            if (
+                instrumentRecordings &&
+                index >= 0 &&
+                index < instrumentRecordings.length
+            ) {
+                instrumentRecordings[index] = {
+                    ...instrumentRecordings[index],
+                    startTime: newStartTime,
+                };
+            }
+
+            return updatedRecordings;
+        });
+    };
+
     const contextValue = {
-        recordings,
+        recordings: Object.entries(recordings),
         resetAllRecordings,
         resetInstrumentRecordings,
         setRecordings,
+        updateStartTime,
     };
 
     return (

@@ -39,7 +39,7 @@ const useRecordingsPlayer = (instrumentName) => {
 
         if (!isPlaying) {
             const allSounds = recordings.getAllRecordedSounds();
-            replayEvents(allSounds, null);
+            replayEvents();
         }
     };
 

@@ -165,7 +165,7 @@ export function initializeFMOD() {
 
 export function playEventInstance(eventPath) {
     if (!gSystem) {
-        console.error("FMOD system hasn't been initialized yet.");
+        window.alert("FMOD system hasn't been initialized yet.");
         return;
     }
 
@@ -183,3 +183,5 @@ export function playEventInstance(eventPath) {
     const result3 = eventInstance.val.start();
     CHECK_RESULT(result3);
 }
+
+export function getEventInstanceLength(eventInstance) {}

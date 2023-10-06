@@ -1,7 +1,7 @@
-const createSound = (eventName, instrumentName, time) => ({
+const createSound = ({ eventName, instrumentName, startTime }) => ({
     eventName,
     instrumentName,
-    time,
+    startTime,
 });
 
 export default createSound;

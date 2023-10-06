@@ -1,20 +1,41 @@
-import React, { useContext } from 'react';
+import React, { useContext, useRef } from 'react';
+import styled from 'styled-components';
 import { InstrumentRecordingsContext } from '../../providers/InstrumentsProvider';
-import InstrumentGroup from './components/InstrumentGroup';
+import InstrumentTimeline from './components/InstrumentTimeline';
+
+const Timeline = styled.div`
+    display: flex;
+    flex-direction: column;
+    overflow-x: scroll;
+`;
+
+const EditorWrapper = styled.div`
+    background-color: white;
+    opacity: 0.7;
+`;
 
 const Editor = () => {
-    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { recordings, updateStartTime } = useContext(
+        InstrumentRecordingsContext
+    );
+
+    const MasterTimelineReference = useRef();
 
     return (
-        <div>
+        <EditorWrapper>
             <div>Editor</div>
-            {Object.entries(recordings).map(([groupKey, instrumentGroup]) => (
-                <InstrumentGroup
-                    key={groupKey}
-                    instrumentGroup={instrumentGroup}
-                />
-            ))}
-        </div>
+
+            <Timeline ref={MasterTimelineReference}>
+                {recordings.map(([groupKey, instrumentGroup]) => (
+                    <InstrumentTimeline
+                        key={groupKey}
+                        updateStartTime={updateStartTime}
+                        instrumentGroup={instrumentGroup}
+                        masterTimelineReference={MasterTimelineReference}
+                    />
+                ))}
+            </Timeline>
+        </EditorWrapper>
     );
 };
 

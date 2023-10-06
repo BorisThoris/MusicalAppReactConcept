@@ -3,7 +3,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { initializeApp } from './fmodLogic';
-import reportWebVitals from './reportWebVitals';
 
 initializeApp();
 
@@ -13,5 +12,3 @@ root.render(
         <App />
     </React.StrictMode>
 );
-
-reportWebVitals();
