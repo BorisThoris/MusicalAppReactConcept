@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
-import { playEventInstance } from '../../fmodLogic';
+import { createAndPlayEventIntance } from '../../fmodLogic';
 import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
 import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
@@ -31,8 +31,8 @@ const Guitar = () => {
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = (musicalEvent) => {
-        recordEvent(musicalEvent, instrumentName);
-        playEventInstance(musicalEvent);
+        const eventInstance = createAndPlayEventIntance(musicalEvent);
+        recordEvent(eventInstance, instrumentName);
     };
 
     const handlePlayEvent = (musicalEvent) => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { playEventInstance } from '../fmodLogic';
+import { createAndPlayEventIntance } from '../fmodLogic';
 
 const scheduleSoundPlayback = (sound, delay, playEventFunc) => {
     const timeoutId = setTimeout(
@@ -30,7 +30,7 @@ const usePlayback = () => {
     return {
         clearAllTimeouts,
         scheduleSoundPlayback: (sound, delay) =>
-            scheduleSoundPlayback(sound, delay, playEventInstance),
+            scheduleSoundPlayback(sound, delay, createAndPlayEventIntance),
     };
 };
 

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
+// let clone = Object.assign(Object.create(Object.getPrototypeOf(orig)), orig)
 const initialRecordings = {
     Drum: [
         {
@@ -155,87 +156,157 @@ const initialRecordings = {
             instrumentName: 'Guitar',
             startTime: 0.575,
         },
-        {
-            eventName: 'Guitar/B',
-            instrumentName: 'Guitar',
-            startTime: 1.227,
-        },
-        {
-            eventName: 'Guitar/D',
-            instrumentName: 'Guitar',
-            startTime: 1.836,
-        },
-        {
-            eventName: 'Guitar/E',
-            instrumentName: 'Guitar',
-            startTime: 2.356,
-        },
-        {
-            eventName: 'Guitar/G',
-            instrumentName: 'Guitar',
-            startTime: 2.911,
-        },
-        {
-            eventName: 'Guitar/A',
-            instrumentName: 'Guitar',
-            startTime: 0.549,
-        },
-        {
-            eventName: 'Guitar/B',
-            instrumentName: 'Guitar',
-            startTime: 1.374,
-        },
-        {
-            eventName: 'Guitar/D',
-            instrumentName: 'Guitar',
-            startTime: 2.267,
-        },
     ],
     Piano: [
         {
-            eventName: 'Piano/pianoC',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 0.706,
+            startTime: 0.74,
         },
         {
-            eventName: 'Piano/pianoD',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 1.279,
+            startTime: 1.363,
         },
         {
-            eventName: 'Piano/pianoE',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 1.638,
+            startTime: 2.016,
         },
         {
-            eventName: 'Piano/pianoF#',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 2.996,
+            startTime: 2.662,
         },
         {
-            eventName: 'Piano/pianoG',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 3.461,
+            startTime: 3.295,
         },
         {
-            eventName: 'Piano/pianoA',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 3.819,
+            startTime: 3.789,
         },
         {
-            eventName: 'Piano/pianoA#',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 4.265,
+            startTime: 4.266,
         },
         {
-            eventName: 'Piano/pianoB',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 4.795,
+            startTime: 4.546,
         },
         {
-            eventName: 'Piano/pianoC',
+            eventInstance: {},
             instrumentName: 'Piano',
-            startTime: 6.42,
+            startTime: 4.782,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 5.058,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 5.329,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 5.587,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 5.762,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 6.068,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 6.347,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 6.466,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 6.611,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 6.871,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 7.002,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 7.141,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 8.803,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 10.227,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 11.809,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 13.408,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 14.965,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 16.723,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 17.565,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 19.348,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 20.133,
+        },
+        {
+            eventInstance: {},
+            instrumentName: 'Piano',
+            startTime: 20.63,
         },
     ],
 };
@@ -246,7 +317,11 @@ export const useInstrumentRecordings = () =>
     useContext(InstrumentRecordingsContext);
 
 export const InstrumentRecordingsProvider = ({ children }) => {
-    const [recordings, setRecordings] = useState(initialRecordings);
+    const [recordings, setRecordings] = useState({});
+
+    useEffect(() => {
+        console.log(recordings);
+    }, [recordings]);
 
     const resetInstrumentRecordings = (instrumentName) => {
         const updatedRecordings = {

@@ -1,12 +1,7 @@
 /* eslint-disable import/prefer-default-export */
-import React from 'react';
 import styled from 'styled-components';
 
-const pixelToSecondRatio = 105;
-
-export const SoundElement = styled(({ positionInTimeline, ...rest }) => (
-    <button {...rest} />
-))`
+export const SoundElement = styled.button`
     padding: 10px;
     background-color: orangered;
     background-image: linear-gradient(to bottom right, #ff4500, #e62e00);
@@ -19,6 +14,7 @@ export const SoundElement = styled(({ positionInTimeline, ...rest }) => (
     position: absolute;
 
     left: ${(props) => props.positionInTimeline}px;
+    width: ${(props) => props.lengthBasedWidth || 10}px;
 
     transition: 1s;
 

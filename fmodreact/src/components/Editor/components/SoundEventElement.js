@@ -1,23 +1,24 @@
-import get from 'lodash/get';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { playEventInstance } from '../../../fmodLogic';
+import { getEventInstanceLength } from '../../../fmodLogic';
 import { SoundElement } from './SoundEventElement.styles';
 
 const pixelToSecondRatio = 105;
 
 const SoundEventElement = ({
-    eventInstance,
     index,
-    instrumentName,
     masterTimelineReference,
+    recording,
     updateStartTime,
 }) => {
-    const { eventName, startTime } = eventInstance;
+    const { eventInstance, instrumentName, startTime } = recording;
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
 
+    const eventLength = getEventInstanceLength(eventInstance);
+    const lengthBasedWidth = eventLength * pixelToSecondRatio;
+
     const onPressEvent = () => {
-        playEventInstance(eventName);
+        eventInstance.start();
     };
 
     const handleDragEnd = (e) => {
@@ -32,20 +33,18 @@ const SoundEventElement = ({
             onClick={onPressEvent}
             draggable
             onDragEnd={handleDragEnd}
+            lengthBasedWidth={lengthBasedWidth}
             positionInTimeline={startingPositionInTimeline}
         >
-            <div>{eventName}</div>
+            <div>{instrumentName}</div>
             <p>--------------</p>
             <div>Start Time:{startTime}</div>
+            <div>Length: {eventLength}</div>
         </SoundElement>
     );
 };
 
 SoundEventElement.propTypes = {
-    eventInstance: PropTypes.shape({
-        eventName: PropTypes.string,
-        startTime: PropTypes.number,
-    }),
     index: PropTypes.number,
     instrumentName: PropTypes.string,
     masterTimelineReference: PropTypes.shape({
@@ -53,14 +52,19 @@ SoundEventElement.propTypes = {
             scrollLeft: PropTypes.number,
         }),
     }),
+    recording: PropTypes.shape({
+        eventInstance: PropTypes.object,
+        instrumentName: PropTypes.string,
+        startTime: PropTypes.number,
+    }),
     updateStartTime: PropTypes.func,
 };
 
 SoundEventElement.defaultProps = {
-    eventInstance: {},
     index: 0,
     instrumentName: '',
     masterTimelineReference: {},
+    recording: {},
     updateStartTime: () => {},
 };
 

@@ -21,11 +21,11 @@ const useRecorder = ({ instrumentName }) => {
         }
     }, [instrumentName, isRecording, resetInstrumentRecordings]);
 
-    const recordEvent = (event, currentInstrumentName) => {
+    const recordEvent = (eventInstance, currentInstrumentName) => {
         if (isRecording) {
             const elapsedTime = getElapsedTime(startTime);
             const sound = createSound({
-                eventName: event,
+                eventInstance,
                 instrumentName: currentInstrumentName,
                 startTime: elapsedTime,
             });

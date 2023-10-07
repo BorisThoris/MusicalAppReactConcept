@@ -1,14 +1,13 @@
 {
     "compilerOptions": {
-        "baseUrl": "src",
-        "paths": {
-            "*": [
-                "*"
-            ]
-        },
-        "jsx": "react"
-    },
-    "include": [
-        "src/**/*"
-    ]
+        "target": "ES6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "jsx": "react",
+        "experimentalDecorators": true,
+        "allowJs": true,
+        "checkJs": true,
+        "outDir": "./dist",
+        "esModuleInterop": true
+    }
 }

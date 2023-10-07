@@ -1,5 +1,5 @@
-const createSound = ({ eventName, instrumentName, startTime }) => ({
-    eventName,
+const createSound = ({ eventInstance, instrumentName, startTime }) => ({
+    eventInstance,
     instrumentName,
     startTime,
 });

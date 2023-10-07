@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import SoundEventElement from './SoundEventElement';
 
 const soundEventType = PropTypes.shape({
-    eventName: PropTypes.string.isRequired,
+    eventInstance: PropTypes.string.isRequired,
     instrumentName: PropTypes.string.isRequired,
     startTime: PropTypes.number.isRequired,
 });
@@ -35,10 +35,9 @@ const InstrumentTimeline = ({
 
             {instrumentGroup.map((eventInstance, index) => (
                 <SoundEventElement
-                    instrumentName={instrumentName}
                     key={index}
                     index={index}
-                    eventInstance={eventInstance}
+                    recording={eventInstance}
                     updateStartTime={updateStartTime}
                     masterTimelineReference={masterTimelineReference}
                 />
