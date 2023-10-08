@@ -1,16 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { createAndPlayEventIntance } from '../fmodLogic';
 
-const scheduleSoundPlayback = (sound, delay, playEventFunc) => {
-    const timeoutId = setTimeout(
-        () => {
-            console.log(sound.eventName);
-            // playEventFunc(sound.eventName);
-        },
-        // Transforming seconds to ms
-        delay * 1000
-    );
-    return timeoutId;
+const scheduleSoundPlayback = ({ delay, playbackCallback }) => {
+    const timeoutId = setTimeout(() => {
+        playbackCallback();
+    }, delay * 1000);
+
+    return delay * 1000;
 };
 
 const usePlayback = () => {
@@ -29,8 +24,7 @@ const usePlayback = () => {
 
     return {
         clearAllTimeouts,
-        scheduleSoundPlayback: (sound, delay) =>
-            scheduleSoundPlayback(sound, delay, createAndPlayEventIntance),
+        scheduleSoundPlayback,
     };
 };
 

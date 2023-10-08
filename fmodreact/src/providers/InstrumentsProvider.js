@@ -354,7 +354,7 @@ export const InstrumentRecordingsProvider = ({ children }) => {
     };
 
     const contextValue = {
-        recordings: Object.entries(recordings),
+        recordings,
         resetAllRecordings,
         resetInstrumentRecordings,
         setRecordings,

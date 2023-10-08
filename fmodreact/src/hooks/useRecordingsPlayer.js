@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
+import { playEventInstance } from '../fmodLogic';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
 
@@ -11,16 +12,16 @@ const useRecordingsPlayer = (instrumentName) => {
         let previousNoteStart = 0;
         let biggestEndTime = 0;
 
-        Object.keys(recordings).forEach((instrument) => {
-            const arrayOfSounds = recordings[instrument];
+        recordings[instrumentName].forEach(({ eventInstance, startTime }) => {
+            const delay = startTime - previousNoteStart;
+            previousNoteStart = startTime;
 
-            arrayOfSounds.forEach((sound) => {
-                const delay = sound.time - previousNoteStart;
-                previousNoteStart = sound.time;
-
-                const soundEndTime = scheduleSoundPlayback(sound, delay);
-                biggestEndTime = Math.max(biggestEndTime, soundEndTime);
+            const soundEndTime = scheduleSoundPlayback({
+                delay,
+                playbackCallback: () => playEventInstance(eventInstance),
             });
+
+            biggestEndTime = Math.max(biggestEndTime, soundEndTime);
         });
     };
 

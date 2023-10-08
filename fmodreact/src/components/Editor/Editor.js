@@ -26,14 +26,16 @@ const Editor = () => {
             <div>Editor</div>
 
             <Timeline ref={MasterTimelineReference}>
-                {recordings.map(([groupKey, instrumentGroup]) => (
-                    <InstrumentTimeline
-                        key={groupKey}
-                        updateStartTime={updateStartTime}
-                        instrumentGroup={instrumentGroup}
-                        masterTimelineReference={MasterTimelineReference}
-                    />
-                ))}
+                {Object.entries(recordings).map(
+                    ([groupKey, instrumentGroup]) => (
+                        <InstrumentTimeline
+                            key={groupKey}
+                            updateStartTime={updateStartTime}
+                            instrumentGroup={instrumentGroup}
+                            masterTimelineReference={MasterTimelineReference}
+                        />
+                    )
+                )}
             </Timeline>
         </EditorWrapper>
     );

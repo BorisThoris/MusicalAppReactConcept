@@ -197,6 +197,23 @@ export function getEventInstanceLength(eventInstance) {
 
 /**
  * Creates and plays an FMOD event instance.
+ * @param {Object} passedEventInstance - The path to the event in FMOD.
+ * or null if failed.
+ */
+export function playEventInstance(passedEventInstance) {
+    if (!gSystem) {
+        window.alert("FMOD system hasn't been initialized yet.");
+        return null;
+    }
+
+    const result = passedEventInstance.start();
+    CHECK_RESULT(result);
+
+    return passedEventInstance;
+}
+
+/**
+ * Creates and plays an FMOD event instance.
  * @param {string} eventPath - The path to the event in FMOD.
  * @returns {Object|null} - Returns the event instance if successful,
  * or null if failed.
@@ -213,15 +230,7 @@ export function createAndPlayEventIntance(eventPath) {
         return null;
     }
 
-    // Get the length of the event instance
-    const eventLength = getEventInstanceLength(eventInstance);
-    if (!eventLength) {
-        return null;
-    }
-
-    // Start the event instance
-    const result = eventInstance.start();
-    CHECK_RESULT(result);
+    playEventInstance(eventInstance);
 
     return eventInstance;
 }

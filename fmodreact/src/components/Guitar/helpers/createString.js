@@ -1,4 +1,3 @@
-import { createAndPlayEventIntance } from '../../../fmodLogic';
 import GUITAR_CONFIG from '../guitarConfig';
 
 const createSvgElement = (elementName) =>

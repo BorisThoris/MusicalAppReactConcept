@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const useTambourine = ({ playEvent }) => {
     const [soundPlayed, setSoundPlayed] = useState(false);
@@ -15,7 +15,7 @@ const useTambourine = ({ playEvent }) => {
                     setSoundPlayed(false);
                 }
             } else if (xAccel > 15 && !soundPlayed) {
-                playEvent(); // Assuming this is the tambourine sound.
+                playEvent();
                 setSoundPlayed(true);
                 setWasPositive(true);
             }
