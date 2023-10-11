@@ -1,5 +1,5 @@
 import React from 'react';
-import { createAndPlayEventIntance } from '../../fmodLogic';
+import { createAndPlayEventIntance } from '../../fmodLogic/eventInstanceHelpers';
 import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
 import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';

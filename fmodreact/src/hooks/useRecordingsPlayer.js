@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { playEventInstance } from '../fmodLogic';
+import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
 
