@@ -29,13 +29,15 @@ export function CHECK_RESULT(result) {
 }
 
 export function prerun() {
-    const fileUrl = '/';
+    const fileUrl = '/FmodProject/Build/Desktop/';
     const folderName = '/';
     const canRead = true;
     const canWrite = false;
     const fileNames = ['Master.bank', 'Master.strings.bank'];
 
     fileNames.forEach((fileName) => {
+        console.log(`${fileUrl}${fileName}`);
+
         FMOD.FS_createPreloadedFile(
             folderName,
             fileName,
