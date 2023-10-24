@@ -3,11 +3,11 @@
         "target": "ES6",
         "module": "commonjs",
         "moduleResolution": "node",
-        "jsx": "react",
         "experimentalDecorators": true,
         "allowJs": true,
-        "checkJs": true,
         "outDir": "./dist",
+        "checkJs": true,
+        "jsx": "react",
         "esModuleInterop": true
     }
 }

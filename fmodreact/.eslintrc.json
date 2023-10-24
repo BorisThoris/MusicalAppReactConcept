@@ -12,7 +12,8 @@
     "plugin:import/warnings",
     "plugin:jsx-a11y/recommended",
     "airbnb-base",
-    "prettier"
+    "prettier",
+    "plugin:react-perf/recommended"
   ],
   "parserOptions": {
     "ecmaFeatures": {
@@ -22,7 +23,7 @@
     "sourceType": "module"
   },
   "plugins": [
-    "unused-imports",
+    "react-perf",
     "sort",
     "react",
     "import",
@@ -93,6 +94,12 @@
       "warn",
       "unix"
     ],
+    "react-perf/jsx-no-new-object-as-prop": [
+      "error",
+      {
+        "nativeAllowList": "all"
+      }
+    ],
     "jsx-quotes": 1,
     "react/display-name": 0,
     "react/forbid-prop-types": 0,
@@ -124,17 +131,7 @@
     "react/prefer-es6-class": 1,
     "react/prop-types": 1,
     "react/self-closing-comp": 1,
-    "react/sort-comp": 1,
-    "unused-imports/no-unused-imports": "error",
-    "unused-imports/no-unused-vars": [
-      "warn",
-      {
-        "vars": "all",
-        "varsIgnorePattern": "^_",
-        "args": "after-used",
-        "argsIgnorePattern": "^_"
-      }
-    ]
+    "react/sort-comp": 1
   },
   "settings": {
     "react": {

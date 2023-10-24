@@ -1,78 +1,76 @@
-import { CHECK_RESULT, gSystem } from '.';
+/* eslint-disable no-alert */
+import { CHECK_RESULT, gSystem } from './index';
+
+const showAlertIfSystemNotInitialized = () => {
+    if (!gSystem) window.alert("FMOD system hasn't been initialized yet.");
+};
+
+export const getEventInstanceParamaters = (eventInstance) => {
+    showAlertIfSystemNotInitialized();
+
+    const eventDescription = {};
+    CHECK_RESULT(eventInstance.getDescription(eventDescription));
+
+    const id = {};
+    eventDescription.val.getID(id);
+
+    const eventInstanceParamsCount = {};
+    eventDescription.val.getParameterDescriptionCount(eventInstanceParamsCount);
+
+    const parameters = Array.from(
+        { length: eventInstanceParamsCount.val },
+        (_, index) => {
+            const param = {};
+            eventDescription.val.getParameterDescriptionByIndex(0, param);
+            return param;
+        }
+    );
+
+    return parameters;
+};
 
 export const createEventInstance = (eventPath) => {
-    if (!gSystem) {
-        window.alert("FMOD system hasn't been initialized yet.");
-        return null;
-    }
+    showAlertIfSystemNotInitialized();
 
-    // Get the event description
     const eventDescription = {};
-    const result1 = gSystem.getEvent(`event:/${eventPath}`, eventDescription);
-    CHECK_RESULT(result1);
+    CHECK_RESULT(gSystem.getEvent(`event:/${eventPath}`, eventDescription));
 
-    // Create an instance of the event
     const eventInstance = {};
-    const result2 = eventDescription.val.createInstance(eventInstance);
-    CHECK_RESULT(result2);
+    CHECK_RESULT(eventDescription.val.createInstance(eventInstance));
 
     return eventInstance.val;
 };
 
 export const getEventInstanceLength = (eventInstance) => {
+    showAlertIfSystemNotInitialized();
+
     if (!eventInstance) {
         window.alert('Event instance is not valid.');
         return null;
     }
 
-    const eventInstanceDescription = {};
-    const result1 = eventInstance.getDescription(eventInstanceDescription);
-    CHECK_RESULT(result1);
+    const description = {};
+    CHECK_RESULT(eventInstance.getDescription(description));
 
-    const eventLength = {};
-    const result2 = eventInstanceDescription.val.getLength(eventLength);
-    CHECK_RESULT(result2);
+    const length = {};
+    CHECK_RESULT(description.val.getLength(length));
 
-    // Transformed from MS to seconds
-    return eventLength.val / 1000;
+    return length.val / 1000;
 };
 
-/**
- * Creates and plays an FMOD event instance.
- * @param {Object} passedEventInstance - The path to the event in FMOD.
- * or null if failed.
- */
 export const playEventInstance = (passedEventInstance) => {
-    if (!gSystem) {
-        window.alert("FMOD system hasn't been initialized yet.");
-        return null;
-    }
+    showAlertIfSystemNotInitialized();
 
-    const result = passedEventInstance.start();
-    CHECK_RESULT(result);
+    CHECK_RESULT(passedEventInstance.start());
 
     return passedEventInstance;
 };
 
-/**
- * Creates and plays an FMOD event instance.
- * @param {string} eventPath - The path to the event in FMOD.
- * @returns {Object|null} - Returns the event instance if successful,
- * or null if failed.
- */
 export const createAndPlayEventIntance = (eventPath) => {
-    if (!gSystem) {
-        window.alert("FMOD system hasn't been initialized yet.");
-        return null;
-    }
+    showAlertIfSystemNotInitialized();
 
-    // Create an instance of the event
     const eventInstance = createEventInstance(eventPath);
-    if (!eventInstance) {
-        return null;
-    }
-
-    playEventInstance(eventInstance);
+    if (eventInstance) playEventInstance(eventInstance);
 
     return eventInstance;
 };
