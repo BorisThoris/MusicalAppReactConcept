@@ -43,6 +43,19 @@ const updateRecordingStartTime = (
     return updatedRecordings;
 };
 
+const deleteEventInstance = (recordings, { index, instrumentName }) => {
+    const updatedRecordings = { ...recordings };
+
+    if (
+        updatedRecordings[instrumentName] &&
+        index >= 0 &&
+        index < updatedRecordings[instrumentName].length
+    ) {
+        updatedRecordings[instrumentName].splice(index, 1);
+    }
+    return updatedRecordings;
+};
+
 export const InstrumentRecordingsProvider = ({ children }) => {
     const [recordings, setRecordings] = useState({});
 
@@ -53,6 +66,12 @@ export const InstrumentRecordingsProvider = ({ children }) => {
             ),
         []
     );
+
+    const removeEventInstance = useCallback((instrumentName, index) => {
+        setRecordings((prev) =>
+            deleteEventInstance(prev, { index, instrumentName })
+        );
+    }, []);
 
     const resetAllRecordings = useCallback(() => setRecordings({}), []);
 
@@ -83,6 +102,7 @@ export const InstrumentRecordingsProvider = ({ children }) => {
         () => ({
             recordings,
             recordSoundEvent,
+            removeEventInstance,
             resetAllRecordings,
             resetInstrumentRecordings,
             setRecordings,
@@ -94,6 +114,7 @@ export const InstrumentRecordingsProvider = ({ children }) => {
             resetInstrumentRecordings,
             setRecordings,
             updateStartTime,
+            removeEventInstance,
             recordSoundEvent,
         ]
     );

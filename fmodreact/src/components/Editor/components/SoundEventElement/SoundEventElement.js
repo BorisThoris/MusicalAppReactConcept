@@ -13,6 +13,7 @@ const SHADOW_OFFSET_X = 2;
 const SHADOW_OFFSET_Y = 2;
 const SHADOW_BLUR = 5;
 const SHADOW_OPACITY = 0.5;
+const TRANSPARENCY_VALUE = 0.8; // 50% transparency
 
 const SoundEventElement = ({
     handleDragEnd,
@@ -35,8 +36,8 @@ const SoundEventElement = ({
     );
 
     const handleClick = useCallback(
-        () => openPanel(recording),
-        [openPanel, recording]
+        () => openPanel(recording, index, instrumentName),
+        [index, instrumentName, openPanel, recording]
     );
 
     const handleDoubleClick = useCallback(
@@ -74,6 +75,7 @@ const SoundEventElement = ({
                 shadowOffsetY={SHADOW_OFFSET_Y}
                 shadowBlur={SHADOW_BLUR}
                 shadowOpacity={SHADOW_OPACITY}
+                opacity={TRANSPARENCY_VALUE} // Added opacity
             />
             <Text
                 x={5}
@@ -81,6 +83,7 @@ const SoundEventElement = ({
                 text={instrumentName}
                 fontSize={15}
                 fill="black"
+                opacity={TRANSPARENCY_VALUE} // Added opacity
             />
         </Group>
     );

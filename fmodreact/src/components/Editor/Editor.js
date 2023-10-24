@@ -18,17 +18,39 @@ const StyledTimeline = styled.div`
 
 const Editor = () => {
     const [panelState, setPanelState] = useState(null);
-    const { recordings, updateStartTime } = useContext(
+    const { recordings, removeEventInstance, updateStartTime } = useContext(
         InstrumentRecordingsContext
     );
 
-    const openPanel = (recording) => {
-        setPanelState({ isOpen: true, recording });
+    const openPanel = (recording, index) => {
+        setPanelState({ index, isOpen: true, recording });
     };
 
     const closePanel = useCallback(() => {
         setPanelState(null);
     }, []);
+
+    const deleteNote = useCallback(() => {
+        if (panelState) {
+            removeEventInstance(
+                panelState.recording.instrumentName,
+                panelState.index
+            );
+
+            setPanelState(null);
+        }
+    }, [panelState, removeEventInstance]);
+
+    const renderTimelines = useCallback(() => {
+        return Object.entries(recordings).map(([groupKey, instrumentGroup]) => (
+            <InstrumentTimeline
+                key={groupKey}
+                updateStartTime={updateStartTime}
+                instrumentGroup={instrumentGroup}
+                openPanel={openPanel}
+            />
+        ));
+    }, [recordings, updateStartTime]);
 
     return (
         <StyledEditorWrapper>
@@ -36,20 +58,15 @@ const Editor = () => {
             <Header />
 
             <StyledTimeline key={recordings}>
-                {Object.entries(recordings).map(
-                    ([groupKey, instrumentGroup]) => (
-                        <InstrumentTimeline
-                            key={groupKey}
-                            updateStartTime={updateStartTime}
-                            instrumentGroup={instrumentGroup}
-                            openPanel={openPanel}
-                        />
-                    )
-                )}
+                {renderTimelines()}
             </StyledTimeline>
 
             {panelState && (
-                <PanelComponent onPressX={closePanel} panelState={panelState} />
+                <PanelComponent
+                    onPressX={closePanel}
+                    panelState={panelState}
+                    onDelete={deleteNote}
+                />
             )}
         </StyledEditorWrapper>
     );
