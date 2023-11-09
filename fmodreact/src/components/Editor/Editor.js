@@ -1,34 +1,23 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
-import styled from 'styled-components';
+import React, { useCallback, useContext } from 'react';
+import threeMinuteMs from '../../globalConstants/songLimit';
+import usePanelStateHook from '../../hooks/usePanelState';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import useStageWidthHook from '../../hooks/useStageWidth';
 import { InstrumentRecordingsContext } from '../../providers/InstrumentsProvider';
 import Header from './components/Header/Header';
-import InstrumentTimeline from './components/InstrumentTimeline/InstrumentTimeline';
 import PanelComponent from './components/Panel/Panel';
-
-// Separate styles
-const StyledEditorWrapper = styled.div`
-    background-color: white;
-    opacity: 0.7;
-`;
-
-const StyledTimeline = styled.div`
-    flex-direction: column;
-    overflow-x: scroll;
-`;
+import Timelines, {
+    StyledEditorWrapper,
+    StyledTimeline,
+} from './components/Timelines/Timelines';
 
 const Editor = () => {
-    const [panelState, setPanelState] = useState(null);
     const { recordings, removeEventInstance, updateStartTime } = useContext(
         InstrumentRecordingsContext
     );
-
-    const openPanel = (recording, index) => {
-        setPanelState({ index, isOpen: true, recording });
-    };
-
-    const closePanel = useCallback(() => {
-        setPanelState(null);
-    }, []);
+    const { isPlaying, replayAllRecordedSounds } = useRecordingsPlayer();
+    const { closePanel, openPanel, panelState } = usePanelStateHook();
+    const { furthestEndTime } = useStageWidthHook({ recordings });
 
     const deleteNote = useCallback(() => {
         if (panelState) {
@@ -36,38 +25,35 @@ const Editor = () => {
                 panelState.recording.instrumentName,
                 panelState.index
             );
-
-            setPanelState(null);
+            closePanel();
         }
-    }, [panelState, removeEventInstance]);
-
-    const renderTimelines = useCallback(() => {
-        return Object.entries(recordings).map(([groupKey, instrumentGroup]) => (
-            <InstrumentTimeline
-                key={groupKey}
-                updateStartTime={updateStartTime}
-                instrumentGroup={instrumentGroup}
-                openPanel={openPanel}
-            />
-        ));
-    }, [recordings, updateStartTime]);
+    }, [closePanel, panelState, removeEventInstance]);
 
     return (
         <StyledEditorWrapper>
-            <div>Editor</div>
             <Header />
+            <StyledTimeline>
+                <button onClick={replayAllRecordedSounds}>
+                    {isPlaying ? 'Pause' : 'Start'}
+                </button>
 
-            <StyledTimeline key={recordings}>
-                {renderTimelines()}
-            </StyledTimeline>
-
-            {panelState && (
-                <PanelComponent
-                    onPressX={closePanel}
-                    panelState={panelState}
-                    onDelete={deleteNote}
+                <Timelines
+                    recordings={recordings}
+                    furthestEndTime={furthestEndTime}
+                    isPlaying={isPlaying}
+                    duration={threeMinuteMs}
+                    openPanel={openPanel}
+                    updateStartTime={updateStartTime}
                 />
-            )}
+
+                {panelState && (
+                    <PanelComponent
+                        onPressX={closePanel}
+                        panelState={panelState}
+                        onDelete={deleteNote}
+                    />
+                )}
+            </StyledTimeline>
         </StyledEditorWrapper>
     );
 };

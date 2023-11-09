@@ -1,13 +1,10 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
-// Importing FMOD logic helpers
 import {
     getEventInstanceParamaters,
     playEventInstance,
 } from '../../../../fmodLogic/eventInstanceHelpers';
-// Importing components
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
-// Importing styled components
 import {
     CloseIcon,
     Header,
@@ -41,7 +38,10 @@ const Panel = ({ onDelete, onPressX, panelState }) => {
             <Timeline>
                 <TimeMarker>
                     <span>START</span>
-                    <span>{startTime}</span>X<span>{endTime}</span>
+                    <div>
+                        <div>Start: {startTime}</div>
+                        <div>End:{endTime}</div>
+                    </div>
                 </TimeMarker>
 
                 {params.map((param) => (

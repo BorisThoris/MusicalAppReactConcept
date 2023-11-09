@@ -6,8 +6,14 @@
         "experimentalDecorators": true,
         "allowJs": true,
         "outDir": "./dist",
-        "checkJs": true,
+        "checkJs": false,
         "jsx": "react",
         "esModuleInterop": true
-    }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/App.js",
+        "src/index.js"
+    ]
 }

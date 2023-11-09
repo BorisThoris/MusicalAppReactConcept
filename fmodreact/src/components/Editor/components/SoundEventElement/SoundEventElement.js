@@ -13,7 +13,29 @@ const SHADOW_OFFSET_X = 2;
 const SHADOW_OFFSET_Y = 2;
 const SHADOW_BLUR = 5;
 const SHADOW_OPACITY = 0.5;
-const TRANSPARENCY_VALUE = 0.8; // 50% transparency
+const TRANSPARENCY_VALUE = 0.8;
+const GRADIENT_START_POINT = { x: 0, y: 0 };
+const GRADIENT_END_POINT = { x: 100, y: 0 };
+const COLOR_STOPS = [0, '#ff4500', 1, '#e62e00'];
+
+const createHandleDragEnd =
+    (handleDragEnd, index, eventLength, instrumentName) => (e) => {
+        handleDragEnd({
+            e,
+            elementIndex: index,
+            eventLength,
+            instrumentName,
+        });
+    };
+
+const createHandleClick =
+    (openPanel, recording, index, instrumentName) => () => {
+        openPanel(recording, index, instrumentName);
+    };
+
+const createHandleDoubleClick = (eventInstance) => () => {
+    playEventInstance(eventInstance);
+};
 
 const SoundEventElement = ({
     handleDragEnd,
@@ -21,34 +43,31 @@ const SoundEventElement = ({
     openPanel,
     recording,
     timelineHeight,
+    timelineY,
 }) => {
     const { eventInstance, instrumentName, startTime } = recording;
-
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const eventLength = getEventInstanceLength(eventInstance);
     const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-    const handleDragEndMemo = useCallback(
-        (e) => {
-            handleDragEnd({ e, eventLength, index, instrumentName });
-        },
-        [eventLength, handleDragEnd, index, instrumentName]
+    const handleDragEndCallback = createHandleDragEnd(
+        handleDragEnd,
+        index,
+        eventLength,
+        instrumentName
     );
-
-    const handleClick = useCallback(
-        () => openPanel(recording, index, instrumentName),
-        [index, instrumentName, openPanel, recording]
+    const handleClickCallback = createHandleClick(
+        openPanel,
+        recording,
+        index,
+        instrumentName
     );
+    const handleDoubleClickCallback = createHandleDoubleClick(eventInstance);
 
-    const handleDoubleClick = useCallback(
-        () => playEventInstance(eventInstance),
-        [eventInstance]
+    const dragBoundFunc = useCallback(
+        (pos) => ({ x: pos.x, y: timelineY }),
+        [timelineY]
     );
-
-    const gradientStartPoint = useMemo(() => ({ x: 0, y: 0 }), []);
-    const gradientEndPoint = useMemo(() => ({ x: 100, y: 0 }), []);
-    const colorStops = useMemo(() => [0, '#ff4500', 1, '#e62e00'], []);
-    const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: 0 }), []);
 
     return (
         <Group
@@ -56,18 +75,18 @@ const SoundEventElement = ({
             x={startingPositionInTimeline}
             draggable
             dragBoundFunc={dragBoundFunc}
-            onDragEnd={handleDragEndMemo}
-            onClick={handleClick}
-            onDblClick={handleDoubleClick}
+            onDragEnd={handleDragEndCallback}
+            onClick={handleClickCallback}
+            onDblClick={handleDoubleClickCallback}
         >
             <Rect
                 x={0}
                 y={0}
                 width={lengthBasedWidth}
                 height={timelineHeight * 0.8}
-                fillLinearGradientStartPoint={gradientStartPoint}
-                fillLinearGradientEndPoint={gradientEndPoint}
-                fillLinearGradientColorStops={colorStops}
+                fillLinearGradientStartPoint={GRADIENT_START_POINT}
+                fillLinearGradientEndPoint={GRADIENT_END_POINT}
+                fillLinearGradientColorStops={COLOR_STOPS}
                 stroke="#b22a00"
                 strokeWidth={STROKE_WIDTH}
                 cornerRadius={CORNER_RADIUS}
@@ -75,7 +94,7 @@ const SoundEventElement = ({
                 shadowOffsetY={SHADOW_OFFSET_Y}
                 shadowBlur={SHADOW_BLUR}
                 shadowOpacity={SHADOW_OPACITY}
-                opacity={TRANSPARENCY_VALUE} // Added opacity
+                opacity={TRANSPARENCY_VALUE}
             />
             <Text
                 x={5}
@@ -83,7 +102,7 @@ const SoundEventElement = ({
                 text={instrumentName}
                 fontSize={15}
                 fill="black"
-                opacity={TRANSPARENCY_VALUE} // Added opacity
+                opacity={TRANSPARENCY_VALUE}
             />
         </Group>
     );
@@ -94,12 +113,12 @@ SoundEventElement.propTypes = {
     index: PropTypes.number.isRequired,
     openPanel: PropTypes.func.isRequired,
     recording: PropTypes.shape({
-        endTime: PropTypes.number.isRequired,
         eventInstance: PropTypes.object.isRequired,
         instrumentName: PropTypes.string.isRequired,
         startTime: PropTypes.number.isRequired,
     }).isRequired,
     timelineHeight: PropTypes.number.isRequired,
+    timelineY: PropTypes.number.isRequired,
 };
 
 export default SoundEventElement;

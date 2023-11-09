@@ -49,6 +49,7 @@ export const Timeline = styled.div`
 export const TimeMarker = styled.div`
     display: flex;
     justify-content: space-between;
+    flex-direction: column;
     font-weight: bold;
     margin-bottom: 10px;
 `;

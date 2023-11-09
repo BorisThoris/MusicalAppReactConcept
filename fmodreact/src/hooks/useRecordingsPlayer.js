@@ -1,51 +1,72 @@
-import { useContext, useEffect, useState } from 'react';
+import { get } from 'lodash';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
+import InstrumentsNames from '../globalConstants/instrumentNames';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
+import useStageWidthHook from './useStageWidth';
 
 const useRecordingsPlayer = (instrumentName) => {
     const [isPlaying, setIsPlaying] = useState(false);
-    const { clearAllTimeouts, scheduleSoundPlayback } = usePlayback();
+
+    const playback = usePlayback();
     const { recordings } = useContext(InstrumentRecordingsContext);
+    const { furthestEndTime } = useStageWidthHook({ recordings });
 
-    const replayEvents = () => {
-        let previousNoteStart = 0;
-        let biggestEndTime = 0;
+    const togglePlayback = useCallback(() => {
+        setIsPlaying((prevIsPlaying) => {
+            if (prevIsPlaying) {
+                playback.clearAllTimeouts();
+            }
+            return !prevIsPlaying;
+        });
+    }, [playback]);
 
-        recordings[instrumentName].forEach(({ eventInstance, startTime }) => {
-            const delay = startTime - previousNoteStart;
-            previousNoteStart = startTime;
+    const replayEvents = (instrument = instrumentName) => {
+        const instrumentRecordings = get(recordings, instrument, []);
+        let lastNoteStart = 0;
+        let lastEndTime = 0;
 
-            const soundEndTime = scheduleSoundPlayback({
-                delay,
-                playbackCallback: () => playEventInstance(eventInstance),
-            });
+        const lengthOfRecordings = instrumentRecordings.length - 1;
+        if (lengthOfRecordings) {
+            instrumentRecordings.forEach(
+                ({ eventInstance, startTime }, index) => {
+                    const delay = startTime;
+                    lastNoteStart = delay;
 
-            biggestEndTime = Math.max(biggestEndTime, soundEndTime);
+                    const soundEndTime = playback.scheduleSoundPlayback({
+                        delay,
+                        playbackCallback: () => {
+                            playEventInstance(eventInstance);
+                        },
+                    });
+
+                    lastEndTime = Math.max(lastEndTime, soundEndTime);
+                }
+            );
+        }
+
+        return lastEndTime;
+    };
+
+    const replayAllEvents = () => {
+        Object.values(InstrumentsNames).forEach((name) => {
+            if (get(recordings, name)) {
+                replayEvents(name);
+            }
         });
     };
 
-    const handlePlaybackToggle = (startTrackerUpdates) => {
-        setIsPlaying((prevIsPlaying) => !prevIsPlaying);
-        if (!isPlaying) {
-            startTrackerUpdates?.();
-        } else {
-            clearAllTimeouts();
-            startTrackerUpdates?.();
-        }
-    };
-
-    const replayAllRecordedSounds = (startTrackerUpdates) => {
-        handlePlaybackToggle(startTrackerUpdates);
+    const replayAllRecordedSounds = () => {
+        togglePlayback();
 
         if (!isPlaying) {
-            const allSounds = recordings.getAllRecordedSounds();
-            replayEvents();
+            replayAllEvents();
         }
     };
 
     const playRecordedSounds = () => {
-        handlePlaybackToggle();
+        togglePlayback();
 
         if (!isPlaying) {
             replayEvents();
@@ -53,10 +74,24 @@ const useRecordingsPlayer = (instrumentName) => {
     };
 
     useEffect(() => {
+        return playback.clearAllTimeouts;
+    }, [playback]);
+
+    useEffect(() => {
+        let timeoutId;
+
+        if (isPlaying) {
+            timeoutId = setTimeout(() => {
+                togglePlayback();
+            }, furthestEndTime * 1000);
+        }
+
         return () => {
-            clearAllTimeouts();
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
         };
-    }, [clearAllTimeouts]);
+    }, [furthestEndTime, isPlaying, togglePlayback]);
 
     return {
         isPlaying,
