@@ -25,6 +25,9 @@ const Timelines = ({
     isPlaying,
     openPanel,
     recordings,
+    setTrackerPosition,
+    stopPlayback,
+    trackerPosition,
     updateStartTime,
 }) => {
     const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
@@ -32,16 +35,21 @@ const Timelines = ({
     const recordingsArr = Object.entries(recordings);
     const EditorHeight = recordingsArr.length * 200 + markersHeight || 500;
 
+    const calculatedStageWidth =
+        window.innerWidth > widthBasedOnLastSound
+            ? window.innerWidth
+            : widthBasedOnLastSound;
+
     return (
         <>
-            <Stage
-                width={
-                    window.innerWidth > widthBasedOnLastSound
-                        ? window.innerWidth
-                        : widthBasedOnLastSound
-                }
-                height={EditorHeight}
-            >
+            <Stage width={calculatedStageWidth} height={EditorHeight}>
+                <TimelineTracker
+                    furthestEndTime={furthestEndTime}
+                    shouldTrack={isPlaying}
+                    trackerPosition={trackerPosition}
+                    setTrackerPosition={setTrackerPosition}
+                />
+
                 {recordingsArr.map(([groupKey, instrumentGroup], index) => (
                     <InstrumentTimeline
                         key={groupKey}
@@ -51,13 +59,9 @@ const Timelines = ({
                         markersHeight={markersHeight}
                         openPanel={openPanel}
                         updateStartTime={updateStartTime}
+                        stopPlayback={stopPlayback}
                     />
                 ))}
-
-                <TimelineTracker
-                    furthestEndTime={furthestEndTime}
-                    shouldTrack={isPlaying}
-                />
 
                 <TimelineMarker
                     duration={duration}
@@ -84,6 +88,9 @@ Timelines.propTypes = {
             })
         )
     ).isRequired,
+    setTrackerPosition: PropTypes.func.isRequired,
+    stopPlayback: PropTypes.func.isRequired,
+    trackerPosition: PropTypes.number,
     updateStartTime: PropTypes.func.isRequired,
 };
 

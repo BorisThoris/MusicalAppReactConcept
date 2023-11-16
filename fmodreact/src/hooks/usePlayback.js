@@ -1,31 +1,30 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-const scheduleSoundPlayback = ({ delay, playbackCallback }) => {
-    const timeoutId = setTimeout(() => {
-        playbackCallback();
-    }, delay * 1000);
+const usePlayback = ({ playbackStatus }) => {
+    const [timeouts, setTimeouts] = useState([]);
 
-    return delay * 1000;
-};
+    const clearAllTimeouts = useCallback(() => {
+        timeouts.forEach(clearTimeout);
 
-const usePlayback = () => {
-    const timeoutIds = useRef([]);
+        setTimeouts([]);
+    }, [timeouts]);
 
-    const clearAllTimeouts = () => {
-        timeoutIds.current.forEach(clearTimeout);
-        timeoutIds.current = [];
-    };
+    const setNewTimeout = useCallback((callback, delay) => {
+        const adjustedDelay = Math.max(0, delay);
+        const timeoutId = setTimeout(() => callback(), adjustedDelay * 1000);
 
-    useEffect(() => {
-        return () => {
-            clearAllTimeouts();
-        };
+        setTimeouts((prevTimeouts) => {
+            return [...prevTimeouts, timeoutId];
+        });
     }, []);
 
-    return {
-        clearAllTimeouts,
-        scheduleSoundPlayback,
-    };
+    useEffect(() => {
+        if (timeouts.length > 0 && !playbackStatus) {
+            clearAllTimeouts();
+        }
+    }, [clearAllTimeouts, playbackStatus, timeouts.length]);
+
+    return { clearAllTimeouts, setNewTimeout };
 };
 
 export default usePlayback;

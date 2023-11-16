@@ -1,28 +1,27 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import useInstrumentRecordingsOperations from './useInstrumentRecordingsOperations';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 
 const useRecorder = ({ instrumentName }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [startTime, setStartTime] = useState(null);
-    const { recordSoundEvent, resetInstrumentRecordings } = useContext(
-        InstrumentRecordingsContext
-    );
+    const { addRecording, resetRecordings } =
+        useInstrumentRecordingsOperations();
 
     const toggleRecording = useCallback(() => {
         setIsRecording((prevIsRecording) => !prevIsRecording);
 
         if (!isRecording) {
             setStartTime(Date.now());
-            resetInstrumentRecordings(instrumentName);
+            resetRecordings(instrumentName);
         }
-    }, [instrumentName, isRecording, resetInstrumentRecordings]);
+    }, [instrumentName, isRecording, resetRecordings]);
 
     const recordEvent = (eventInstance, currentInstrumentName) => {
         if (isRecording) {
-            recordSoundEvent(eventInstance, currentInstrumentName, startTime);
+            addRecording(eventInstance, currentInstrumentName, startTime);
         }
     };
 

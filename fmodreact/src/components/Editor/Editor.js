@@ -1,5 +1,6 @@
 import React, { useCallback, useContext } from 'react';
 import threeMinuteMs from '../../globalConstants/songLimit';
+import instrumentRecordingOperationsHook from '../../hooks/useInstrumentRecordingsOperations';
 import usePanelStateHook from '../../hooks/usePanelState';
 import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import useStageWidthHook from '../../hooks/useStageWidth';
@@ -12,26 +13,35 @@ import Timelines, {
 } from './components/Timelines/Timelines';
 
 const Editor = () => {
-    const { recordings, removeEventInstance, updateStartTime } = useContext(
-        InstrumentRecordingsContext
-    );
-    const { isPlaying, replayAllRecordedSounds } = useRecordingsPlayer();
+    const { deleteRecording, updateRecording } =
+        instrumentRecordingOperationsHook();
+    const { recordings } = useContext(InstrumentRecordingsContext);
+
+    const {
+        isPlaying,
+        replayAllRecordedSounds,
+        setTrackerPosition,
+        stopPlayback,
+        trackerPosition,
+    } = useRecordingsPlayer();
     const { closePanel, openPanel, panelState } = usePanelStateHook();
     const { furthestEndTime } = useStageWidthHook({ recordings });
 
     const deleteNote = useCallback(() => {
         if (panelState) {
-            removeEventInstance(
+            deleteRecording(
                 panelState.recording.instrumentName,
                 panelState.index
             );
+
             closePanel();
         }
-    }, [closePanel, panelState, removeEventInstance]);
+    }, [closePanel, deleteRecording, panelState]);
 
     return (
         <StyledEditorWrapper>
             <Header />
+
             <StyledTimeline>
                 <button onClick={replayAllRecordedSounds}>
                     {isPlaying ? 'Pause' : 'Start'}
@@ -42,8 +52,11 @@ const Editor = () => {
                     furthestEndTime={furthestEndTime}
                     isPlaying={isPlaying}
                     duration={threeMinuteMs}
+                    stopPlayback={stopPlayback}
                     openPanel={openPanel}
-                    updateStartTime={updateStartTime}
+                    updateStartTime={updateRecording}
+                    trackerPosition={trackerPosition}
+                    setTrackerPosition={setTrackerPosition}
                 />
 
                 {panelState && (

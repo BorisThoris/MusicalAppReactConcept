@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import {
     getEventInstanceLength,
@@ -18,51 +18,43 @@ const GRADIENT_START_POINT = { x: 0, y: 0 };
 const GRADIENT_END_POINT = { x: 100, y: 0 };
 const COLOR_STOPS = [0, '#ff4500', 1, '#e62e00'];
 
-const createHandleDragEnd =
-    (handleDragEnd, index, eventLength, instrumentName) => (e) => {
-        handleDragEnd({
-            e,
-            elementIndex: index,
-            eventLength,
-            instrumentName,
-        });
-    };
-
-const createHandleClick =
-    (openPanel, recording, index, instrumentName) => () => {
-        openPanel(recording, index, instrumentName);
-    };
-
-const createHandleDoubleClick = (eventInstance) => () => {
-    playEventInstance(eventInstance);
-};
-
 const SoundEventElement = ({
-    handleDragEnd,
     index,
     openPanel,
     recording,
+    stopPlayback,
     timelineHeight,
     timelineY,
+    updateStartTime,
 }) => {
     const { eventInstance, instrumentName, startTime } = recording;
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const eventLength = getEventInstanceLength(eventInstance);
     const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-    const handleDragEndCallback = createHandleDragEnd(
-        handleDragEnd,
-        index,
-        eventLength,
-        instrumentName
+    const handleDragEndCallback = useCallback(
+        (e) => {
+            const newStartTime = e.target.x() / pixelToSecondRatio;
+
+            updateStartTime({
+                eventLength,
+                index,
+                instrumentName,
+                newStartTime,
+            });
+
+            stopPlayback();
+        },
+        [eventLength, index, instrumentName, stopPlayback, updateStartTime]
     );
-    const handleClickCallback = createHandleClick(
-        openPanel,
-        recording,
-        index,
-        instrumentName
-    );
-    const handleDoubleClickCallback = createHandleDoubleClick(eventInstance);
+
+    const handleClickCallback = useCallback(() => {
+        openPanel(recording, index, instrumentName);
+    }, [index, instrumentName, openPanel, recording]);
+
+    const handleDoubleClickCallback = useCallback(() => {
+        playEventInstance(eventInstance);
+    }, [eventInstance]);
 
     const dragBoundFunc = useCallback(
         (pos) => ({ x: pos.x, y: timelineY }),
@@ -109,7 +101,6 @@ const SoundEventElement = ({
 };
 
 SoundEventElement.propTypes = {
-    handleDragEnd: PropTypes.func.isRequired,
     index: PropTypes.number.isRequired,
     openPanel: PropTypes.func.isRequired,
     recording: PropTypes.shape({
@@ -117,8 +108,10 @@ SoundEventElement.propTypes = {
         instrumentName: PropTypes.string.isRequired,
         startTime: PropTypes.number.isRequired,
     }).isRequired,
+    stopPlayback: PropTypes.func.isRequired,
     timelineHeight: PropTypes.number.isRequired,
     timelineY: PropTypes.number.isRequired,
+    updateStartTime: PropTypes.func.isRequired,
 };
 
 export default SoundEventElement;

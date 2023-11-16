@@ -2,101 +2,84 @@ import { get } from 'lodash';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import InstrumentsNames from '../globalConstants/instrumentNames';
+import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
 import useStageWidthHook from './useStageWidth';
 
 const useRecordingsPlayer = (instrumentName) => {
     const [isPlaying, setIsPlaying] = useState(false);
-
-    const playback = usePlayback();
+    const [trackerPosition, setTrackerPosition] = useState(0);
     const { recordings } = useContext(InstrumentRecordingsContext);
     const { furthestEndTime } = useStageWidthHook({ recordings });
 
+    const { clearAllTimeouts, setNewTimeout } = usePlayback({
+        playbackStatus: isPlaying,
+        trackerPosition,
+    });
+
     const togglePlayback = useCallback(() => {
-        setIsPlaying((prevIsPlaying) => {
-            if (prevIsPlaying) {
-                playback.clearAllTimeouts();
-            }
-            return !prevIsPlaying;
-        });
-    }, [playback]);
-
-    const replayEvents = (instrument = instrumentName) => {
-        const instrumentRecordings = get(recordings, instrument, []);
-        let lastNoteStart = 0;
-        let lastEndTime = 0;
-
-        const lengthOfRecordings = instrumentRecordings.length - 1;
-        if (lengthOfRecordings) {
-            instrumentRecordings.forEach(
-                ({ eventInstance, startTime }, index) => {
-                    const delay = startTime;
-                    lastNoteStart = delay;
-
-                    const soundEndTime = playback.scheduleSoundPlayback({
-                        delay,
-                        playbackCallback: () => {
-                            playEventInstance(eventInstance);
-                        },
-                    });
-
-                    lastEndTime = Math.max(lastEndTime, soundEndTime);
-                }
-            );
-        }
-
-        return lastEndTime;
-    };
-
-    const replayAllEvents = () => {
-        Object.values(InstrumentsNames).forEach((name) => {
-            if (get(recordings, name)) {
-                replayEvents(name);
-            }
-        });
-    };
-
-    const replayAllRecordedSounds = () => {
-        togglePlayback();
-
-        if (!isPlaying) {
-            replayAllEvents();
-        }
-    };
-
-    const playRecordedSounds = () => {
-        togglePlayback();
-
-        if (!isPlaying) {
-            replayEvents();
-        }
-    };
-
-    useEffect(() => {
-        return playback.clearAllTimeouts;
-    }, [playback]);
-
-    useEffect(() => {
-        let timeoutId;
-
+        setIsPlaying((prevIsPlaying) => !prevIsPlaying);
         if (isPlaying) {
-            timeoutId = setTimeout(() => {
-                togglePlayback();
-            }, furthestEndTime * 1000);
+            clearAllTimeouts();
         }
+    }, [isPlaying, clearAllTimeouts]);
 
-        return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        };
+    const stopPlayback = useCallback(() => {
+        setIsPlaying(false);
+    }, []);
+
+    const replayEvents = useCallback(
+        (instrument = instrumentName) => {
+            const instrumentRecordings = get(recordings, instrument, []);
+            let lastEndTime = 0;
+
+            instrumentRecordings.forEach(({ eventInstance, startTime }) => {
+                if (startTime > trackerPosition / pixelToSecondRatio) {
+                    setNewTimeout(
+                        () => playEventInstance(eventInstance),
+                        startTime - trackerPosition / pixelToSecondRatio
+                    );
+                }
+
+                lastEndTime = Math.max(lastEndTime, startTime);
+            });
+
+            return lastEndTime;
+        },
+        [instrumentName, recordings, trackerPosition, setNewTimeout]
+    );
+
+    const replayAllRecordedSounds = useCallback(() => {
+        togglePlayback();
+
+        if (!isPlaying) {
+            const instrumentsWithRecordings = Object.values(
+                InstrumentsNames
+            ).filter((name) => get(recordings, name));
+
+            instrumentsWithRecordings.forEach(replayEvents);
+        }
+    }, [isPlaying, togglePlayback, recordings, replayEvents]);
+
+    useEffect(() => {
+        if (isPlaying) {
+            const timeoutId = setTimeout(
+                togglePlayback,
+                furthestEndTime * 1000
+            );
+
+            return () => clearTimeout(timeoutId);
+        }
     }, [furthestEndTime, isPlaying, togglePlayback]);
 
     return {
         isPlaying,
-        playRecordedSounds,
+        playRecordedSounds: togglePlayback,
         replayAllRecordedSounds,
+        setTrackerPosition,
+        stopPlayback,
+        trackerPosition,
     };
 };
 
