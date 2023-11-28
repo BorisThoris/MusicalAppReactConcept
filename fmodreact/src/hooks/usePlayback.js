@@ -10,8 +10,7 @@ const usePlayback = ({ playbackStatus }) => {
     }, [timeouts]);
 
     const setNewTimeout = useCallback((callback, delay) => {
-        const adjustedDelay = Math.max(0, delay);
-        const timeoutId = setTimeout(() => callback(), adjustedDelay * 1000);
+        const timeoutId = setTimeout(() => callback(), delay * 1000);
 
         setTimeouts((prevTimeouts) => {
             return [...prevTimeouts, timeoutId];

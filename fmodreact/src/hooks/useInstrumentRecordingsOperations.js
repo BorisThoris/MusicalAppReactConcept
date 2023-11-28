@@ -28,16 +28,18 @@ const useInstrumentRecordingsOperations = () => {
                     (startRounded + eventLength).toFixed(2)
                 );
 
-                if (
-                    instrumentRecordings &&
-                    index >= 0 &&
-                    index < instrumentRecordings.length
-                ) {
-                    instrumentRecordings[index] = {
-                        ...instrumentRecordings[index],
-                        endTime: newEndRounded,
-                        startTime: startRounded,
-                    };
+                if (instrumentRecordings) {
+                    const targetIndex = instrumentRecordings.findIndex(
+                        (item) => item.id === index
+                    );
+
+                    if (targetIndex !== -1) {
+                        instrumentRecordings[targetIndex] = {
+                            ...instrumentRecordings[targetIndex],
+                            endTime: newEndRounded,
+                            startTime: startRounded,
+                        };
+                    }
                 }
 
                 return updatedRecordings;
@@ -47,17 +49,23 @@ const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteEventInstance = useCallback(
-        (instrumentName, index) => {
+        (id) => {
             setRecordings((prev) => {
                 const updatedRecordings = { ...prev };
 
-                if (
-                    updatedRecordings[instrumentName] &&
-                    index >= 0 &&
-                    index < updatedRecordings[instrumentName].length
-                ) {
-                    updatedRecordings[instrumentName].splice(index, 1);
-                }
+                Object.keys(updatedRecordings).forEach((instrumentName) => {
+                    const instrumentRecordings =
+                        updatedRecordings[instrumentName];
+                    const targetIndex = instrumentRecordings.findIndex(
+                        (item) => item.id === id
+                    );
+
+                    if (targetIndex !== -1) {
+                        instrumentRecordings.splice(targetIndex, 1);
+                        return updatedRecordings;
+                    }
+                });
+
                 return updatedRecordings;
             });
         },
@@ -89,8 +97,8 @@ const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteRecording = useCallback(
-        (instrumentName, index) => {
-            deleteEventInstance(instrumentName, index);
+        (id) => {
+            deleteEventInstance(id);
         },
         [deleteEventInstance]
     );

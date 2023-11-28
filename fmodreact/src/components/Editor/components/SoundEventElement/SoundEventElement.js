@@ -1,25 +1,22 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 import { Group, Rect, Text } from 'react-konva';
-import {
-    getEventInstanceLength,
-    playEventInstance,
-} from '../../../../fmodLogic/eventInstanceHelpers';
+import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 
 const STROKE_WIDTH = 2;
 const CORNER_RADIUS = 5;
-const SHADOW_OFFSET_X = 2;
-const SHADOW_OFFSET_Y = 2;
+const SHADOW_OFFSET_X = 8;
+const SHADOW_OFFSET_Y = 5;
 const SHADOW_BLUR = 5;
 const SHADOW_OPACITY = 0.5;
 const TRANSPARENCY_VALUE = 0.8;
 const GRADIENT_START_POINT = { x: 0, y: 0 };
 const GRADIENT_END_POINT = { x: 100, y: 0 };
-const COLOR_STOPS = [0, '#ff4500', 1, '#e62e00'];
 
 const SoundEventElement = ({
     index,
+    isOverlapping,
     openPanel,
     recording,
     stopPlayback,
@@ -27,9 +24,11 @@ const SoundEventElement = ({
     timelineY,
     updateStartTime,
 }) => {
-    const { eventInstance, instrumentName, startTime } = recording;
+    const { eventInstance, eventLength, id, instrumentName, startTime } =
+        recording;
+
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
-    const eventLength = getEventInstanceLength(eventInstance);
+
     const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
     const handleDragEndCallback = useCallback(
@@ -38,19 +37,19 @@ const SoundEventElement = ({
 
             updateStartTime({
                 eventLength,
-                index,
+                index: id,
                 instrumentName,
                 newStartTime,
             });
 
             stopPlayback();
         },
-        [eventLength, index, instrumentName, stopPlayback, updateStartTime]
+        [eventLength, id, instrumentName, stopPlayback, updateStartTime]
     );
 
     const handleClickCallback = useCallback(() => {
-        openPanel(recording, index, instrumentName);
-    }, [index, instrumentName, openPanel, recording]);
+        openPanel({ index, instrumentName });
+    }, [index, instrumentName, openPanel]);
 
     const handleDoubleClickCallback = useCallback(() => {
         playEventInstance(eventInstance);
@@ -60,6 +59,10 @@ const SoundEventElement = ({
         (pos) => ({ x: pos.x, y: timelineY }),
         [timelineY]
     );
+
+    const dynamicColorStops = isOverlapping
+        ? [0, 'red', 1, 'yellow']
+        : [1, 'red'];
 
     return (
         <Group
@@ -78,8 +81,8 @@ const SoundEventElement = ({
                 height={timelineHeight * 0.8}
                 fillLinearGradientStartPoint={GRADIENT_START_POINT}
                 fillLinearGradientEndPoint={GRADIENT_END_POINT}
-                fillLinearGradientColorStops={COLOR_STOPS}
-                stroke="#b22a00"
+                fillLinearGradientColorStops={dynamicColorStops}
+                stroke={isOverlapping ? 'blue' : 'red'}
                 strokeWidth={STROKE_WIDTH}
                 cornerRadius={CORNER_RADIUS}
                 shadowOffsetX={SHADOW_OFFSET_X}
@@ -102,6 +105,7 @@ const SoundEventElement = ({
 
 SoundEventElement.propTypes = {
     index: PropTypes.number.isRequired,
+    isOverlapping: PropTypes.bool,
     openPanel: PropTypes.func.isRequired,
     recording: PropTypes.shape({
         eventInstance: PropTypes.object.isRequired,

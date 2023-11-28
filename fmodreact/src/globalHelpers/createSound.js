@@ -7,6 +7,8 @@ const createSound = ({ eventInstance, instrumentName, startTime }) => {
     return {
         endTime: parseFloat(endTime.toFixed(2)),
         eventInstance,
+        eventLength,
+        id: eventInstance.$$.ptr,
         instrumentName,
         startTime: parseFloat(startTime.toFixed(2)),
     };

@@ -15,7 +15,9 @@ import Timelines, {
 const Editor = () => {
     const { deleteRecording, updateRecording } =
         instrumentRecordingOperationsHook();
-    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups, recordings } = useContext(
+        InstrumentRecordingsContext
+    );
 
     const {
         isPlaying,
@@ -27,16 +29,16 @@ const Editor = () => {
     const { closePanel, openPanel, panelState } = usePanelStateHook();
     const { furthestEndTime } = useStageWidthHook({ recordings });
 
-    const deleteNote = useCallback(() => {
-        if (panelState) {
-            deleteRecording(
-                panelState.recording.instrumentName,
-                panelState.index
-            );
+    const deleteNote = useCallback(
+        (id) => {
+            deleteRecording(id);
 
-            closePanel();
-        }
-    }, [closePanel, deleteRecording, panelState]);
+            if (panelState.isOpen) {
+                // closePanel();
+            }
+        },
+        [deleteRecording, panelState]
+    );
 
     return (
         <StyledEditorWrapper>
@@ -48,7 +50,7 @@ const Editor = () => {
                 </button>
 
                 <Timelines
-                    recordings={recordings}
+                    recordings={overlapGroups}
                     furthestEndTime={furthestEndTime}
                     isPlaying={isPlaying}
                     duration={threeMinuteMs}
@@ -59,7 +61,7 @@ const Editor = () => {
                     setTrackerPosition={setTrackerPosition}
                 />
 
-                {panelState && (
+                {panelState.isOpen && (
                     <PanelComponent
                         onPressX={closePanel}
                         panelState={panelState}

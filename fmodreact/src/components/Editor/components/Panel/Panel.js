@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { Fragment, useCallback } from 'react';
 import {
     getEventInstanceParamaters,
     playEventInstance,
@@ -9,50 +9,71 @@ import {
     CloseIcon,
     Header,
     PlayIcon,
-    Timeline,
-    TimelineContainer,
     TimeMarker,
     TrashIcon,
 } from './Panel.styles';
 
 const Panel = ({ onDelete, onPressX, panelState }) => {
-    const { endTime, eventInstance, startTime } = panelState.recording;
-
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
-    const onPressPlay = useCallback(
-        () => playEventInstance(eventInstance),
-        [eventInstance]
+    const renderEvent = useCallback(
+        (passedEvent) => {
+            const currentEventInstance = passedEvent.eventInstance;
+
+            const params = getEventInstanceParamaters(
+                passedEvent.eventInstance
+            );
+
+            function handlePlay() {
+                playEventInstance(currentEventInstance);
+            }
+
+            function handleDelete() {
+                onDelete(passedEvent.id);
+            }
+
+            return (
+                <div style={{ backgroundColor: 'red', width: 200 }}>
+                    <Header>
+                        <PlayIcon onClick={handlePlay}>▶</PlayIcon>
+                        <TrashIcon onClick={handleDelete}>🗑️</TrashIcon>
+                        <CloseIcon onClick={handleClose}>X</CloseIcon>
+                    </Header>
+
+                    <TimeMarker>
+                        <span>START</span>
+                        <div>
+                            <div>Start: {passedEvent.startTime}</div>
+                            <div>End:{passedEvent.endTime}</div>
+                        </div>
+                    </TimeMarker>
+
+                    {params.map((param) => (
+                        <ParameterControlComponent
+                            key={param.name}
+                            param={param}
+                            eventInstance={currentEventInstance}
+                        />
+                    ))}
+                </div>
+            );
+        },
+        [handleClose, onDelete]
     );
 
-    const params = getEventInstanceParamaters(eventInstance);
+    if (panelState.recording) {
+        return renderEvent(panelState.recording);
+    }
 
     return (
-        <TimelineContainer>
-            <Header>
-                <PlayIcon onClick={onPressPlay}>▶</PlayIcon>
-                <TrashIcon onClick={onDelete}>🗑️</TrashIcon>
-                <CloseIcon onClick={handleClose}>X</CloseIcon>
-            </Header>
-
-            <Timeline>
-                <TimeMarker>
-                    <span>START</span>
-                    <div>
-                        <div>Start: {startTime}</div>
-                        <div>End:{endTime}</div>
-                    </div>
-                </TimeMarker>
-
-                {params.map((param) => (
-                    <ParameterControlComponent
-                        key={param.name}
-                        param={param}
-                        eventInstance={eventInstance}
-                    />
-                ))}
-            </Timeline>
-        </TimelineContainer>
+        <div>
+            Group:
+            <div style={{ display: 'flex' }}>
+                {panelState.overlapGroup.events.map((event) =>
+                    renderEvent(event)
+                )}
+            </div>
+        </div>
     );
 };
 

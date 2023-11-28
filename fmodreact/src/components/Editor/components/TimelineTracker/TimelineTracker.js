@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { Layer, Line } from 'react-konva';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Layer, Line } from 'react-konva/es/ReactKonvaCore';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 
 const TimelineTracker = ({
@@ -9,36 +9,32 @@ const TimelineTracker = ({
     shouldTrack,
     trackerPosition = 0,
 }) => {
+    const trackerRef = useRef();
+
     const calculatePoints = useMemo(
-        () => [0 + 40 / 2, 0, 0 + 40 / 2, window.innerHeight],
-        []
+        () => [
+            trackerPosition / pixelToSecondRatio / 2,
+            0,
+            trackerPosition / pixelToSecondRatio / 2,
+            window.innerHeight,
+        ],
+        [trackerPosition]
     );
 
-    const maxPosition = furthestEndTime * pixelToSecondRatio;
-
     useEffect(() => {
-        if (shouldTrack) {
-            const secondPerPixel = 1 / pixelToSecondRatio;
-            const updateInterval = secondPerPixel * 1000;
-
-            const interval = setInterval(() => {
-                setTrackerPosition((prev) => {
-                    const nextPosition = prev + 1;
-
-                    return nextPosition < maxPosition
-                        ? nextPosition
-                        : maxPosition;
-                });
-            }, updateInterval);
-
-            return () => clearInterval(interval);
+        if (shouldTrack && trackerRef?.current) {
+            trackerRef.current.to({
+                duration:
+                    furthestEndTime - trackerPosition / pixelToSecondRatio,
+                scaleY: Math.random() + 0.8,
+                x: furthestEndTime * pixelToSecondRatio,
+            });
         }
-    }, [furthestEndTime, maxPosition, setTrackerPosition, shouldTrack]);
+    }, [furthestEndTime, setTrackerPosition, shouldTrack, trackerPosition]);
 
     const handleDragEndCallback = useCallback(
         (e) => {
             const newStartTime = e.target.x();
-
             setTrackerPosition(newStartTime);
         },
         [setTrackerPosition]
@@ -47,11 +43,12 @@ const TimelineTracker = ({
     return (
         <Layer>
             <Line
+                ref={trackerRef}
                 x={trackerPosition}
                 draggable
                 points={calculatePoints}
                 stroke="red"
-                strokeWidth={40}
+                strokeWidth={10}
                 onDragEnd={handleDragEndCallback}
             />
         </Layer>

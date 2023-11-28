@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { Layer } from 'react-konva';
-import SoundEventElement from '../SoundEventElement/SoundEventElement';
+import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
+import SoundEventElement from '../SoundEventElement/SoundEventElement'; // New component for overlapping elements
 
 const TimelineHeight = 200;
 const Y_OFFSET = 20;
@@ -18,18 +19,30 @@ const InstrumentTimeline = ({
 
     return (
         <Layer y={timelineY}>
-            {instrumentGroup.map((recording, groupIndex) => (
-                <SoundEventElement
-                    updateStartTime={updateStartTime}
-                    key={groupIndex}
-                    timelineHeight={TimelineHeight}
-                    recording={recording}
-                    index={groupIndex}
-                    openPanel={openPanel}
-                    timelineY={timelineY}
-                    stopPlayback={stopPlayback}
-                />
-            ))}
+            {instrumentGroup.map((groupData, groupIndex) => {
+                return groupData.events.length === 1 ? (
+                    <SoundEventElement
+                        updateStartTime={updateStartTime}
+                        key={groupData.events[0].id}
+                        timelineHeight={TimelineHeight}
+                        recording={groupData.events[0]}
+                        index={groupIndex}
+                        openPanel={openPanel}
+                        timelineY={timelineY}
+                        stopPlayback={stopPlayback}
+                    />
+                ) : (
+                    <OverlapGroupElement
+                        key={`group-${groupIndex}`}
+                        groupData={groupData}
+                        index={groupIndex}
+                        openPanel={openPanel}
+                        timelineHeight={TimelineHeight}
+                        timelineY={timelineY}
+                        updateStartTime={updateStartTime}
+                    />
+                );
+            })}
         </Layer>
     );
 };
@@ -38,6 +51,7 @@ InstrumentTimeline.propTypes = {
     index: PropTypes.number.isRequired,
     instrumentGroup: PropTypes.arrayOf(
         PropTypes.shape({
+            endTime: PropTypes.number,
             eventInstance: PropTypes.object,
             instrumentName: PropTypes.string,
             startTime: PropTypes.number,
