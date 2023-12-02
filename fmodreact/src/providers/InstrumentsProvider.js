@@ -24,6 +24,7 @@ const groupOverlappingSounds = (instrumentGroup) => {
             const group = {
                 endTime: event.endTime,
                 events: [event],
+                id: event.id, // Initialize the id with the first event's id
                 instrumentName: event.instrumentName,
                 startTime: event.startTime,
             };
@@ -41,6 +42,7 @@ const groupOverlappingSounds = (instrumentGroup) => {
                     );
                     group.endTime = Math.max(group.endTime, otherEvent.endTime);
                     group.events.push(otherEvent);
+                    group.id += otherEvent.id; // Concatenate the ids
                     visited.add(j);
                 }
             });
@@ -71,6 +73,7 @@ const groupOverlappingSounds = (instrumentGroup) => {
                 mergedGroup.events = [
                     ...new Set([...mergedGroup.events, ...group.events]),
                 ];
+                mergedGroup.id += group.id; // Concatenate ids for merged groups
                 merged = true;
             } else {
                 newOverlapGroups.push(group);

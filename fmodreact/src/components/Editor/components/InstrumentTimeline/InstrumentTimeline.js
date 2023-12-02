@@ -12,6 +12,7 @@ const InstrumentTimeline = ({
     instrumentGroup,
     markersHeight,
     openPanel,
+    panelFor,
     stopPlayback,
     updateStartTime,
 }) => {
@@ -20,6 +21,10 @@ const InstrumentTimeline = ({
     return (
         <Layer y={timelineY}>
             {instrumentGroup.map((groupData, groupIndex) => {
+                const elementIsSelected = panelFor === groupData.id;
+
+                console.log(groupData.events.length);
+
                 return groupData.events.length === 1 ? (
                     <SoundEventElement
                         updateStartTime={updateStartTime}
@@ -30,6 +35,7 @@ const InstrumentTimeline = ({
                         openPanel={openPanel}
                         timelineY={timelineY}
                         stopPlayback={stopPlayback}
+                        isTargeted={elementIsSelected}
                     />
                 ) : (
                     <OverlapGroupElement
@@ -40,6 +46,7 @@ const InstrumentTimeline = ({
                         timelineHeight={TimelineHeight}
                         timelineY={timelineY}
                         updateStartTime={updateStartTime}
+                        isTargeted={elementIsSelected}
                     />
                 );
             })}

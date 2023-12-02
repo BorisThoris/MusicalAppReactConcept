@@ -17,9 +17,9 @@ const GRADIENT_END_POINT = { x: 100, y: 0 };
 const SoundEventElement = ({
     index,
     isOverlapping,
+    isTargeted,
     openPanel,
     recording,
-    stopPlayback,
     timelineHeight,
     timelineY,
     updateStartTime,
@@ -33,6 +33,7 @@ const SoundEventElement = ({
 
     const handleDragEndCallback = useCallback(
         (e) => {
+            e.evt.preventDefault();
             const newStartTime = e.target.x() / pixelToSecondRatio;
 
             updateStartTime({
@@ -41,14 +42,14 @@ const SoundEventElement = ({
                 instrumentName,
                 newStartTime,
             });
-
-            stopPlayback();
         },
-        [eventLength, id, instrumentName, stopPlayback, updateStartTime]
+        [eventLength, id, instrumentName, updateStartTime]
     );
 
     const handleClickCallback = useCallback(() => {
-        openPanel({ index, instrumentName });
+        if (openPanel) {
+            openPanel({ index, instrumentName });
+        }
     }, [index, instrumentName, openPanel]);
 
     const handleDoubleClickCallback = useCallback(() => {
@@ -82,7 +83,7 @@ const SoundEventElement = ({
                 fillLinearGradientStartPoint={GRADIENT_START_POINT}
                 fillLinearGradientEndPoint={GRADIENT_END_POINT}
                 fillLinearGradientColorStops={dynamicColorStops}
-                stroke={isOverlapping ? 'blue' : 'red'}
+                stroke={isTargeted ? 'blue' : 'red'}
                 strokeWidth={STROKE_WIDTH}
                 cornerRadius={CORNER_RADIUS}
                 shadowOffsetX={SHADOW_OFFSET_X}
@@ -106,9 +107,12 @@ const SoundEventElement = ({
 SoundEventElement.propTypes = {
     index: PropTypes.number.isRequired,
     isOverlapping: PropTypes.bool,
-    openPanel: PropTypes.func.isRequired,
+    isTargeted: PropTypes.bool,
+    openPanel: PropTypes.func,
     recording: PropTypes.shape({
         eventInstance: PropTypes.object.isRequired,
+        eventLength: PropTypes.number.isRequired,
+        id: PropTypes.number.isRequired,
         instrumentName: PropTypes.string.isRequired,
         startTime: PropTypes.number.isRequired,
     }).isRequired,

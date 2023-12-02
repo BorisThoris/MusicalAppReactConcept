@@ -59,6 +59,7 @@ const Editor = () => {
                     updateStartTime={updateRecording}
                     trackerPosition={trackerPosition}
                     setTrackerPosition={setTrackerPosition}
+                    panelFor={panelState?.overlapGroup?.id}
                 />
 
                 {panelState.isOpen && (

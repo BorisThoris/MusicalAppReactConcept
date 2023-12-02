@@ -24,6 +24,7 @@ const Timelines = ({
     furthestEndTime,
     isPlaying,
     openPanel,
+    panelFor,
     recordings,
     setTrackerPosition,
     stopPlayback,
@@ -52,6 +53,7 @@ const Timelines = ({
 
                 {recordingsArr.map(([groupKey, instrumentGroup], index) => (
                     <InstrumentTimeline
+                        panelFor={panelFor}
                         key={groupKey}
                         instrumentGroup={instrumentGroup}
                         furthestEndTime={furthestEndTime}

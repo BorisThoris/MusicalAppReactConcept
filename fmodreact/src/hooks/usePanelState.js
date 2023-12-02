@@ -49,6 +49,8 @@ const usePanelState = () => {
                 return;
             }
 
+            console.log('panel for');
+            console.log(newOverlapGroup);
             openPanelAction(newIndex, newInstrumentName, newOverlapGroup);
         },
         [overlapGroups, index, instrumentName, isOpen, overlapGroup]

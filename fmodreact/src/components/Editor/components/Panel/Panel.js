@@ -1,91 +1,71 @@
 import PropTypes from 'prop-types';
-import React, { Fragment, useCallback } from 'react';
-import {
-    getEventInstanceParamaters,
-    playEventInstance,
-} from '../../../../fmodLogic/eventInstanceHelpers';
-import ParameterControlComponent from '../ParameterControl/ParameterControl';
-import {
-    CloseIcon,
-    Header,
-    PlayIcon,
-    TimeMarker,
-    TrashIcon,
-} from './Panel.styles';
+import React, { useCallback } from 'react';
+import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
+import usePlayback from '../../../../hooks/usePlayback';
+import EventItemComponent from './EventItem';
+import { CloseIcon, PlayIcon } from './Panel.styles';
 
 const Panel = ({ onDelete, onPressX, panelState }) => {
+    const { setNewTimeout } = usePlayback({ playbackStatus: true });
+    const { events, startTime: groupStartTime } = panelState.overlapGroup;
+
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
-    const renderEvent = useCallback(
-        (passedEvent) => {
-            const currentEventInstance = passedEvent.eventInstance;
+    const handlePlayEvent = useCallback((eventInstance) => {
+        playEventInstance(eventInstance);
+    }, []);
 
-            const params = getEventInstanceParamaters(
-                passedEvent.eventInstance
+    const handleReplayEvents = useCallback(() => {
+        events.forEach((event) => {
+            setNewTimeout(
+                () => playEventInstance(event.eventInstance),
+                event.startTime - groupStartTime
             );
-
-            function handlePlay() {
-                playEventInstance(currentEventInstance);
-            }
-
-            function handleDelete() {
-                onDelete(passedEvent.id);
-            }
-
-            return (
-                <div style={{ backgroundColor: 'red', width: 200 }}>
-                    <Header>
-                        <PlayIcon onClick={handlePlay}>▶</PlayIcon>
-                        <TrashIcon onClick={handleDelete}>🗑️</TrashIcon>
-                        <CloseIcon onClick={handleClose}>X</CloseIcon>
-                    </Header>
-
-                    <TimeMarker>
-                        <span>START</span>
-                        <div>
-                            <div>Start: {passedEvent.startTime}</div>
-                            <div>End:{passedEvent.endTime}</div>
-                        </div>
-                    </TimeMarker>
-
-                    {params.map((param) => (
-                        <ParameterControlComponent
-                            key={param.name}
-                            param={param}
-                            eventInstance={currentEventInstance}
-                        />
-                    ))}
-                </div>
-            );
-        },
-        [handleClose, onDelete]
-    );
-
-    if (panelState.recording) {
-        return renderEvent(panelState.recording);
-    }
+        });
+    }, [events, groupStartTime, setNewTimeout]);
 
     return (
         <div>
-            Group:
+            <span>Group:</span>
+
             <div style={{ display: 'flex' }}>
-                {panelState.overlapGroup.events.map((event) =>
-                    renderEvent(event)
+                {events.length > 1 && (
+                    <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
                 )}
+
+                <CloseIcon onClick={handleClose}>X</CloseIcon>
+            </div>
+
+            <div style={{ display: 'flex' }}>
+                {events.map((event) => (
+                    <EventItemComponent
+                        key={event.id}
+                        event={event}
+                        onDelete={onDelete}
+                        onPlay={handlePlayEvent}
+                        onClose={handleClose}
+                    />
+                ))}
             </div>
         </div>
     );
 };
 
 Panel.propTypes = {
-    onDelete: PropTypes.func.isRequired, // Added validation for onDelete prop
+    onDelete: PropTypes.func.isRequired,
     onPressX: PropTypes.func.isRequired,
     panelState: PropTypes.shape({
-        recording: PropTypes.shape({
-            endTime: PropTypes.number.isRequired,
-            eventInstance: PropTypes.object.isRequired,
-            startTime: PropTypes.number.isRequired,
+        overlapGroup: PropTypes.shape({
+            events: PropTypes.arrayOf(
+                PropTypes.shape({
+                    endTime: PropTypes.number.isRequired,
+                    eventInstance: PropTypes.object.isRequired,
+                    id: PropTypes.any.isRequired,
+                    startTime: PropTypes.number.isRequired,
+                })
+            ).isRequired,
         }).isRequired,
+        recording: PropTypes.object,
     }).isRequired,
 };
 

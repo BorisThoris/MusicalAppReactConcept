@@ -15,7 +15,6 @@ const useRecordingsPlayer = (instrumentName) => {
 
     const { clearAllTimeouts, setNewTimeout } = usePlayback({
         playbackStatus: isPlaying,
-        trackerPosition,
     });
 
     const togglePlayback = useCallback(() => {
