@@ -56,6 +56,7 @@ const Editor = () => {
                     duration={threeMinuteMs}
                     stopPlayback={stopPlayback}
                     openPanel={openPanel}
+                    closePanel={closePanel}
                     updateStartTime={updateRecording}
                     trackerPosition={trackerPosition}
                     setTrackerPosition={setTrackerPosition}

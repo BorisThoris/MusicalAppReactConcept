@@ -20,9 +20,9 @@ const panelReducer = (state, action) => {
 };
 
 const usePanelState = () => {
-    const { overlapGroups } = useContext(InstrumentRecordingsContext);
     const [state, dispatch] = useReducer(panelReducer, initialState);
     const { index, instrumentName, isOpen, overlapGroup } = state;
+    const { overlapGroups } = useContext(InstrumentRecordingsContext);
 
     const openPanelAction = (newIndex, newInstrumentName, newOverlapGroup) => {
         dispatch({
@@ -49,8 +49,6 @@ const usePanelState = () => {
                 return;
             }
 
-            console.log('panel for');
-            console.log(newOverlapGroup);
             openPanelAction(newIndex, newInstrumentName, newOverlapGroup);
         },
         [overlapGroups, index, instrumentName, isOpen, overlapGroup]
@@ -68,8 +66,17 @@ const usePanelState = () => {
 
         if (isPanelOpenAndGroupDefined && hasOverlapGroupChanged) {
             openPanelAction(index, instrumentName, currentOverlapGroup);
+        } else if (!currentOverlapGroup) {
+            closePanel();
         }
-    }, [index, instrumentName, isOpen, overlapGroup, overlapGroups]);
+    }, [
+        closePanel,
+        index,
+        instrumentName,
+        isOpen,
+        overlapGroup,
+        overlapGroups,
+    ]);
 
     return { closePanel, openPanel, panelState: state };
 };

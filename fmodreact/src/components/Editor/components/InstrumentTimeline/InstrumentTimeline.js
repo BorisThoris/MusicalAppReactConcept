@@ -23,8 +23,6 @@ const InstrumentTimeline = ({
             {instrumentGroup.map((groupData, groupIndex) => {
                 const elementIsSelected = panelFor === groupData.id;
 
-                console.log(groupData.events.length);
-
                 return groupData.events.length === 1 ? (
                     <SoundEventElement
                         updateStartTime={updateStartTime}
@@ -66,6 +64,7 @@ InstrumentTimeline.propTypes = {
     ).isRequired,
     markersHeight: PropTypes.number.isRequired,
     openPanel: PropTypes.func.isRequired,
+    panelFor: PropTypes.number,
     stopPlayback: PropTypes.func.isRequired,
     updateStartTime: PropTypes.func.isRequired,
 };

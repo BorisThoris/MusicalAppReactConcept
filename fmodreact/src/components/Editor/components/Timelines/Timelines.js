@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Stage } from 'react-konva';
 import styled from 'styled-components';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -20,6 +20,7 @@ export const StyledTimeline = styled.div`
 const markersHeight = 50;
 
 const Timelines = ({
+    closePanel,
     duration,
     furthestEndTime,
     isPlaying,
@@ -41,9 +42,22 @@ const Timelines = ({
             ? window.innerWidth
             : widthBasedOnLastSound;
 
+    const closePanelOnTimelinePress = useCallback(
+        (event) => {
+            if (event.target.className !== 'Rect') {
+                closePanel();
+            }
+        },
+        [closePanel]
+    );
+
     return (
         <>
-            <Stage width={calculatedStageWidth} height={EditorHeight}>
+            <Stage
+                width={calculatedStageWidth}
+                height={EditorHeight}
+                onClick={closePanelOnTimelinePress}
+            >
                 <TimelineTracker
                     furthestEndTime={furthestEndTime}
                     shouldTrack={isPlaying}
@@ -77,10 +91,12 @@ const Timelines = ({
 };
 
 Timelines.propTypes = {
+    closePanel: PropTypes.func.isRequired,
     duration: PropTypes.number.isRequired,
     furthestEndTime: PropTypes.number.isRequired,
     isPlaying: PropTypes.bool.isRequired,
     openPanel: PropTypes.func.isRequired,
+    panelFor: PropTypes.number,
     recordings: PropTypes.objectOf(
         PropTypes.arrayOf(
             PropTypes.shape({

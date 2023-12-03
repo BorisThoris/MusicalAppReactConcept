@@ -33,7 +33,6 @@ const SoundEventElement = ({
 
     const handleDragEndCallback = useCallback(
         (e) => {
-            e.evt.preventDefault();
             const newStartTime = e.target.x() / pixelToSecondRatio;
 
             updateStartTime({
@@ -116,7 +115,6 @@ SoundEventElement.propTypes = {
         instrumentName: PropTypes.string.isRequired,
         startTime: PropTypes.number.isRequired,
     }).isRequired,
-    stopPlayback: PropTypes.func.isRequired,
     timelineHeight: PropTypes.number.isRequired,
     timelineY: PropTypes.number.isRequired,
     updateStartTime: PropTypes.func.isRequired,
