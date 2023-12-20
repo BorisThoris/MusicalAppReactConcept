@@ -3,11 +3,22 @@ import React, { useCallback } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
-import { CloseIcon, PlayIcon } from './Panel.styles';
+import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
 
-const Panel = ({ onDelete, onPressX, panelState }) => {
+const Panel = ({
+    focusedEvent,
+    onDelete,
+    onDeleteGroup,
+    onPressX,
+    panelState,
+    setFocusedEvent,
+    updateStartTime,
+}) => {
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
-    const { events, startTime: groupStartTime } = panelState.overlapGroup;
+    const { events, id, startTime: groupStartTime } = panelState.overlapGroup;
+
+    console.log(focusedEvent);
+    console.log(id);
 
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
@@ -24,35 +35,53 @@ const Panel = ({ onDelete, onPressX, panelState }) => {
         });
     }, [events, groupStartTime, setNewTimeout]);
 
+    const deleteOverlapGroup = useCallback(() => {
+        onDeleteGroup(id);
+    }, [id, onDeleteGroup]);
+
+    const isMultipleEvents = events.length > 1;
+
+    const resetFocusedEvent = useCallback(() => {
+        setFocusedEvent(0);
+    }, [setFocusedEvent]);
+
     return (
-        <div>
+        <div
+            onMouseLeave={resetFocusedEvent}
+            style={{
+                backgroundColor: focusedEvent === id ? 'red' : 'transparent',
+            }}
+        >
             <span>Group:</span>
-
-            <div style={{ display: 'flex' }}>
-                {events.length > 1 && (
-                    <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
+            <FlexContainer>
+                {isMultipleEvents && (
+                    <>
+                        <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
+                        <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
+                    </>
                 )}
-
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
-            </div>
-
-            <div style={{ display: 'flex' }}>
+            </FlexContainer>
+            <FlexContainer>
                 {events.map((event) => (
                     <EventItemComponent
                         key={event.id}
                         event={event}
                         onDelete={onDelete}
+                        setFocusedEvent={setFocusedEvent}
                         onPlay={handlePlayEvent}
                         onClose={handleClose}
+                        updateStartTime={updateStartTime}
                     />
                 ))}
-            </div>
+            </FlexContainer>
         </div>
     );
 };
 
 Panel.propTypes = {
     onDelete: PropTypes.func.isRequired,
+    onDeleteGroup: PropTypes.func.isRequired,
     onPressX: PropTypes.func.isRequired,
     panelState: PropTypes.shape({
         overlapGroup: PropTypes.shape({
@@ -64,9 +93,13 @@ Panel.propTypes = {
                     startTime: PropTypes.number.isRequired,
                 })
             ).isRequired,
+            id: PropTypes.any.isRequired,
+            startTime: PropTypes.number.isRequired,
         }).isRequired,
         recording: PropTypes.object,
     }).isRequired,
+    setFocusedEvent: PropTypes.func.isRequired,
+    updateStartTime: PropTypes.func.isRequired,
 };
 
 export default Panel;

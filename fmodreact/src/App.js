@@ -7,6 +7,7 @@ import Editor from './components/Editor/Editor';
 import Guitar from './components/Guitar/Guitar';
 import Piano from './components/Piano/Piano';
 import Tambourine from './components/Tambourine/Tambourine';
+import { gSystem } from './fmodLogic';
 import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
 
 const NavContainer = styled.nav`
@@ -42,6 +43,10 @@ const TopNav = () => {
 };
 
 function App() {
+    if (!gSystem) {
+        return <div>lol</div>;
+    }
+
     return (
         <InstrumentRecordingsProvider>
             <Router>

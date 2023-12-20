@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Stage } from 'react-konva';
 import styled from 'styled-components';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -19,84 +19,120 @@ export const StyledTimeline = styled.div`
 
 const markersHeight = 50;
 
-const Timelines = ({
-    closePanel,
-    duration,
-    furthestEndTime,
-    isPlaying,
-    openPanel,
-    panelFor,
-    recordings,
-    setTrackerPosition,
-    stopPlayback,
-    trackerPosition,
-    updateStartTime,
-}) => {
-    const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
+const Timelines = React.memo(
+    ({
+        closePanel,
+        currentPlayingInstrument,
+        deleteAllRecordingsForInstrument,
+        duration,
+        focusedEvent,
+        furthestEndTime,
+        furthestEndTimes,
+        isPlaying,
+        openPanel,
+        panelFor,
+        recordings,
+        replayInstrumentRecordings,
+        setTrackerPosition,
+        trackerPosition,
+        updateStartTime,
+    }) => {
+        const panelCompensationOffset = useMemo(() => {
+            return { x: -60 };
+        }, []);
 
-    const recordingsArr = Object.entries(recordings);
-    const EditorHeight = recordingsArr.length * 200 + markersHeight || 500;
+        const closePanelOnTimelinePress = useCallback(
+            (event) => {
+                if (event.target.className !== 'Rect') {
+                    closePanel();
+                }
+            },
+            [closePanel]
+        );
 
-    const calculatedStageWidth =
-        window.innerWidth > widthBasedOnLastSound
-            ? window.innerWidth
-            : widthBasedOnLastSound;
+        const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
+        const calculatedStageWidth =
+            window.innerWidth > widthBasedOnLastSound
+                ? window.innerWidth
+                : widthBasedOnLastSound;
 
-    const closePanelOnTimelinePress = useCallback(
-        (event) => {
-            if (event.target.className !== 'Rect') {
-                closePanel();
-            }
-        },
-        [closePanel]
-    );
+        const recordingsArr = Object.entries(recordings);
+        const EditorHeight = recordingsArr.length * 200 + markersHeight || 500;
 
-    return (
-        <>
-            <Stage
-                width={calculatedStageWidth}
-                height={EditorHeight}
-                onClick={closePanelOnTimelinePress}
-            >
-                <TimelineTracker
-                    furthestEndTime={furthestEndTime}
-                    shouldTrack={isPlaying}
-                    trackerPosition={trackerPosition}
-                    setTrackerPosition={setTrackerPosition}
-                />
+        return (
+            <div style={{ display: 'flex' }}>
+                <Stage
+                    width={calculatedStageWidth}
+                    height={EditorHeight}
+                    onClick={closePanelOnTimelinePress}
+                >
+                    {recordingsArr &&
+                        recordingsArr.map(
+                            ([groupName, instrumentGroup], index) => (
+                                <InstrumentTimeline
+                                    panelFor={panelFor}
+                                    key={groupName}
+                                    groupName={groupName}
+                                    instrumentGroup={instrumentGroup}
+                                    furthestEndTime={
+                                        furthestEndTimes[groupName]
+                                    }
+                                    index={index}
+                                    markersHeight={markersHeight}
+                                    openPanel={openPanel}
+                                    updateStartTime={updateStartTime}
+                                    panelCompensationOffset={
+                                        panelCompensationOffset
+                                    }
+                                    replayInstrumentRecordings={
+                                        replayInstrumentRecordings
+                                    }
+                                    focusedEvent={focusedEvent}
+                                    deleteAllRecordingsForInstrument={
+                                        deleteAllRecordingsForInstrument
+                                    }
+                                    currentPlayingInstrument={
+                                        currentPlayingInstrument
+                                    }
+                                />
+                            )
+                        )}
 
-                {recordingsArr.map(([groupKey, instrumentGroup], index) => (
-                    <InstrumentTimeline
-                        panelFor={panelFor}
-                        key={groupKey}
-                        instrumentGroup={instrumentGroup}
-                        furthestEndTime={furthestEndTime}
-                        index={index}
-                        markersHeight={markersHeight}
-                        openPanel={openPanel}
-                        updateStartTime={updateStartTime}
-                        stopPlayback={stopPlayback}
+                    <TimelineTracker
+                        furthestEndTime={
+                            furthestEndTimes[currentPlayingInstrument] ||
+                            furthestEndTime
+                        }
+                        shouldTrack={isPlaying}
+                        trackerPosition={trackerPosition}
+                        setTrackerPosition={setTrackerPosition}
+                        panelCompensationOffset={panelCompensationOffset}
                     />
-                ))}
 
-                <TimelineMarker
-                    duration={duration}
-                    height={markersHeight}
-                    pixelToSecond={105}
-                    furthestEndTime={furthestEndTime}
-                />
-            </Stage>
-        </>
-    );
-};
+                    <TimelineMarker
+                        duration={duration}
+                        height={markersHeight}
+                        pixelToSecond={105}
+                        furthestEndTime={furthestEndTime}
+                        panelCompensationOffset={panelCompensationOffset}
+                    />
+                </Stage>
+            </div>
+        );
+    }
+);
 
 Timelines.propTypes = {
     closePanel: PropTypes.func.isRequired,
+    currentPlayingInstrument: PropTypes.string,
+    deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
     duration: PropTypes.number.isRequired,
+    focusedEvent: PropTypes.number,
     furthestEndTime: PropTypes.number.isRequired,
+    furthestEndTimes: PropTypes.object.isRequired,
     isPlaying: PropTypes.bool.isRequired,
     openPanel: PropTypes.func.isRequired,
-    panelFor: PropTypes.number,
+    panelFor: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     recordings: PropTypes.objectOf(
         PropTypes.arrayOf(
             PropTypes.shape({
@@ -106,17 +142,17 @@ Timelines.propTypes = {
             })
         )
     ).isRequired,
+    replayInstrumentRecordings: PropTypes.func.isRequired,
     setTrackerPosition: PropTypes.func.isRequired,
-    stopPlayback: PropTypes.func.isRequired,
     trackerPosition: PropTypes.number,
     updateStartTime: PropTypes.func.isRequired,
 };
 
 Timelines.defaultProps = {
-    duration: 0,
-    furthestEndTime: 0,
-    isPlaying: false,
-    recordings: {},
+    currentPlayingInstrument: '',
+    focusedEvent: null,
+    panelFor: null,
+    trackerPosition: 0,
 };
 
 export default Timelines;

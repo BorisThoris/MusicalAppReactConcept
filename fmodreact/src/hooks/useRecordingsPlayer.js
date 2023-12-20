@@ -1,38 +1,49 @@
-import { get } from 'lodash';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import InstrumentsNames from '../globalConstants/instrumentNames';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import usePlayback from './usePlayback';
-import useStageWidthHook from './useStageWidth';
 
-const useRecordingsPlayer = (instrumentName) => {
-    const [isPlaying, setIsPlaying] = useState(false);
+const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
+    const [playbackStatus, setPlaybackStatus] = useState({
+        currentInstrument: false,
+        isPlaying: false,
+    });
     const [trackerPosition, setTrackerPosition] = useState(0);
     const { recordings } = useContext(InstrumentRecordingsContext);
-    const { furthestEndTime } = useStageWidthHook({ recordings });
 
     const { clearAllTimeouts, setNewTimeout } = usePlayback({
-        playbackStatus: isPlaying,
+        playbackStatus: playbackStatus.isPlaying,
     });
 
     const togglePlayback = useCallback(() => {
-        setIsPlaying((prevIsPlaying) => !prevIsPlaying);
-        if (isPlaying) {
+        setPlaybackStatus((prevStatus) => ({
+            ...prevStatus,
+            currentInstrument: prevStatus.isPlaying
+                ? false
+                : prevStatus.currentInstrument,
+            isPlaying: !prevStatus.isPlaying,
+        }));
+
+        if (playbackStatus.isPlaying) {
             clearAllTimeouts();
         }
-    }, [isPlaying, clearAllTimeouts]);
+    }, [playbackStatus.isPlaying, clearAllTimeouts]);
 
     const stopPlayback = useCallback(() => {
-        setIsPlaying(false);
-    }, []);
+        setPlaybackStatus({ currentInstrument: false, isPlaying: false });
+        clearAllTimeouts();
+    }, [clearAllTimeouts]);
 
-    const replayEvents = useCallback(
-        (instrument = instrumentName) => {
-            const instrumentRecordings = get(recordings, instrument, []);
-            let lastEndTime = 0;
+    const playInstrumentRecording = useCallback(
+        (instrument) => {
+            setPlaybackStatus({
+                currentInstrument: instrument,
+                isPlaying: true,
+            });
 
+            const instrumentRecordings = recordings[instrument] || [];
             instrumentRecordings.forEach(({ eventInstance, startTime }) => {
                 if (startTime > trackerPosition / pixelToSecondRatio) {
                     setNewTimeout(
@@ -40,42 +51,60 @@ const useRecordingsPlayer = (instrumentName) => {
                         startTime - trackerPosition / pixelToSecondRatio
                     );
                 }
-
-                lastEndTime = Math.max(lastEndTime, startTime);
             });
-
-            return lastEndTime;
         },
-        [instrumentName, recordings, trackerPosition, setNewTimeout]
+        [recordings, trackerPosition, setNewTimeout]
     );
 
     const replayAllRecordedSounds = useCallback(() => {
         togglePlayback();
 
-        if (!isPlaying) {
-            const instrumentsWithRecordings = Object.values(
-                InstrumentsNames
-            ).filter((name) => get(recordings, name));
-
-            instrumentsWithRecordings.forEach(replayEvents);
+        if (!playbackStatus.isPlaying) {
+            Object.values(InstrumentsNames).forEach(playInstrumentRecording);
         }
-    }, [isPlaying, togglePlayback, recordings, replayEvents]);
+    }, [playbackStatus.isPlaying, togglePlayback, playInstrumentRecording]);
+
+    const replayInstrumentRecordings = useCallback(
+        (instrumentName) => {
+            togglePlayback();
+
+            if (!playbackStatus.isPlaying) {
+                playInstrumentRecording(instrumentName);
+            }
+        },
+        [playbackStatus.isPlaying, togglePlayback, playInstrumentRecording]
+    );
 
     useEffect(() => {
-        if (isPlaying) {
-            const timeoutId = setTimeout(
-                togglePlayback,
-                furthestEndTime * 1000
-            );
+        if (playbackStatus.isPlaying) {
+            const instrumentEndTime =
+                furthestEndTimes[playbackStatus.currentInstrument];
+
+            const currentInstrumentEndTime =
+                instrumentEndTime || furthestEndTime;
+
+            const timeoutAmount =
+                currentInstrumentEndTime * 1000 -
+                (trackerPosition / pixelToSecondRatio) * 1000;
+
+            const timeoutId = setTimeout(togglePlayback, timeoutAmount);
 
             return () => clearTimeout(timeoutId);
         }
-    }, [furthestEndTime, isPlaying, togglePlayback]);
+    }, [
+        furthestEndTime,
+        furthestEndTimes,
+        playbackStatus.currentInstrument,
+        playbackStatus.isPlaying,
+        togglePlayback,
+        trackerPosition,
+    ]);
 
     return {
-        isPlaying,
+        playbackStatus,
         playRecordedSounds: togglePlayback,
         replayAllRecordedSounds,
+        replayInstrumentRecordings,
         setTrackerPosition,
         stopPlayback,
         trackerPosition,

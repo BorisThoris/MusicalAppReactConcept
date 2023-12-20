@@ -12,8 +12,6 @@ const usePlayback = ({ playbackStatus }) => {
     const setNewTimeout = useCallback((callback, delay) => {
         const timeoutId = setTimeout(() => callback(), delay * 1000);
 
-        console.log(delay * 1000);
-
         setTimeouts((prevTimeouts) => {
             return [...prevTimeouts, timeoutId];
         });
@@ -21,8 +19,6 @@ const usePlayback = ({ playbackStatus }) => {
 
     useEffect(() => {
         if (timeouts.length > 0 && !playbackStatus) {
-            console.log('eyyy yoooo');
-            console.log('clearing');
             clearAllTimeouts();
         }
     }, [clearAllTimeouts, playbackStatus, timeouts.length]);

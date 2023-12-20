@@ -12,77 +12,77 @@ const TEXT_OFFSET_X = 10;
 const TEXT_OFFSET_Y = 20;
 const TEXT_FONT_SIZE = 18;
 
-const OverlapGroupElement = ({
-    groupData,
-    index,
-    isTargeted,
-    openPanel,
-    timelineHeight,
-    timelineY,
-    updateStartTime,
-}) => {
-    const { endTime, events, instrumentName, startTime } = groupData;
-    const startingPositionInTimeline = startTime * pixelToSecondRatio;
-    const groupWidth = (endTime - startTime) * pixelToSecondRatio;
+const OverlapGroupElement = React.memo(
+    ({
+        focusedEvent,
+        groupData,
+        index,
+        isTargeted,
+        openPanel,
+        timelineHeight,
+        timelineY,
+        updateStartTime,
+    }) => {
+        const { endTime, events, instrumentName, startTime } = groupData;
+        const startingPositionInTimeline = startTime * pixelToSecondRatio;
+        const groupWidth = (endTime - startTime) * pixelToSecondRatio;
 
-    const handleDragEnd = useCallback(
-        (e) => {
-            const newGroupStart = e.target.x() / pixelToSecondRatio;
-            const timeShift = newGroupStart - startTime;
+        const handleDragEnd = useCallback(
+            (e) => {
+                const newGroupStart = e.target.x() / pixelToSecondRatio;
+                const timeShift = newGroupStart - startTime;
 
-            events.forEach((event) => {
-                const newEventStart = event.startTime + timeShift;
+                events.forEach((event) => {
+                    const newEventStart = event.startTime + timeShift;
 
-                updateStartTime({
-                    ...event,
-                    eventLength: event.eventLength,
-                    index: event.id,
-                    newStartTime: newEventStart,
+                    updateStartTime({
+                        ...event,
+                        eventLength: event.eventLength,
+                        index: event.id,
+                        newStartTime: newEventStart,
+                    });
                 });
-            });
-        },
-        [events, startTime, updateStartTime]
-    );
+            },
+            [events, startTime, updateStartTime]
+        );
 
-    const handleClickOverlapGroup = useCallback(() => {
-        openPanel({ index, instrumentName });
-    }, [index, instrumentName, openPanel]);
+        const handleClickOverlapGroup = useCallback(() => {
+            openPanel({ index, instrumentName });
+        }, [index, instrumentName, openPanel]);
 
-    const dragBoundFunc = useCallback(
-        (pos) => ({ x: pos.x, y: timelineY }),
-        [timelineY]
-    );
+        const dragBoundFunc = useCallback(
+            (pos) => ({ x: pos.x, y: timelineY }),
+            [timelineY]
+        );
 
-    return (
-        <Fragment>
-            <Group
-                key={index}
-                x={startingPositionInTimeline}
-                draggable
-                dragBoundFunc={dragBoundFunc}
-                onDragEnd={handleDragEnd}
-                onClick={handleClickOverlapGroup}
-            >
-                <Rect
-                    width={groupWidth}
-                    height={timelineHeight * 0.8}
-                    fill={isTargeted ? 'red' : GROUP_COLOR}
-                    opacity={GROUP_OPACITY}
-                    strokeWidth={GROUP_STROKE_WIDTH}
-                    stroke={GROUP_COLOR}
-                />
-                <Text
-                    x={TEXT_OFFSET_X}
-                    y={TEXT_OFFSET_Y}
-                    text={GROUP_TEXT}
-                    fontSize={TEXT_FONT_SIZE}
-                    fill="white"
-                />
-            </Group>
+        return (
+            <Fragment>
+                <Group
+                    key={index}
+                    x={startingPositionInTimeline}
+                    draggable
+                    dragBoundFunc={dragBoundFunc}
+                    onDragEnd={handleDragEnd}
+                >
+                    <Rect
+                        width={groupWidth}
+                        height={timelineHeight * 0.9}
+                        fill={isTargeted ? 'red' : GROUP_COLOR}
+                        opacity={GROUP_OPACITY}
+                        strokeWidth={GROUP_STROKE_WIDTH}
+                        stroke={GROUP_COLOR}
+                    />
+                    <Text
+                        x={TEXT_OFFSET_X}
+                        y={TEXT_OFFSET_Y}
+                        text={GROUP_TEXT}
+                        fontSize={TEXT_FONT_SIZE}
+                        fill="white"
+                    />
+                </Group>
 
-            <Group>
-                {isTargeted &&
-                    events.map((event, eventIndex) => (
+                <Group onClick={handleClickOverlapGroup}>
+                    {events.map((event, eventIndex) => (
                         <SoundEventElement
                             key={event.id}
                             index={eventIndex}
@@ -91,14 +91,17 @@ const OverlapGroupElement = ({
                             timelineHeight={timelineHeight}
                             timelineY={timelineY}
                             updateStartTime={updateStartTime}
+                            isFocused={event.id === focusedEvent}
                         />
                     ))}
-            </Group>
-        </Fragment>
-    );
-};
+                </Group>
+            </Fragment>
+        );
+    }
+);
 
 OverlapGroupElement.propTypes = {
+    focusedEvent: PropTypes.number.isRequired,
     groupData: PropTypes.shape({
         endTime: PropTypes.number.isRequired,
         events: PropTypes.arrayOf(

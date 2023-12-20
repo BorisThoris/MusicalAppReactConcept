@@ -13,31 +13,39 @@ import Timelines, {
 } from './components/Timelines/Timelines';
 
 const Editor = () => {
-    const { deleteRecording, updateRecording } =
-        instrumentRecordingOperationsHook();
+    const {
+        deleteAllRecordingsForInstrument,
+        deleteOverlappingGroupById,
+        deleteRecording,
+        updateRecording,
+    } = instrumentRecordingOperationsHook();
+
     const { overlapGroups, recordings } = useContext(
         InstrumentRecordingsContext
     );
 
+    const { closePanel, focusedEvent, openPanel, panelState, setFocusedEvent } =
+        usePanelStateHook();
+
+    const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
+        recordings,
+    });
+
     const {
-        isPlaying,
+        playbackStatus,
         replayAllRecordedSounds,
+        replayInstrumentRecordings,
         setTrackerPosition,
-        stopPlayback,
         trackerPosition,
-    } = useRecordingsPlayer();
-    const { closePanel, openPanel, panelState } = usePanelStateHook();
-    const { furthestEndTime } = useStageWidthHook({ recordings });
+    } = useRecordingsPlayer({ furthestEndTime, furthestEndTimes });
+
+    const { currentInstrument, isPlaying } = playbackStatus;
 
     const deleteNote = useCallback(
         (id) => {
             deleteRecording(id);
-
-            if (panelState.isOpen) {
-                // closePanel();
-            }
         },
-        [deleteRecording, panelState]
+        [deleteRecording]
     );
 
     return (
@@ -54,20 +62,30 @@ const Editor = () => {
                     furthestEndTime={furthestEndTime}
                     isPlaying={isPlaying}
                     duration={threeMinuteMs}
-                    stopPlayback={stopPlayback}
                     openPanel={openPanel}
                     closePanel={closePanel}
                     updateStartTime={updateRecording}
                     trackerPosition={trackerPosition}
                     setTrackerPosition={setTrackerPosition}
                     panelFor={panelState?.overlapGroup?.id}
+                    replayInstrumentRecordings={replayInstrumentRecordings}
+                    focusedEvent={focusedEvent}
+                    deleteAllRecordingsForInstrument={
+                        deleteAllRecordingsForInstrument
+                    }
+                    furthestEndTimes={furthestEndTimes}
+                    currentPlayingInstrument={currentInstrument}
                 />
 
                 {panelState.isOpen && (
                     <PanelComponent
                         onPressX={closePanel}
+                        updateStartTime={updateRecording}
                         panelState={panelState}
                         onDelete={deleteNote}
+                        onDeleteGroup={deleteOverlappingGroupById}
+                        setFocusedEvent={setFocusedEvent}
+                        focusedEvent={focusedEvent}
                     />
                 )}
             </StyledTimeline>

@@ -1,10 +1,16 @@
 import { useCallback, useContext } from 'react';
+import {
+    createEventInstance,
+    getEventPath,
+} from '../fmodLogic/eventInstanceHelpers';
 import createSound from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 
 const useInstrumentRecordingsOperations = () => {
-    const { setRecordings } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups, setRecordings } = useContext(
+        InstrumentRecordingsContext
+    );
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
@@ -51,20 +57,20 @@ const useInstrumentRecordingsOperations = () => {
     const deleteEventInstance = useCallback(
         (id) => {
             setRecordings((prev) => {
-                const updatedRecordings = { ...prev };
+                const updatedRecordings = Object.keys(prev).reduce(
+                    (acc, instrumentName) => {
+                        const filteredRecordings = prev[instrumentName].filter(
+                            (item) => item.id !== id
+                        );
 
-                Object.keys(updatedRecordings).forEach((instrumentName) => {
-                    const instrumentRecordings =
-                        updatedRecordings[instrumentName];
-                    const targetIndex = instrumentRecordings.findIndex(
-                        (item) => item.id === id
-                    );
+                        if (filteredRecordings.length > 0) {
+                            acc[instrumentName] = filteredRecordings;
+                        }
 
-                    if (targetIndex !== -1) {
-                        instrumentRecordings.splice(targetIndex, 1);
-                        return updatedRecordings;
-                    }
-                });
+                        return acc;
+                    },
+                    {}
+                );
 
                 return updatedRecordings;
             });
@@ -72,11 +78,47 @@ const useInstrumentRecordingsOperations = () => {
         [setRecordings]
     );
 
+    const deleteAllRecordingsForInstrument = useCallback(
+        (instrumentName) => {
+            setRecordings((prev) => {
+                const updatedRecordings = { ...prev };
+                delete updatedRecordings[instrumentName];
+                return updatedRecordings;
+            });
+        },
+        [setRecordings]
+    );
+
+    const duplicateEventInstance = useCallback(
+        (oldSound) => {
+            const eventPath = getEventPath(oldSound.eventInstance);
+            const eventInstance = createEventInstance(eventPath);
+
+            const { instrumentName, startTime: oldStartTime } = oldSound;
+
+            const newSound = createSound({
+                eventInstance,
+                eventPath,
+                instrumentName,
+                startTime: oldStartTime + 0.2,
+            });
+
+            setRecordings((prev) => ({
+                ...prev,
+                [instrumentName]: [...(prev[instrumentName] || []), newSound],
+            }));
+        },
+        [setRecordings]
+    );
+
     const recordSoundEvent = useCallback(
         (eventInstance, instrumentName, startTime) => {
             const elapsedTime = getElapsedTime(startTime);
+            const eventPath = getEventPath(eventInstance);
+
             const sound = createSound({
                 eventInstance,
+                eventPath,
                 instrumentName,
                 startTime: elapsedTime,
             });
@@ -103,6 +145,23 @@ const useInstrumentRecordingsOperations = () => {
         [deleteEventInstance]
     );
 
+    const deleteOverlappingGroupById = (groupId) => {
+        Object.keys(overlapGroups).forEach((instrument) => {
+            overlapGroups[instrument] = overlapGroups[instrument].filter(
+                (group) => {
+                    if (group.id === groupId) {
+                        group.events.forEach((event) =>
+                            deleteRecording(event.id)
+                        );
+
+                        return true;
+                    }
+                    return false;
+                }
+            );
+        });
+    };
+
     const updateRecording = useCallback(
         (params) => {
             updateRecordingStartTime(params);
@@ -123,7 +182,10 @@ const useInstrumentRecordingsOperations = () => {
 
     return {
         addRecording,
+        deleteAllRecordingsForInstrument,
+        deleteOverlappingGroupById,
         deleteRecording,
+        duplicateEventInstance,
         resetRecordings,
         updateRecording,
     };

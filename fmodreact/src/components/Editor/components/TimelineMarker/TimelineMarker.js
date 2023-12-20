@@ -3,7 +3,12 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Group, Layer, Line, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 
-const TimeMarker = ({ duration, height, pixelToSecond }) => {
+const TimeMarker = ({
+    duration,
+    height,
+    panelCompensationOffset,
+    pixelToSecond,
+}) => {
     const [width, setWidth] = useState(180 * pixelToSecondRatio);
     const markerHeight = 10;
     const secondMarkerHeight = 20;
@@ -62,7 +67,8 @@ const TimeMarker = ({ duration, height, pixelToSecond }) => {
         return markersArray;
     }, [createMarker, duration, pixelToSecond, width]);
 
-    return <Layer>{markers}</Layer>;
+    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
+    return <Layer offset={panelCompensationOffset}>{markers}</Layer>;
 };
 
 TimeMarker.propTypes = {

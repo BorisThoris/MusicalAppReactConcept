@@ -8,7 +8,6 @@ import {
     SliderInput,
 } from './ParameterControl.styles';
 
-// Main component
 const ParameterControl = ({ eventInstance, param }) => {
     const [paramDetails, handleParamChange] = useParameter(
         eventInstance,

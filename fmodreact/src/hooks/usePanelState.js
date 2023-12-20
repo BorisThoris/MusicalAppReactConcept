@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useReducer } from 'react';
+import React, {
+    useCallback,
+    useContext,
+    useEffect,
+    useReducer,
+    useState,
+} from 'react';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 
 const initialState = {
@@ -20,6 +26,7 @@ const panelReducer = (state, action) => {
 };
 
 const usePanelState = () => {
+    const [focusedEvent, setFocusedEvent] = useState(0);
     const [state, dispatch] = useReducer(panelReducer, initialState);
     const { index, instrumentName, isOpen, overlapGroup } = state;
     const { overlapGroups } = useContext(InstrumentRecordingsContext);
@@ -78,7 +85,13 @@ const usePanelState = () => {
         overlapGroups,
     ]);
 
-    return { closePanel, openPanel, panelState: state };
+    return {
+        closePanel,
+        focusedEvent,
+        openPanel,
+        panelState: state,
+        setFocusedEvent,
+    };
 };
 
 export default usePanelState;

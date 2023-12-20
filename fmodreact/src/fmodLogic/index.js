@@ -7,16 +7,6 @@ export const FMOD = {};
 // eslint-disable-next-line import/no-mutable-exports, no-var
 export var gSystem;
 
-// Create an initialization function
-export function initializeApp() {
-    // eslint-disable-next-line no-use-before-define
-    FMOD.preRun = prerun;
-    // eslint-disable-next-line no-use-before-define
-    FMOD.onRuntimeInitialized = initializeFMOD;
-    FMOD.INITIAL_MEMORY = FMODConfig.INITIAL_MEMORY;
-    window.FMODModule(FMOD);
-}
-
 let gSystemCore = null;
 let gAudioResumed = false;
 
@@ -157,5 +147,22 @@ export function initializeFMOD() {
 
     window.setInterval(updateApplication, 20);
 
+    console.log(gSystem);
+
     return FMOD.OK;
+}
+
+// Create an initialization function
+export function initializeApp() {
+    return new Promise((resolve, reject) => {
+        // Existing logic...
+        FMOD.preRun = prerun;
+        FMOD.onRuntimeInitialized = () => {
+            // Call resolve when initialization is complete
+            initializeFMOD();
+            resolve();
+        };
+        FMOD.INITIAL_MEMORY = FMODConfig.INITIAL_MEMORY;
+        window.FMODModule(FMOD);
+    });
 }

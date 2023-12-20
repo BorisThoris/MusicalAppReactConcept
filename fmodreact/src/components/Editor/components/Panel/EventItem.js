@@ -1,41 +1,81 @@
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { getEventInstanceParamaters } from '../../../../fmodLogic/eventInstanceHelpers';
+import instrumentRecordingOperationsHook from '../../../../hooks/useInstrumentRecordingsOperations';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
-import { Header, PlayIcon, TimeMarker, TrashIcon } from './Panel.styles';
+import EventHeaderComponent from './EventHeader';
+import TimeControlComponent from './TimeControl';
 
-const EventItem = ({ event, onDelete, onPlay }) => {
-    const params = getEventInstanceParamaters(event.eventInstance);
+const EventItem = ({
+    event,
+    onDelete,
+    onPlay,
+    setFocusedEvent,
+    updateStartTime,
+}) => {
+    const {
+        endTime,
+        eventInstance,
+        eventLength,
+        id,
+        instrumentName,
+        startTime,
+    } = event;
 
-    const handleDelete = useCallback(
-        () => onDelete(event.id),
-        [onDelete, event.id]
+    const { duplicateEventInstance } = instrumentRecordingOperationsHook();
+
+    const params = useMemo(
+        () => getEventInstanceParamaters(eventInstance),
+        [eventInstance]
     );
+
+    const handleDelete = useCallback(() => onDelete(id), [onDelete, id]);
+
+    const handleDuplicate = useCallback(() => {
+        console.log(event);
+        duplicateEventInstance(event);
+    }, [duplicateEventInstance, event]);
+
     const handlePlay = useCallback(
-        () => onPlay(event.eventInstance),
-        [onPlay, event.eventInstance]
+        () => onPlay(eventInstance),
+        [onPlay, eventInstance]
+    );
+    const focusEvent = useCallback(
+        () => setFocusedEvent(id),
+        [id, setFocusedEvent]
+    );
+
+    const modifyStartTime = useCallback(
+        (delta) => {
+            updateStartTime({
+                eventLength,
+                index: id,
+                instrumentName,
+                newStartTime: startTime + delta,
+            });
+        },
+        [eventLength, id, instrumentName, startTime, updateStartTime]
     );
 
     return (
-        <div>
-            <Header>
-                <PlayIcon onClick={handlePlay}>▶</PlayIcon>
-                <TrashIcon onClick={handleDelete}>🗑️</TrashIcon>
-            </Header>
+        <div onMouseEnter={focusEvent}>
+            <EventHeaderComponent
+                onPlay={handlePlay}
+                onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
+            />
 
-            <TimeMarker>
-                <span>START</span>
-                <div>
-                    <div>Start: {event.startTime}</div>
-                    <div>End: {event.endTime}</div>
-                </div>
-            </TimeMarker>
+            <TimeControlComponent
+                startTime={startTime}
+                endTime={endTime}
+                onModifyStartTime={modifyStartTime}
+            />
 
             {params.map((param) => (
                 <ParameterControlComponent
                     key={param.name}
                     param={param}
-                    eventInstance={event.eventInstance}
+                    eventInstance={eventInstance}
                 />
             ))}
         </div>
@@ -43,10 +83,18 @@ const EventItem = ({ event, onDelete, onPlay }) => {
 };
 
 EventItem.propTypes = {
-    event: PropTypes.object.isRequired,
-    onClose: PropTypes.func.isRequired,
+    event: PropTypes.shape({
+        endTime: PropTypes.number,
+        eventInstance: PropTypes.object,
+        eventLength: PropTypes.number,
+        id: PropTypes.number,
+        instrumentName: PropTypes.string,
+        startTime: PropTypes.number,
+    }).isRequired,
     onDelete: PropTypes.func.isRequired,
     onPlay: PropTypes.func.isRequired,
+    setFocusedEvent: PropTypes.func.isRequired,
+    updateStartTime: PropTypes.func.isRequired,
 };
 
 export default EventItem;

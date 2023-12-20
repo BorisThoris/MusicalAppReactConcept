@@ -27,11 +27,31 @@ export const PressableIcon = styled.button`
 
 export const PlayIcon = styled(PressableIcon)`
     background-color: green;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+`;
+
+export const CopyIcon = styled(PressableIcon)`
+    background-color: green;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+`;
+
+export const FlexContainer = styled.div`
+    display: flex;
 `;
 
 export const TrashIcon = styled(PressableIcon)`
     background-color: #f5f5f5;
     border: 1px solid black;
+
+    &:hover {
+        transform: scale(1.1);
+    }
 `;
 
 export const CloseIcon = styled(PressableIcon)`

@@ -1,3 +1,6 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable max-len */
 /* eslint-disable no-alert */
 import { CHECK_RESULT, gSystem } from './index';
 
@@ -31,6 +34,9 @@ export const getEventInstanceParamaters = (eventInstance) => {
 
 export const createEventInstance = (eventPath) => {
     showAlertIfSystemNotInitialized();
+
+    console.log('event path');
+    console.log(eventPath);
 
     const eventDescription = {};
     CHECK_RESULT(gSystem.getEvent(`event:/${eventPath}`, eventDescription));
@@ -69,8 +75,83 @@ export const playEventInstance = (passedEventInstance) => {
 export const createAndPlayEventIntance = (eventPath) => {
     showAlertIfSystemNotInitialized();
 
+    console.clear();
+    console.log(eventPath);
+
     const eventInstance = createEventInstance(eventPath);
     if (eventInstance) playEventInstance(eventInstance);
 
     return eventInstance;
+};
+
+export const getEventPath = (eventInstance) => {
+    showAlertIfSystemNotInitialized();
+
+    // Check if the event instance is valid
+    if (!eventInstance) {
+        window.alert('Event instance is not valid.');
+        return null;
+    }
+
+    const eventDescription = {};
+    CHECK_RESULT(eventInstance.getDescription(eventDescription));
+
+    // Define the size of the buffer to receive the path
+    const bufferSize = 512; // You can adjust this size as needed
+    const pathBuffer = new Uint8Array(bufferSize);
+
+    // Retrieve the path
+    const retrieved = {};
+    const result = eventDescription.val.getPath(
+        pathBuffer,
+        bufferSize,
+        retrieved
+    );
+
+    const parts = pathBuffer.val.split('event:/');
+    return parts.length > 1 ? parts[1] : '';
+};
+
+/**
+ * Converts a GUID-like object to a string representation, handling various shapes.
+ * @param {object} guid - The GUID-like object to convert.
+ * @returns {string} The string representation of the object.
+ */
+const guidToString = (guid) => {
+    let stringRepresentation = '';
+
+    for (const key in guid) {
+        if (guid.hasOwnProperty(key)) {
+            const element = guid[key];
+
+            // If the element is an array, convert each element to a hex string
+            if (Array.isArray(element)) {
+                stringRepresentation += element
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('');
+            } else {
+                // If the element is a number, convert it to a hex string
+                stringRepresentation += element.toString(16).padStart(8, '0');
+            }
+        }
+    }
+
+    return stringRepresentation;
+};
+
+export const getEventDescriptionId = (eventInstance) => {
+    showAlertIfSystemNotInitialized();
+
+    if (!eventInstance) {
+        window.alert('Event instance is not valid.');
+        return null;
+    }
+
+    const eventDescription = {};
+    CHECK_RESULT(eventInstance.getDescription(eventDescription));
+
+    const id = {};
+    CHECK_RESULT(eventDescription.val.getID(id));
+
+    return id.val ? guidToString(id.val) : null;
 };
