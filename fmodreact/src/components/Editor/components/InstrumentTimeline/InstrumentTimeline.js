@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useContext } from 'react';
 import { Group, Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
@@ -22,9 +23,14 @@ const InstrumentTimeline = React.memo(
         openPanel,
         panelCompensationOffset,
         panelFor,
-        replayInstrumentRecordings,
+        setFocusedEvent,
         updateStartTime,
     }) => {
+        const { mutedInstruments, replayInstrumentRecordings, toggleMute } =
+            useContext(RecordingsPlayerContext);
+
+        const isMuted = mutedInstruments.includes(groupName);
+
         const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
         const timelineWidth = furthestEndTime * pixelToSecondRatio;
         const fillColor =
@@ -43,6 +49,7 @@ const InstrumentTimeline = React.memo(
                     timelineY={timelineY}
                     isTargeted={elementIsSelected}
                     isFocused={groupData.events[0].id === focusedEvent}
+                    setFocusedEvent={setFocusedEvent}
                 />
             ) : (
                 <OverlapGroupElement
@@ -55,6 +62,7 @@ const InstrumentTimeline = React.memo(
                     updateStartTime={updateStartTime}
                     isTargeted={elementIsSelected}
                     focusedEvent={focusedEvent}
+                    setFocusedEvent={setFocusedEvent}
                 />
             );
         };
@@ -65,7 +73,7 @@ const InstrumentTimeline = React.memo(
                     offset={panelCompensationOffset}
                     height={TimelineHeight}
                     width={timelineWidth}
-                    fill={fillColor}
+                    fill={isMuted ? 'red' : fillColor}
                 />
 
                 <InstrumentTimelinePanelComponent
@@ -75,6 +83,7 @@ const InstrumentTimeline = React.memo(
                     deleteAllRecordingsForInstrument={
                         deleteAllRecordingsForInstrument
                     }
+                    toggleMute={toggleMute}
                 />
 
                 <Group offset={panelCompensationOffset}>

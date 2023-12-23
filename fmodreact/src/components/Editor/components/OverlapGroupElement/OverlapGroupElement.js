@@ -19,6 +19,7 @@ const OverlapGroupElement = React.memo(
         index,
         isTargeted,
         openPanel,
+        setFocusedEvent,
         timelineHeight,
         timelineY,
         updateStartTime,
@@ -54,6 +55,8 @@ const OverlapGroupElement = React.memo(
             (pos) => ({ x: pos.x, y: timelineY }),
             [timelineY]
         );
+
+        console.log(events);
 
         return (
             <Fragment>
@@ -92,6 +95,7 @@ const OverlapGroupElement = React.memo(
                             timelineY={timelineY}
                             updateStartTime={updateStartTime}
                             isFocused={event.id === focusedEvent}
+                            setFocusedEvent={setFocusedEvent}
                         />
                     ))}
                 </Group>

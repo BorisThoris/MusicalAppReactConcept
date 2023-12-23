@@ -1,8 +1,10 @@
+/* eslint-disable react-perf/jsx-no-new-function-as-prop */
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { Stage } from 'react-konva';
 import styled from 'styled-components';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
@@ -22,21 +24,23 @@ const markersHeight = 50;
 const Timelines = React.memo(
     ({
         closePanel,
-        currentPlayingInstrument,
         deleteAllRecordingsForInstrument,
         duration,
         focusedEvent,
         furthestEndTime,
         furthestEndTimes,
-        isPlaying,
         openPanel,
         panelFor,
         recordings,
-        replayInstrumentRecordings,
-        setTrackerPosition,
-        trackerPosition,
+        setFocusedEvent,
         updateStartTime,
     }) => {
+        const { playbackStatus, replayAllRecordedSounds } = useContext(
+            RecordingsPlayerContext
+        );
+
+        const { currentInstrument, isPlaying } = playbackStatus;
+
         const panelCompensationOffset = useMemo(() => {
             return { x: -60 };
         }, []);
@@ -60,71 +64,71 @@ const Timelines = React.memo(
         const EditorHeight = recordingsArr.length * 200 + markersHeight || 500;
 
         return (
-            <div style={{ display: 'flex' }}>
-                <Stage
-                    width={calculatedStageWidth}
-                    height={EditorHeight}
-                    onClick={closePanelOnTimelinePress}
-                >
-                    {recordingsArr &&
-                        recordingsArr.map(
-                            ([groupName, instrumentGroup], index) => (
-                                <InstrumentTimeline
-                                    panelFor={panelFor}
-                                    key={groupName}
-                                    groupName={groupName}
-                                    instrumentGroup={instrumentGroup}
-                                    furthestEndTime={
-                                        furthestEndTimes[groupName]
-                                    }
-                                    index={index}
-                                    markersHeight={markersHeight}
-                                    openPanel={openPanel}
-                                    updateStartTime={updateStartTime}
-                                    panelCompensationOffset={
-                                        panelCompensationOffset
-                                    }
-                                    replayInstrumentRecordings={
-                                        replayInstrumentRecordings
-                                    }
-                                    focusedEvent={focusedEvent}
-                                    deleteAllRecordingsForInstrument={
-                                        deleteAllRecordingsForInstrument
-                                    }
-                                    currentPlayingInstrument={
-                                        currentPlayingInstrument
-                                    }
-                                />
-                            )
-                        )}
+            <>
+                <button onClick={replayAllRecordedSounds}>
+                    {isPlaying ? 'Pause' : 'Start'}
+                </button>
+                <div style={{ display: 'flex' }}>
+                    <Stage
+                        width={calculatedStageWidth}
+                        height={EditorHeight}
+                        onClick={closePanelOnTimelinePress}
+                    >
+                        {recordingsArr &&
+                            recordingsArr.map(
+                                ([groupName, instrumentGroup], index) => (
+                                    <InstrumentTimeline
+                                        panelFor={panelFor}
+                                        key={groupName}
+                                        groupName={groupName}
+                                        instrumentGroup={instrumentGroup}
+                                        furthestEndTime={
+                                            furthestEndTimes[groupName]
+                                        }
+                                        index={index}
+                                        markersHeight={markersHeight}
+                                        openPanel={openPanel}
+                                        updateStartTime={updateStartTime}
+                                        panelCompensationOffset={
+                                            panelCompensationOffset
+                                        }
+                                        focusedEvent={focusedEvent}
+                                        deleteAllRecordingsForInstrument={
+                                            deleteAllRecordingsForInstrument
+                                        }
+                                        currentPlayingInstrument={
+                                            currentInstrument
+                                        }
+                                        setFocusedEvent={setFocusedEvent}
+                                    />
+                                )
+                            )}
 
-                    <TimelineTracker
-                        furthestEndTime={
-                            furthestEndTimes[currentPlayingInstrument] ||
-                            furthestEndTime
-                        }
-                        shouldTrack={isPlaying}
-                        trackerPosition={trackerPosition}
-                        setTrackerPosition={setTrackerPosition}
-                        panelCompensationOffset={panelCompensationOffset}
-                    />
+                        <TimelineTracker
+                            furthestEndTime={
+                                furthestEndTimes[currentInstrument] ||
+                                furthestEndTime
+                            }
+                            shouldTrack={isPlaying}
+                            panelCompensationOffset={panelCompensationOffset}
+                        />
 
-                    <TimelineMarker
-                        duration={duration}
-                        height={markersHeight}
-                        pixelToSecond={105}
-                        furthestEndTime={furthestEndTime}
-                        panelCompensationOffset={panelCompensationOffset}
-                    />
-                </Stage>
-            </div>
+                        <TimelineMarker
+                            duration={duration}
+                            height={markersHeight}
+                            pixelToSecond={105}
+                            furthestEndTime={furthestEndTime}
+                            panelCompensationOffset={panelCompensationOffset}
+                        />
+                    </Stage>
+                </div>
+            </>
         );
     }
 );
 
 Timelines.propTypes = {
     closePanel: PropTypes.func.isRequired,
-    currentPlayingInstrument: PropTypes.string,
     deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
     duration: PropTypes.number.isRequired,
     focusedEvent: PropTypes.number,
@@ -142,14 +146,12 @@ Timelines.propTypes = {
             })
         )
     ).isRequired,
-    replayInstrumentRecordings: PropTypes.func.isRequired,
     setTrackerPosition: PropTypes.func.isRequired,
     trackerPosition: PropTypes.number,
     updateStartTime: PropTypes.func.isRequired,
 };
 
 Timelines.defaultProps = {
-    currentPlayingInstrument: '',
     focusedEvent: null,
     panelFor: null,
     trackerPosition: 0,

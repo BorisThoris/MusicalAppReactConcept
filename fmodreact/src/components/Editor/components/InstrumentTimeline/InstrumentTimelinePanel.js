@@ -13,6 +13,7 @@ const InstrumentTimelinePanel = ({
     groupName,
     replayInstrumentRecordings,
     timelineHeight,
+    toggleMute,
 }) => {
     const onPlay = useCallback(() => {
         replayInstrumentRecordings(groupName);
@@ -23,9 +24,8 @@ const InstrumentTimelinePanel = ({
     }, [deleteAllRecordingsForInstrument, groupName]);
 
     const onMute = useCallback(() => {
-        // eslint-disable-next-line no-alert
-        alert('Mute');
-    }, []);
+        toggleMute(groupName);
+    }, [groupName, toggleMute]);
 
     const icons = [
         { callback: onPlay, icon: '▶' },

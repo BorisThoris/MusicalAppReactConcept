@@ -33,16 +33,23 @@ const SoundEventElement = ({
     isTargeted,
     openPanel,
     recording,
+    setFocusedEvent,
     timelineHeight,
     timelineY,
     updateStartTime,
 }) => {
-    const [hoevered, setIsHovered] = useState(false);
     const { eventInstance, eventLength, id, instrumentName, startTime } =
         recording;
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const lengthBasedWidth = eventLength * pixelToSecondRatio;
     const groupRef = useRef();
+    const [originalZIndex, setOriginalZIndex] = useState(0);
+
+    useEffect(() => {
+        if (groupRef.current) {
+            setOriginalZIndex(groupRef.current.zIndex());
+        }
+    }, []);
 
     const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
     const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
@@ -78,18 +85,19 @@ const SoundEventElement = ({
 
     const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
 
+    const restoreZIndex = useCallback(() => {
+        groupRef.current.setZIndex(originalZIndex);
+        setFocusedEvent(-1);
+    }, [originalZIndex, setFocusedEvent]);
+
     useEffect(() => {
         if (isFocused && groupRef.current) {
             groupRef.current.moveToTop();
         }
-    }, [isFocused]);
+    }, [isFocused, originalZIndex, restoreZIndex]);
 
     return (
         <Group
-            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            onMouseEnter={() => setIsHovered(true)}
-            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            onMouseLeave={() => setIsHovered(false)}
             ref={groupRef}
             key={index}
             x={startingPositionInTimeline}
@@ -101,8 +109,14 @@ const SoundEventElement = ({
             onDragStart={handleDragStart}
         >
             <Rect
+                // eslint-disable-next-line max-len
+                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                onMouseEnter={() => setFocusedEvent(id)}
+                // eslint-disable-next-line max-len
+                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                onMouseLeave={restoreZIndex}
                 x={0}
-                y={isFocused || hoevered ? -4 : 0}
+                y={isFocused ? -4 : 0}
                 width={lengthBasedWidth}
                 height={timelineHeight * 0.8}
                 fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}

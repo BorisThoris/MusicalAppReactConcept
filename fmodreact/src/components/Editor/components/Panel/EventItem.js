@@ -8,6 +8,7 @@ import TimeControlComponent from './TimeControl';
 
 const EventItem = ({
     event,
+    focusedEvent,
     onDelete,
     onPlay,
     setFocusedEvent,
@@ -32,7 +33,6 @@ const EventItem = ({
     const handleDelete = useCallback(() => onDelete(id), [onDelete, id]);
 
     const handleDuplicate = useCallback(() => {
-        console.log(event);
         duplicateEventInstance(event);
     }, [duplicateEventInstance, event]);
 
@@ -40,10 +40,10 @@ const EventItem = ({
         () => onPlay(eventInstance),
         [onPlay, eventInstance]
     );
-    const focusEvent = useCallback(
-        () => setFocusedEvent(id),
-        [id, setFocusedEvent]
-    );
+    const focusEvent = useCallback(() => {
+        console.log(id);
+        setFocusedEvent(id);
+    }, [id, setFocusedEvent]);
 
     const modifyStartTime = useCallback(
         (delta) => {
@@ -58,7 +58,12 @@ const EventItem = ({
     );
 
     return (
-        <div onMouseEnter={focusEvent}>
+        <div
+            onMouseEnter={focusEvent}
+            style={{
+                backgroundColor: focusedEvent === id ? 'red' : 'transparent',
+            }}
+        >
             <EventHeaderComponent
                 onPlay={handlePlay}
                 onDelete={handleDelete}

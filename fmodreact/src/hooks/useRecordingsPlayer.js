@@ -11,11 +11,23 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
         isPlaying: false,
     });
     const [trackerPosition, setTrackerPosition] = useState(0);
+    const [mutedInstruments, setMutedInstruments] = useState([]);
     const { recordings } = useContext(InstrumentRecordingsContext);
 
     const { clearAllTimeouts, setNewTimeout } = usePlayback({
         playbackStatus: playbackStatus.isPlaying,
     });
+
+    const toggleMute = useCallback((instrumentName) => {
+        setMutedInstruments((currentMutedInstruments) => {
+            if (currentMutedInstruments.includes(instrumentName)) {
+                return currentMutedInstruments.filter(
+                    (instr) => instr !== instrumentName
+                );
+            }
+            return [...currentMutedInstruments, instrumentName];
+        });
+    }, []);
 
     const togglePlayback = useCallback(() => {
         setPlaybackStatus((prevStatus) => ({
@@ -38,6 +50,10 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
 
     const playInstrumentRecording = useCallback(
         (instrument) => {
+            if (mutedInstruments.includes(instrument)) {
+                return;
+            }
+
             setPlaybackStatus({
                 currentInstrument: instrument,
                 isPlaying: true,
@@ -53,7 +69,7 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
                 }
             });
         },
-        [recordings, trackerPosition, setNewTimeout]
+        [mutedInstruments, recordings, trackerPosition, setNewTimeout]
     );
 
     const replayAllRecordedSounds = useCallback(() => {
@@ -101,12 +117,14 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
     ]);
 
     return {
+        mutedInstruments,
         playbackStatus,
         playRecordedSounds: togglePlayback,
         replayAllRecordedSounds,
         replayInstrumentRecordings,
         setTrackerPosition,
         stopPlayback,
+        toggleMute,
         trackerPosition,
     };
 };

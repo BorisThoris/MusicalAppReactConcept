@@ -17,9 +17,6 @@ const Panel = ({
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
     const { events, id, startTime: groupStartTime } = panelState.overlapGroup;
 
-    console.log(focusedEvent);
-    console.log(id);
-
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
     const handlePlayEvent = useCallback((eventInstance) => {
@@ -42,16 +39,11 @@ const Panel = ({
     const isMultipleEvents = events.length > 1;
 
     const resetFocusedEvent = useCallback(() => {
-        setFocusedEvent(0);
+        setFocusedEvent(-1);
     }, [setFocusedEvent]);
 
     return (
-        <div
-            onMouseLeave={resetFocusedEvent}
-            style={{
-                backgroundColor: focusedEvent === id ? 'red' : 'transparent',
-            }}
-        >
+        <div onMouseLeave={resetFocusedEvent}>
             <span>Group:</span>
             <FlexContainer>
                 {isMultipleEvents && (
@@ -69,6 +61,7 @@ const Panel = ({
                         event={event}
                         onDelete={onDelete}
                         setFocusedEvent={setFocusedEvent}
+                        focusedEvent={focusedEvent}
                         onPlay={handlePlayEvent}
                         onClose={handleClose}
                         updateStartTime={updateStartTime}

@@ -1,16 +1,26 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+} from 'react';
 import { Layer, Line } from 'react-konva/es/ReactKonvaCore';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 
 const TimelineTracker = ({
     furthestEndTime,
     panelCompensationOffset,
-    setTrackerPosition,
+
     shouldTrack,
-    trackerPosition = 0,
 }) => {
     const trackerRef = useRef();
+
+    const { setTrackerPosition, trackerPosition } = useContext(
+        RecordingsPlayerContext
+    );
 
     const trackerPositionInSec = useMemo(
         () => trackerPosition / pixelToSecondRatio,

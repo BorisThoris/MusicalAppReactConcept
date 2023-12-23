@@ -2,7 +2,6 @@ import React, { useCallback, useContext } from 'react';
 import threeMinuteMs from '../../globalConstants/songLimit';
 import instrumentRecordingOperationsHook from '../../hooks/useInstrumentRecordingsOperations';
 import usePanelStateHook from '../../hooks/usePanelState';
-import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import useStageWidthHook from '../../hooks/useStageWidth';
 import { InstrumentRecordingsContext } from '../../providers/InstrumentsProvider';
 import Header from './components/Header/Header';
@@ -31,16 +30,6 @@ const Editor = () => {
         recordings,
     });
 
-    const {
-        playbackStatus,
-        replayAllRecordedSounds,
-        replayInstrumentRecordings,
-        setTrackerPosition,
-        trackerPosition,
-    } = useRecordingsPlayer({ furthestEndTime, furthestEndTimes });
-
-    const { currentInstrument, isPlaying } = playbackStatus;
-
     const deleteNote = useCallback(
         (id) => {
             deleteRecording(id);
@@ -53,28 +42,20 @@ const Editor = () => {
             <Header />
 
             <StyledTimeline>
-                <button onClick={replayAllRecordedSounds}>
-                    {isPlaying ? 'Pause' : 'Start'}
-                </button>
-
                 <Timelines
                     recordings={overlapGroups}
                     furthestEndTime={furthestEndTime}
-                    isPlaying={isPlaying}
                     duration={threeMinuteMs}
                     openPanel={openPanel}
                     closePanel={closePanel}
                     updateStartTime={updateRecording}
-                    trackerPosition={trackerPosition}
-                    setTrackerPosition={setTrackerPosition}
                     panelFor={panelState?.overlapGroup?.id}
-                    replayInstrumentRecordings={replayInstrumentRecordings}
                     focusedEvent={focusedEvent}
+                    setFocusedEvent={setFocusedEvent}
                     deleteAllRecordingsForInstrument={
                         deleteAllRecordingsForInstrument
                     }
                     furthestEndTimes={furthestEndTimes}
-                    currentPlayingInstrument={currentInstrument}
                 />
 
                 {panelState.isOpen && (

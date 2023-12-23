@@ -26,7 +26,7 @@ const panelReducer = (state, action) => {
 };
 
 const usePanelState = () => {
-    const [focusedEvent, setFocusedEvent] = useState(0);
+    const [focusedEvent, setFocusedEvent] = useState(-1);
     const [state, dispatch] = useReducer(panelReducer, initialState);
     const { index, instrumentName, isOpen, overlapGroup } = state;
     const { overlapGroups } = useContext(InstrumentRecordingsContext);
