@@ -10,7 +10,8 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
         currentInstrument: false,
         isPlaying: false,
     });
-    const [trackerPosition, setTrackerPosition] = useState(0);
+
+    const [trackerPosition, setTrackerPosition] = useState(-0.1);
     const [mutedInstruments, setMutedInstruments] = useState([]);
     const { recordings } = useContext(InstrumentRecordingsContext);
 

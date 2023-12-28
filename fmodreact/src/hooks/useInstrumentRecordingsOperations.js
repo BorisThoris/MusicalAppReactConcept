@@ -29,10 +29,14 @@ const useInstrumentRecordingsOperations = () => {
                     params;
                 const updatedRecordings = { ...prev };
                 const instrumentRecordings = updatedRecordings[instrumentName];
-                const startRounded = parseFloat(newStartTime.toFixed(2));
+
+                const roundedTime = parseFloat(newStartTime.toFixed(2));
+                const startRounded = roundedTime > 0 ? roundedTime : 0.0;
                 const newEndRounded = parseFloat(
                     (startRounded + eventLength).toFixed(2)
                 );
+
+                console.log('update ');
 
                 if (instrumentRecordings) {
                     const targetIndex = instrumentRecordings.findIndex(

@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
@@ -26,118 +27,129 @@ const getDynamicShadowBlur = (isFocused) =>
 const getDynamicColorStops = (isOverlapping) =>
     isOverlapping ? [0, 'red', 1, 'yellow'] : [1, 'red'];
 
-const SoundEventElement = ({
-    index,
-    isFocused,
-    isOverlapping,
-    isTargeted,
-    openPanel,
-    recording,
-    setFocusedEvent,
-    timelineHeight,
-    timelineY,
-    updateStartTime,
-}) => {
-    const { eventInstance, eventLength, id, instrumentName, startTime } =
-        recording;
-    const startingPositionInTimeline = startTime * pixelToSecondRatio;
-    const lengthBasedWidth = eventLength * pixelToSecondRatio;
-    const groupRef = useRef();
-    const [originalZIndex, setOriginalZIndex] = useState(0);
+const SoundEventElement = React.memo(
+    ({
+        index,
+        isFocused,
+        isOverlapping,
+        isTargeted,
+        openPanel,
+        recording,
+        setFocusedEvent,
+        timelineHeight,
+        timelineY,
+        updateStartTime,
+    }) => {
+        const {
+            eventInstance,
+            eventLength,
+            id,
+            instrumentName,
+            name,
+            startTime,
+        } = recording;
 
-    useEffect(() => {
-        if (groupRef.current) {
-            setOriginalZIndex(groupRef.current.zIndex());
-        }
-    }, []);
+        const startingPositionInTimeline = startTime * pixelToSecondRatio;
+        const lengthBasedWidth = eventLength * pixelToSecondRatio;
+        const groupRef = useRef();
+        const [originalZIndex, setOriginalZIndex] = useState(0);
 
-    const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
-    const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
-    const dynamicColorStops = getDynamicColorStops(isOverlapping);
+        useEffect(() => {
+            if (groupRef.current) {
+                setOriginalZIndex(groupRef.current.zIndex());
+            }
+        }, []);
 
-    const handleDragEnd = useCallback(
-        (e) => {
-            const newStartTime = e.target.x() / pixelToSecondRatio;
+        const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
+        const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
+        const dynamicColorStops = getDynamicColorStops(isOverlapping);
 
-            updateStartTime({
-                eventLength,
-                index: id,
-                instrumentName,
-                newStartTime,
-            });
-        },
-        [eventLength, id, instrumentName, updateStartTime]
-    );
+        const handleDragEnd = useCallback(
+            (e) => {
+                const newStartTime = e.target.x() / pixelToSecondRatio;
 
-    const dragBoundFunc = useCallback(
-        (pos) => ({ x: pos.x, y: timelineY }),
-        [timelineY]
-    );
+                updateStartTime({
+                    eventLength,
+                    index: id,
+                    instrumentName,
+                    newStartTime,
+                });
+            },
+            [eventLength, id, instrumentName, updateStartTime]
+        );
 
-    const handleClick = useCallback(() => {
-        if (openPanel) openPanel({ index, instrumentName });
-    }, [openPanel, index, instrumentName]);
+        const dragBoundFunc = useCallback(
+            (pos) => ({
+                x: pos.x - 60 > 0 ? pos.x : 60,
+                y: timelineY,
+            }),
+            [timelineY]
+        );
 
-    const handleDoubleClick = useCallback(
-        () => playEventInstance(eventInstance),
-        [eventInstance]
-    );
+        const handleClick = useCallback(() => {
+            if (openPanel) openPanel({ index, instrumentName });
+        }, [openPanel, index, instrumentName]);
 
-    const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
+        const handleDoubleClick = useCallback(
+            () => playEventInstance(eventInstance),
+            [eventInstance]
+        );
 
-    const restoreZIndex = useCallback(() => {
-        groupRef.current.setZIndex(originalZIndex);
-        setFocusedEvent(-1);
-    }, [originalZIndex, setFocusedEvent]);
+        const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
 
-    useEffect(() => {
-        if (isFocused && groupRef.current) {
-            groupRef.current.moveToTop();
-        }
-    }, [isFocused, originalZIndex, restoreZIndex]);
+        const restoreZIndex = useCallback(() => {
+            groupRef.current.setZIndex(originalZIndex);
+            setFocusedEvent(-1);
+        }, [originalZIndex, setFocusedEvent]);
 
-    return (
-        <Group
-            ref={groupRef}
-            key={index}
-            x={startingPositionInTimeline}
-            draggable
-            dragBoundFunc={dragBoundFunc}
-            onDragEnd={handleDragEnd}
-            onClick={handleClick}
-            onDblClick={handleDoubleClick}
-            onDragStart={handleDragStart}
-        >
-            <Rect
-                // eslint-disable-next-line max-len
-                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                onMouseEnter={() => setFocusedEvent(id)}
-                // eslint-disable-next-line max-len
-                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                onMouseLeave={restoreZIndex}
-                x={0}
-                y={isFocused ? -4 : 0}
-                width={lengthBasedWidth}
-                height={timelineHeight * 0.8}
-                fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
-                fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
-                fillLinearGradientColorStops={dynamicColorStops}
-                stroke={dynamicStroke}
-                strokeWidth={CONSTANTS.STROKE_WIDTH}
-                cornerRadius={CONSTANTS.CORNER_RADIUS}
-                shadowOffset={CONSTANTS.SHADOW.OFFSET}
-                shadowBlur={dynamicShadowBlur}
-                shadowOpacity={CONSTANTS.SHADOW.OPACITY}
-                opacity={CONSTANTS.TRANSPARENCY_VALUE}
-            />
-            <Text
-                {...CONSTANTS.TEXT_STYLE}
-                text={instrumentName}
-                opacity={CONSTANTS.TRANSPARENCY_VALUE}
-            />
-        </Group>
-    );
-};
+        useEffect(() => {
+            if (isFocused && groupRef.current) {
+                groupRef.current.moveToTop();
+            }
+        }, [isFocused, originalZIndex, restoreZIndex]);
+
+        return (
+            <Group
+                ref={groupRef}
+                key={index}
+                x={startingPositionInTimeline}
+                draggable
+                dragBoundFunc={dragBoundFunc}
+                onDragEnd={handleDragEnd}
+                onClick={handleClick}
+                onDblClick={handleDoubleClick}
+                onDragStart={handleDragStart}
+            >
+                <Rect
+                    // eslint-disable-next-line max-len
+                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                    onMouseEnter={() => setFocusedEvent(id)}
+                    onMouseLeave={restoreZIndex}
+                    x={0}
+                    y={isFocused ? -4 : 0}
+                    width={lengthBasedWidth}
+                    height={timelineHeight * 0.8}
+                    fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
+                    fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
+                    fillLinearGradientColorStops={dynamicColorStops}
+                    stroke={dynamicStroke}
+                    strokeWidth={CONSTANTS.STROKE_WIDTH}
+                    cornerRadius={CONSTANTS.CORNER_RADIUS}
+                    shadowOffset={CONSTANTS.SHADOW.OFFSET}
+                    shadowBlur={dynamicShadowBlur}
+                    shadowOpacity={CONSTANTS.SHADOW.OPACITY}
+                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
+                />
+                <Text
+                    {...CONSTANTS.TEXT_STYLE}
+                    text={name}
+                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
+                />
+            </Group>
+        );
+    },
+    isEqual
+);
 
 SoundEventElement.propTypes = {
     index: PropTypes.number.isRequired,

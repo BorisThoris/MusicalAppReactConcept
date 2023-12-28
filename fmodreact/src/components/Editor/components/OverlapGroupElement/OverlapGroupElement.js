@@ -56,8 +56,6 @@ const OverlapGroupElement = React.memo(
             [timelineY]
         );
 
-        console.log(events);
-
         return (
             <Fragment>
                 <Group

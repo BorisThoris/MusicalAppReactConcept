@@ -35,9 +35,6 @@ export const getEventInstanceParamaters = (eventInstance) => {
 export const createEventInstance = (eventPath) => {
     showAlertIfSystemNotInitialized();
 
-    console.log('event path');
-    console.log(eventPath);
-
     const eventDescription = {};
     CHECK_RESULT(gSystem.getEvent(`event:/${eventPath}`, eventDescription));
 
@@ -75,9 +72,6 @@ export const playEventInstance = (passedEventInstance) => {
 export const createAndPlayEventIntance = (eventPath) => {
     showAlertIfSystemNotInitialized();
 
-    console.clear();
-    console.log(eventPath);
-
     const eventInstance = createEventInstance(eventPath);
     if (eventInstance) playEventInstance(eventInstance);
 
@@ -110,6 +104,13 @@ export const getEventPath = (eventInstance) => {
 
     const parts = pathBuffer.val.split('event:/');
     return parts.length > 1 ? parts[1] : '';
+};
+
+export const getEventName = (eventInstance) => {
+    const path = getEventPath(eventInstance);
+    const pathParths = path.split('/');
+
+    return pathParths[pathParths.length - 1];
 };
 
 /**

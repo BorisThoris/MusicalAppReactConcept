@@ -41,7 +41,6 @@ const EventItem = ({
         [onPlay, eventInstance]
     );
     const focusEvent = useCallback(() => {
-        console.log(id);
         setFocusedEvent(id);
     }, [id, setFocusedEvent]);
 

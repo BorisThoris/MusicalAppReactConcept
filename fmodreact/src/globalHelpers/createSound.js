@@ -1,4 +1,7 @@
-import { getEventInstanceLength } from '../fmodLogic/eventInstanceHelpers';
+import {
+    getEventInstanceLength,
+    getEventName,
+} from '../fmodLogic/eventInstanceHelpers';
 
 const createSound = ({
     eventInstance,
@@ -8,6 +11,7 @@ const createSound = ({
 }) => {
     const eventLength = getEventInstanceLength(eventInstance);
     const endTime = startTime + eventLength;
+    const name = getEventName(eventInstance);
 
     return {
         endTime: parseFloat(endTime.toFixed(2)),
@@ -16,6 +20,7 @@ const createSound = ({
         eventPath,
         id: eventInstance.$$.ptr,
         instrumentName,
+        name,
         startTime: parseFloat(startTime.toFixed(2)),
     };
 };
