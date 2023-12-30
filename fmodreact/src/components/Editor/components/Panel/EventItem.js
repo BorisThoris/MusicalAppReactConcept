@@ -20,15 +20,11 @@ const EventItem = ({
         eventLength,
         id,
         instrumentName,
+        params,
         startTime,
     } = event;
 
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();
-
-    const params = useMemo(
-        () => getEventInstanceParamaters(eventInstance),
-        [eventInstance]
-    );
 
     const handleDelete = useCallback(() => onDelete(id), [onDelete, id]);
 
@@ -79,6 +75,7 @@ const EventItem = ({
                 <ParameterControlComponent
                     key={param.name}
                     param={param}
+                    eventId={id}
                     eventInstance={eventInstance}
                 />
             ))}

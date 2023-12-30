@@ -134,6 +134,7 @@ export const InstrumentRecordingsProvider = ({ children }) => {
                             eventInstance,
                             eventPath: recording.eventPath || 'Drum/Snare',
                             instrumentName,
+                            passedParams: recording.params,
                             startTime: recording.startTime,
                         });
                     }

@@ -7,7 +7,7 @@ import createSound from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 
-const useInstrumentRecordingsOperations = () => {
+export const useInstrumentRecordingsOperations = () => {
     const { overlapGroups, setRecordings } = useContext(
         InstrumentRecordingsContext
     );
@@ -18,6 +18,36 @@ const useInstrumentRecordingsOperations = () => {
                 ...prev,
                 [instrumentName]: [],
             }));
+        },
+        [setRecordings]
+    );
+
+    const updateRecordingParams = useCallback(
+        (id, updatedParam) => {
+            setRecordings((prevRecordings) => {
+                const updatedRecordings = { ...prevRecordings };
+                Object.keys(updatedRecordings).forEach((instrumentName) => {
+                    const recordings = updatedRecordings[instrumentName];
+                    const recordingIndex = recordings.findIndex(
+                        (recording) => recording.id === id
+                    );
+
+                    if (recordingIndex !== -1) {
+                        // Find the parameter to update within the recording
+                        const paramIndex = recordings[
+                            recordingIndex
+                        ].params.findIndex(
+                            (param) => param.name === updatedParam.name
+                        );
+                        if (paramIndex !== -1) {
+                            // Update only the targeted parameter
+                            recordings[recordingIndex].params[paramIndex] =
+                                updatedParam;
+                        }
+                    }
+                });
+                return updatedRecordings;
+            });
         },
         [setRecordings]
     );
@@ -192,6 +222,7 @@ const useInstrumentRecordingsOperations = () => {
         duplicateEventInstance,
         resetRecordings,
         updateRecording,
+        updateRecordingParams,
     };
 };
 

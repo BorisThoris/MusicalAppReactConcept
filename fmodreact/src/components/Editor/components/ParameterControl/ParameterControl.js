@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React from 'react';
 import useParameter from '../../../../hooks/useParameter';
@@ -8,11 +9,12 @@ import {
     SliderInput,
 } from './ParameterControl.styles';
 
-const ParameterControl = ({ eventInstance, param }) => {
-    const [paramDetails, handleParamChange] = useParameter(
+const ParameterControl = React.memo(({ eventId, eventInstance, param }) => {
+    const [paramDetails, handleParamChange] = useParameter({
+        eventId,
         eventInstance,
-        param
-    );
+        param,
+    });
 
     return (
         <ControlWrapper>
@@ -29,7 +31,7 @@ const ParameterControl = ({ eventInstance, param }) => {
             />
         </ControlWrapper>
     );
-};
+}, isEqual);
 
 ParameterControl.propTypes = {
     eventInstance: PropTypes.object.isRequired,

@@ -2,7 +2,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable max-len */
 /* eslint-disable no-alert */
-import { CHECK_RESULT, gSystem } from './index';
+import { CHECK_RESULT, FMOD, gSystem } from './index';
 
 const showAlertIfSystemNotInitialized = () => {
     if (!gSystem) window.alert("FMOD system hasn't been initialized yet.");
@@ -42,6 +42,22 @@ export const createEventInstance = (eventPath) => {
     CHECK_RESULT(eventDescription.val.createInstance(eventInstance));
 
     return eventInstance.val;
+};
+
+export const stopAllPlayback = () => {
+    showAlertIfSystemNotInitialized();
+
+    // Get a reference to the master bus
+    const masterBus = {};
+    CHECK_RESULT(gSystem.getBus('bus:/', masterBus));
+
+    if (!masterBus.val) {
+        window.alert('Failed to get master bus.');
+        return;
+    }
+
+    // Stop all events on the master bus
+    CHECK_RESULT(masterBus.val.stopAllEvents(FMOD.STUDIO_STOP_IMMEDIATE));
 };
 
 export const getEventInstanceLength = (eventInstance) => {

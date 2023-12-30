@@ -1,55 +1,48 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 
-const withValidation = (useParameterHook) => (eventInstance, param) => {
-    const [paramDetails, handleParamChange] = useParameterHook(
-        eventInstance,
-        param
-    );
+const withValidation =
+    (useParameterHook) =>
+    ({ eventId, eventInstance, param }) => {
+        const [paramDetails, handleParamChange] = useParameterHook({
+            eventId,
+            eventInstance,
+            paramData: param,
+        });
 
-    if (
-        !paramDetails ||
-        typeof paramDetails.paramValue !== 'number' ||
-        typeof paramDetails.paramMin !== 'number' ||
-        typeof paramDetails.paramMax !== 'number'
-    ) {
-        console.error(
-            'Validation Failed: Invalid paramDetails object returned by the useParameter hook.'
-        );
-    }
+        // Validate paramDetails structure
+        if (
+            !paramDetails ||
+            typeof paramDetails.paramValue !== 'number' ||
+            typeof paramDetails.paramMin !== 'number' ||
+            typeof paramDetails.paramMax !== 'number'
+        ) {
+            console.error(
+                'Validation Failed: Invalid paramDetails object returned by the useParameter hook.'
+            );
+        }
 
-    if (typeof handleParamChange !== 'function') {
-        console.error(
-            'Validation Failed: handleParamChange should be a function.'
-        );
-    }
+        if (typeof handleParamChange !== 'function') {
+            console.error(
+                'Validation Failed: handleParamChange should be a function.'
+            );
+        }
 
-    return [paramDetails, handleParamChange];
-};
+        return [paramDetails, handleParamChange];
+    };
 
-const useParameter = (eventInstance, param) => {
+const useParameter = ({ eventId, eventInstance, paramData }) => {
+    const { updateRecordingParams } = useInstrumentRecordingsOperations();
+
+    const { param, value } = paramData;
+
     const { maximum: max, minimum: min, name: paramName } = param;
+
     const [paramDetails, setParamDetails] = useState({
         paramMax: max,
         paramMin: min,
-        paramValue: 0,
+        paramValue: value || 0,
     });
-
-    useEffect(() => {
-        if (eventInstance && paramName) {
-            const paramValueObj = {};
-            eventInstance.getParameterByName(paramName, paramValueObj, {});
-
-            const validatedValue = Math.min(
-                Math.max(paramValueObj.val, min),
-                max
-            );
-            setParamDetails({
-                paramMax: max,
-                paramMin: min,
-                paramValue: validatedValue,
-            });
-        }
-    }, [eventInstance, paramName, min, max]);
 
     const handleParamChange = useCallback(
         (event) => {
@@ -61,8 +54,18 @@ const useParameter = (eventInstance, param) => {
                 ...prevDetails,
                 paramValue: newValue,
             }));
+
+            updateRecordingParams(eventId, { ...paramData, value: newValue });
         },
-        [eventInstance, paramName, min, max]
+        [
+            min,
+            max,
+            eventInstance,
+            paramName,
+            updateRecordingParams,
+            eventId,
+            paramData,
+        ]
     );
 
     return [paramDetails, handleParamChange];

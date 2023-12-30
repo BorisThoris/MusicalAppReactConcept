@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
+import { stopAllPlayback } from '../fmodLogic/eventInstanceHelpers';
 
 const usePlayback = ({ playbackStatus }) => {
     const [timeouts, setTimeouts] = useState([]);
 
     const clearAllTimeouts = useCallback(() => {
         timeouts.forEach(clearTimeout);
-
         setTimeouts([]);
+
+        stopAllPlayback();
     }, [timeouts]);
 
     const setNewTimeout = useCallback((callback, delay) => {
