@@ -4,7 +4,7 @@ import { createGroupFromEvent } from './EventUtility';
 export const filterOutOverlappedGroups = (groups, overlapped) =>
     groups.filter((group) => !overlapped.includes(group));
 
-export const mergeGroupWithOverlaps = (group, overlapGroup) => {
+export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
     group.startTime = Math.min(group.startTime, overlapGroup.startTime);
     group.endTime = Math.max(group.endTime, overlapGroup.endTime);
     overlapGroup.events?.forEach((event) => {
@@ -40,7 +40,10 @@ export const combineOverlappingGroups = (groups, tree) => {
         for (let i = 0; i < groups.length; i += 1) {
             for (let j = i + 1; j < groups.length; j += 1) {
                 if (doGroupsOverlap(groups[i], groups[j])) {
-                    mergeGroupWithOverlaps(groups[i], groups[j]);
+                    mergeGroupWithOverlaps({
+                        group: groups[i],
+                        overlapGroup: groups[j],
+                    });
 
                     tree.remove(
                         [groups[j].startTime, groups[j].endTime],
@@ -83,7 +86,10 @@ export const mergeOverlappingEvents = (event, overlaps, groups, tree) => {
     const mergedGroup = createGroupFromEvent(event);
 
     overlaps.forEach((overlapGroup) => {
-        mergeGroupWithOverlaps(mergedGroup, overlapGroup);
+        mergeGroupWithOverlaps({
+            group: mergedGroup,
+            overlapGroup,
+        });
     });
 
     mergedGroup.events = Array.from(new Set(mergedGroup.events));
@@ -95,12 +101,14 @@ export const mergeOverlappingEvents = (event, overlaps, groups, tree) => {
 
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 
-    const newGroups = combineOverlappingGroups(tree.values, tree);
+    // const newGroups = combineOverlappingGroups(tree.values, tree);
 
-    groups = filterOutOverlappedGroups(groups, tree.values);
+    // groups = filterOutOverlappedGroups(groups, tree.values);
     if (!groups.some((group) => group.id === mergedGroup.id)) {
         groups.push(mergedGroup);
     }
+
+    groups = combineOverlappingGroups(groups, tree);
 
     console.log(groups);
 };
