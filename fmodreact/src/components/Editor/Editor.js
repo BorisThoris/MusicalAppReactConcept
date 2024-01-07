@@ -24,7 +24,7 @@ const Editor = () => {
     );
 
     const { closePanel, focusedEvent, openPanel, panelState, setFocusedEvent } =
-        usePanelStateHook();
+        usePanelStateHook({ overlapGroups });
 
     const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
         recordings,

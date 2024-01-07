@@ -1,7 +1,9 @@
+import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { Fragment, useCallback } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 const GROUP_COLOR = 'blue';
@@ -10,6 +12,7 @@ const GROUP_STROKE_WIDTH = 4;
 const GROUP_TEXT = 'Overlapping Events';
 const TEXT_OFFSET_X = 10;
 const TEXT_OFFSET_Y = 20;
+const LOCK_OFFSET_Y = -10;
 const TEXT_FONT_SIZE = 18;
 
 const OverlapGroupElement = React.memo(
@@ -24,7 +27,11 @@ const OverlapGroupElement = React.memo(
         timelineY,
         updateStartTime,
     }) => {
-        const { endTime, events, instrumentName, startTime } = groupData;
+        const { lockOverlapGroupById } = useInstrumentRecordingsOperations();
+
+        const { endTime, events, id, instrumentName, locked, startTime } =
+            groupData;
+
         const startingPositionInTimeline = startTime * pixelToSecondRatio;
         const groupWidth = (endTime - startTime) * pixelToSecondRatio;
 
@@ -55,6 +62,10 @@ const OverlapGroupElement = React.memo(
             (pos) => ({ x: pos.x, y: timelineY }),
             [timelineY]
         );
+
+        const onLockOverlapGroup = useCallback(() => {
+            lockOverlapGroupById({ groupId: id });
+        }, [id, lockOverlapGroupById]);
 
         return (
             <Fragment>
@@ -97,9 +108,19 @@ const OverlapGroupElement = React.memo(
                         />
                     ))}
                 </Group>
+
+                <Text
+                    onClick={onLockOverlapGroup}
+                    x={startingPositionInTimeline - 10}
+                    y={LOCK_OFFSET_Y}
+                    text={locked ? '🔒' : '✔️'}
+                    fontSize={TEXT_FONT_SIZE}
+                    fill="white"
+                />
             </Fragment>
         );
-    }
+    },
+    isEqual
 );
 
 OverlapGroupElement.propTypes = {

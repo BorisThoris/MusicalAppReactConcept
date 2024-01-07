@@ -6,9 +6,7 @@ import { InstrumentRecordingsContext } from './InstrumentsProvider';
 export const RecordingsPlayerContext = React.createContext(null);
 
 export const RecordingsPlayerProvider = ({ children }) => {
-    const { overlapGroups, recordings } = useContext(
-        InstrumentRecordingsContext
-    );
+    const { recordings } = useContext(InstrumentRecordingsContext);
 
     const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
         recordings,

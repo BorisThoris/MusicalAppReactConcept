@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { useCallback, useContext } from 'react';
 import {
     createEventInstance,
@@ -8,7 +9,7 @@ import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { overlapGroups, setRecordings } = useContext(
+    const { overlapGroups, setOverlapGroups, setRecordings } = useContext(
         InstrumentRecordingsContext
     );
 
@@ -66,8 +67,6 @@ export const useInstrumentRecordingsOperations = () => {
                     (startRounded + eventLength).toFixed(2)
                 );
 
-                console.log('update ');
-
                 if (instrumentRecordings) {
                     const targetIndex = instrumentRecordings.findIndex(
                         (item) => item.id === index
@@ -86,6 +85,46 @@ export const useInstrumentRecordingsOperations = () => {
             });
         },
         [setRecordings]
+    );
+
+    const updateOverlapGroupTimes = useCallback(
+        (groupId, newStartTime, newEndTime) => {
+            setOverlapGroups((prevGroups) => {
+                const updatedGroups = { ...prevGroups };
+                Object.keys(updatedGroups).forEach((instrument) => {
+                    updatedGroups[instrument] = updatedGroups[instrument].map(
+                        (group) => {
+                            if (group.id === groupId) {
+                                // Calculate the time shift
+                                const timeShift =
+                                    newStartTime - group.startTime;
+
+                                // Update group times
+                                const updatedGroup = {
+                                    ...group,
+                                    endTime: newEndTime,
+                                    startTime: newStartTime,
+                                };
+
+                                // Apply the time shift to each event
+                                updatedGroup.events = updatedGroup.events.map(
+                                    (event) => ({
+                                        ...event,
+                                        endTime: event.endTime + timeShift,
+                                        startTime: event.startTime + timeShift,
+                                    })
+                                );
+
+                                return updatedGroup;
+                            }
+                            return group;
+                        }
+                    );
+                });
+                return updatedGroups;
+            });
+        },
+        [setOverlapGroups]
     );
 
     const deleteEventInstance = useCallback(
@@ -196,6 +235,35 @@ export const useInstrumentRecordingsOperations = () => {
         });
     };
 
+    const lockOverlapGroupById = useCallback(
+        ({ groupId }) => {
+            setOverlapGroups((prevGroups) => {
+                const updatedGroups = { ...prevGroups };
+                Object.keys(updatedGroups).forEach((instrument) => {
+                    updatedGroups[instrument] = updatedGroups[instrument].map(
+                        (group) => {
+                            if (group.id === groupId) {
+                                return { ...group, locked: !group.locked };
+                            }
+                            return group;
+                        }
+                    );
+                });
+                return updatedGroups;
+            });
+        },
+        [setOverlapGroups]
+    );
+
+    const duplicateEventInstances = useCallback(
+        ({ events }) => {
+            events.forEach((event) => {
+                duplicateEventInstance(event);
+            });
+        },
+        [duplicateEventInstance]
+    );
+
     const updateRecording = useCallback(
         (params) => {
             updateRecordingStartTime(params);
@@ -220,7 +288,10 @@ export const useInstrumentRecordingsOperations = () => {
         deleteOverlappingGroupById,
         deleteRecording,
         duplicateEventInstance,
+        duplicateEventInstances,
+        lockOverlapGroupById,
         resetRecordings,
+        updateOverlapGroupTimes,
         updateRecording,
         updateRecordingParams,
     };

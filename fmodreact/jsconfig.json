@@ -6,13 +6,15 @@
         "experimentalDecorators": true,
         "allowJs": true,
         "outDir": "./dist",
-        "checkJs": false,
+        "checkJs": true,
         "jsx": "react",
         "esModuleInterop": true
     },
     "include": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
+        "src/*.js",
+        "src/*.jsx",
+        "src/**/*.js",
+        "src/**/*.jsx",
         "src/App.js",
         "src/index.js"
     ]

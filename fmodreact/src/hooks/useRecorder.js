@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
-import useInstrumentRecordingsOperations from './useInstrumentRecordingsOperations';
+import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 

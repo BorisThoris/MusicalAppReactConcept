@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
@@ -14,14 +15,17 @@ const Panel = ({
     setFocusedEvent,
     updateStartTime,
 }) => {
+    const { duplicateEventInstances } = useInstrumentRecordingsOperations();
+
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
     const { events, id, startTime: groupStartTime } = panelState.overlapGroup;
 
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
-    const handlePlayEvent = useCallback((eventInstance) => {
-        playEventInstance(eventInstance);
-    }, []);
+    const handlePlayEvent = useCallback(
+        (eventInstance) => playEventInstance(eventInstance),
+        []
+    );
 
     const handleReplayEvents = useCallback(() => {
         events.forEach((event) => {
@@ -32,15 +36,23 @@ const Panel = ({
         });
     }, [events, groupStartTime, setNewTimeout]);
 
-    const deleteOverlapGroup = useCallback(() => {
-        onDeleteGroup(id);
-    }, [id, onDeleteGroup]);
+    const deleteOverlapGroup = useCallback(
+        () => onDeleteGroup(id),
+        [id, onDeleteGroup]
+    );
 
     const isMultipleEvents = events.length > 1;
 
-    const resetFocusedEvent = useCallback(() => {
-        setFocusedEvent(-1);
-    }, [setFocusedEvent]);
+    const resetFocusedEvent = useCallback(
+        () => setFocusedEvent(-1),
+        [setFocusedEvent]
+    );
+
+    const onDuplicateGroup = useCallback(
+        () =>
+            duplicateEventInstances({ events: panelState.overlapGroup.events }),
+        [duplicateEventInstances, panelState.overlapGroup]
+    );
 
     return (
         <div onMouseLeave={resetFocusedEvent}>
@@ -50,6 +62,7 @@ const Panel = ({
                     <>
                         <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
                         <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
+                        <button onClick={onDuplicateGroup}>LOL TEST</button>
                     </>
                 )}
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
