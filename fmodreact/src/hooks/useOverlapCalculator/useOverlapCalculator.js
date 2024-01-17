@@ -1,7 +1,7 @@
-/* eslint-disable no-param-reassign */
-// useOverlapCalculator.js
-import IntervalTree from '@flatten-js/interval-tree';
+import { isEmpty, reduce, uniqBy } from 'lodash';
+import { useCallback, useMemo } from 'react';
 import {
+    combineOverlappingGroups,
     handleNonOverlappingEvent,
     mergeOverlappingEvents,
 } from './GroupUtility';
@@ -11,51 +11,87 @@ import {
 } from './IntervalTreeUtility';
 
 const useOverlapCalculator = (recordings, prevOverlapGroups) => {
-    const initializeOverlapGroups = (prevGroups) =>
-        prevGroups ? [...prevGroups] : [];
+    const initializedOverlapGroups = useMemo(
+        () => prevOverlapGroups || {},
+        [prevOverlapGroups]
+    );
 
-    const processEvents = (events, tree) => {
-        const groups = [];
-        events.forEach((event) => {
-            const interval = [event.startTime, event.endTime];
-            const overlaps = findOverlappingGroups(event, tree);
+    const processEvents = useCallback(
+        ({ overlapTree, recordingsForInstrument }) => {
+            return reduce(
+                recordingsForInstrument,
+                (accGroups, recording) => {
+                    const interval = [recording.startTime, recording.endTime];
 
-            if (overlaps.length === 0) {
-                handleNonOverlappingEvent(event, interval, groups, tree);
-            }
+                    const overlaps = findOverlappingGroups(
+                        recording,
+                        overlapTree
+                    );
 
-            mergeOverlappingEvents(event, overlaps, groups, tree);
-        });
-        return groups;
-    };
+                    if (isEmpty(overlaps)) {
+                        const test = [
+                            ...accGroups,
+                            handleNonOverlappingEvent({
+                                interval,
+                                overlapTree,
+                                recording,
+                            }),
+                        ];
 
-    const processOverlapCalculations = (recordingData, prevGroups) => {
-        const groups = new Set(initializeOverlapGroups(prevGroups));
-        const tree = new IntervalTree();
-        const eventSet = new Set();
+                        return uniqBy(test, (e) => {
+                            return e.id;
+                        });
+                    }
 
-        insertGroupsIntoTree(groups, tree, eventSet);
-        const newGroups = processEvents(recordingData, tree);
+                    const updatedGroups = mergeOverlappingEvents({
+                        event: recording,
+                        groups: accGroups,
+                        overlaps,
+                        recordings: recordingsForInstrument,
+                        tree: overlapTree,
+                    });
 
-        newGroups.forEach((group) => groups.add(group));
-        return Array.from(groups).sort((a, b) => a.startTime - b.startTime);
-    };
-
-    const calculateOverlaps = () => {
-        return processOverlapCalculations(recordings, prevOverlapGroups);
-    };
-
-    const calculateOverlapsForAllInstruments = () => {
-        const allGroups = {};
-        Object.keys(recordings).forEach((instrument) => {
-            allGroups[instrument] = processOverlapCalculations(
-                recordings[instrument],
-                prevOverlapGroups ? prevOverlapGroups[instrument] : []
+                    return combineOverlappingGroups(updatedGroups, overlapTree);
+                },
+                []
             );
-        });
+        },
+        []
+    );
 
-        return allGroups;
-    };
+    const processOverlapCalculations = useCallback(
+        (instrument) => {
+            const recordingsForInstrument = recordings[instrument];
+
+            const initialOverlapGroups = new Set(
+                initializedOverlapGroups[instrument] || []
+            );
+
+            const { tree } = insertGroupsIntoTree({ initialOverlapGroups });
+
+            const processedGroups = processEvents({
+                overlapTree: tree,
+                recordingsForInstrument,
+            });
+
+            const mergedGroups = new Set([...processedGroups]);
+
+            return Array.from(mergedGroups);
+        },
+        [initializedOverlapGroups, processEvents, recordings]
+    );
+
+    const calculateOverlaps = useCallback(() => {
+        const instrument = Object.keys(recordings)[0];
+        return processOverlapCalculations(instrument);
+    }, [recordings, processOverlapCalculations]);
+
+    const calculateOverlapsForAllInstruments = useCallback(() => {
+        return Object.keys(recordings).reduce((acc, instrument) => {
+            acc[instrument] = processOverlapCalculations(instrument);
+            return acc;
+        }, {});
+    }, [recordings, processOverlapCalculations]);
 
     return { calculateOverlaps, calculateOverlapsForAllInstruments };
 };

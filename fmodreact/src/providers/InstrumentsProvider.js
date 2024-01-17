@@ -22,31 +22,28 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [recordings, setRecordings] = useState({});
     const [overlapGroups, setOverlapGroups] = useState({});
     const prevOverlapGroupsRef = useRef({});
-    const prevRecordings = useRef();
+
     const [localLoaded, setLocalLoaded] = useState(false);
 
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(
         recordings,
-        prevOverlapGroupsRef
+        overlapGroups
     );
 
     useEffect(() => {
-        const newRecs = cloneDeep(recordings);
-        const isRecordingsChanged = !isEqual(newRecs, prevRecordings.current);
+        prevOverlapGroupsRef.current = overlapGroups;
+    }, [overlapGroups]);
 
-        if (isRecordingsChanged) {
-            const newOverlapGroups = calculateOverlapsForAllInstruments();
-            const isOverlapGroupsChanged = !isEqual(
-                newOverlapGroups,
-                prevOverlapGroupsRef.current
-            );
+    useEffect(() => {
+        const newOverlapGroups = calculateOverlapsForAllInstruments();
+        const isOverlapGroupsChanged = !isEqual(
+            newOverlapGroups,
+            prevOverlapGroupsRef.current
+        );
 
-            if (isOverlapGroupsChanged) {
-                setOverlapGroups(newOverlapGroups);
-                prevOverlapGroupsRef.current = newOverlapGroups;
-            }
-
-            prevRecordings.current = newRecs;
+        if (isOverlapGroupsChanged) {
+            setOverlapGroups(newOverlapGroups);
+            prevOverlapGroupsRef.current = newOverlapGroups;
         }
     }, [recordings, calculateOverlapsForAllInstruments]);
 

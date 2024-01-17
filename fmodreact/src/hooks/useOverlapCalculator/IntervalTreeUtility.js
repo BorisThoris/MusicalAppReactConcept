@@ -1,9 +1,39 @@
-export const insertGroupsIntoTree = (groups, tree, eventSet) => {
-    groups.forEach((group) => {
-        tree.insert([group.startTime, group.endTime], group);
-        group.events.forEach((event) => eventSet.add(event));
-    });
+import IntervalTree from '@flatten-js/interval-tree';
+import { find } from 'lodash';
+
+export const notInTree = ({ interval, item, overlapTree }) => {
+    const { items } = overlapTree;
+    return !find(items, { key: interval, value: item });
 };
 
-export const findOverlappingGroups = (event, tree) =>
-    tree.search([event.startTime, event.endTime]);
+export const insertGroupsIntoTree = ({ initialOverlapGroups }) => {
+    const tree = new IntervalTree();
+
+    initialOverlapGroups.forEach((group) => {
+        const currentGroupConstaints = [group.startTime, group.endTime];
+        tree.insert(currentGroupConstaints, group);
+    });
+
+    return { tree };
+};
+
+export const findOverlappingGroups = (recording, overlapTree) => {
+    const doGroupsOverlap = (group1, group2) =>
+        group1.endTime >= group2.startTime &&
+        group2.endTime >= group1.startTime;
+
+    const overlaps = [];
+
+    overlapTree.forEach((key, overlapGroup) => {
+        const groupConstraints = { endTime: key.high, startTime: key.low };
+
+        const groupsOverlap = doGroupsOverlap(groupConstraints, recording);
+        const notLocked = !overlapGroup.locked && !recording.locked;
+
+        if (groupsOverlap && overlapGroup.id !== recording.id) {
+            overlaps.push(key);
+        }
+    });
+
+    return overlaps;
+};
