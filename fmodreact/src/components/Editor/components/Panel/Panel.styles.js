@@ -1,4 +1,16 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+const flexCenter = css`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const hoverEffect = css`
+    &:hover {
+        transform: scale(1.1);
+    }
+`;
 
 export const TimelineContainer = styled.div`
     border: 1px solid black;
@@ -9,36 +21,31 @@ export const TimelineContainer = styled.div`
 `;
 
 export const Header = styled.div`
-    display: flex;
+    ${flexCenter};
     justify-content: space-between;
-    align-items: center;
     padding: 5px;
 `;
 
-export const PressableIcon = styled.button`
+const basePressableIcon = css`
     width: 30px;
     height: 20px;
     margin-right: 10px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    ${flexCenter};
+`;
+
+export const PressableIcon = styled.button`
+    ${basePressableIcon}
 `;
 
 export const PlayIcon = styled(PressableIcon)`
     background-color: green;
-
-    &:hover {
-        transform: scale(1.1);
-    }
+    ${hoverEffect};
 `;
 
 export const CopyIcon = styled(PressableIcon)`
     background-color: green;
-
-    &:hover {
-        transform: scale(1.1);
-    }
+    ${hoverEffect};
 `;
 
 export const FlexContainer = styled.div`
@@ -48,10 +55,13 @@ export const FlexContainer = styled.div`
 export const TrashIcon = styled(PressableIcon)`
     background-color: #f5f5f5;
     border: 1px solid black;
+    ${hoverEffect};
+`;
 
-    &:hover {
-        transform: scale(1.1);
-    }
+export const DuplicateIcon = styled(PressableIcon)`
+    background-color: #f5f5f5;
+    border: 1px solid black;
+    ${hoverEffect};
 `;
 
 export const CloseIcon = styled(PressableIcon)`
@@ -59,7 +69,7 @@ export const CloseIcon = styled(PressableIcon)`
 `;
 
 export const Timeline = styled.div`
-    display: flex;
+    ${flexCenter};
     flex-direction: column;
     gap: 10px;
     padding: 10px 0;
@@ -67,7 +77,7 @@ export const Timeline = styled.div`
 `;
 
 export const TimeMarker = styled.div`
-    display: flex;
+    ${flexCenter};
     justify-content: space-between;
     flex-direction: column;
     font-weight: bold;

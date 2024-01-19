@@ -26,9 +26,7 @@ export const findOverlappingGroups = (recording, overlapTree) => {
 
     overlapTree.forEach((key, overlapGroup) => {
         const groupConstraints = { endTime: key.high, startTime: key.low };
-
         const groupsOverlap = doGroupsOverlap(groupConstraints, recording);
-        const notLocked = !overlapGroup.locked && !recording.locked;
 
         if (groupsOverlap && overlapGroup.id !== recording.id) {
             overlaps.push(key);

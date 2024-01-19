@@ -7,9 +7,9 @@ export const isExactMatch = (event, eventSet) =>
     );
 
 export const createGroupFromEvent = (event, foundEvent) => {
-    const test = foundEvent?.value;
+    const existingEvent = foundEvent?.value;
 
-    if (!test)
+    if (!existingEvent) {
         return {
             endTime: event.endTime,
             events: [event],
@@ -19,6 +19,7 @@ export const createGroupFromEvent = (event, foundEvent) => {
             locked: event.locked,
             startTime: event.startTime,
         };
+    }
 
-    return test;
+    return existingEvent;
 };

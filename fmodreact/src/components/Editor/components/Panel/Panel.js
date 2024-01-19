@@ -4,7 +4,13 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
-import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
+import {
+    CloseIcon,
+    DuplicateIcon,
+    FlexContainer,
+    PlayIcon,
+    TrashIcon,
+} from './Panel.styles';
 
 const Panel = ({
     focusedEvent,
@@ -50,7 +56,10 @@ const Panel = ({
 
     const onDuplicateGroup = useCallback(
         () =>
-            duplicateEventInstances({ events: panelState.overlapGroup.events }),
+            duplicateEventInstances({
+                events: panelState.overlapGroup.events,
+                parentGroup: panelState.overlapGroup,
+            }),
         [duplicateEventInstances, panelState.overlapGroup]
     );
 
@@ -62,7 +71,9 @@ const Panel = ({
                     <>
                         <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
                         <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
-                        <button onClick={onDuplicateGroup}>LOL TEST</button>
+                        <DuplicateIcon onClick={onDuplicateGroup}>
+                            Duplicate Group
+                        </DuplicateIcon>
                     </>
                 )}
                 <CloseIcon onClick={handleClose}>X</CloseIcon>

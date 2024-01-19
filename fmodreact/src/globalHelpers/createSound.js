@@ -28,7 +28,7 @@ const createSound = ({
     eventInstance,
     eventPath,
     instrumentName,
-    passedParams,
+    passedParams = [],
     startTime,
 }) => {
     const eventLength = getEventInstanceLength(eventInstance);
@@ -36,7 +36,7 @@ const createSound = ({
     const name = getEventName(eventInstance);
     let params;
 
-    if (passedParams) {
+    if (passedParams.length > 0) {
         params = passedParams;
         params.forEach((paramData) => {
             const { param, value } = paramData;

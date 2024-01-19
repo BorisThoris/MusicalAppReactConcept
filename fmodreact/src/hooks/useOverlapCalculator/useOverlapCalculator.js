@@ -17,8 +17,8 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
     );
 
     const processEvents = useCallback(
-        ({ overlapTree, recordingsForInstrument }) => {
-            return reduce(
+        ({ overlapTree, recordingsForInstrument }) =>
+            reduce(
                 recordingsForInstrument,
                 (accGroups, recording) => {
                     const interval = [recording.startTime, recording.endTime];
@@ -54,8 +54,7 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
                     return combineOverlappingGroups(updatedGroups, overlapTree);
                 },
                 []
-            );
-        },
+            ),
         []
     );
 
@@ -76,7 +75,7 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
 
             const mergedGroups = new Set([...processedGroups]);
 
-            return Array.from(mergedGroups);
+            return Array.from(processedGroups);
         },
         [initializedOverlapGroups, processEvents, recordings]
     );

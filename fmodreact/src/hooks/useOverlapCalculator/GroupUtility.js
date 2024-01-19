@@ -1,11 +1,13 @@
 /* eslint-disable no-param-reassign */
 
-import { find } from 'lodash';
 import differenceWith from 'lodash/differenceWith';
+import find from 'lodash/find';
+import first from 'lodash/first';
+import forEach from 'lodash/forEach';
 import isEqual from 'lodash/isEqual';
-import pullAt from 'lodash/pullAt';
+import last from 'lodash/last';
 import unionWith from 'lodash/unionWith';
-import uniqBy from 'lodash/uniqBy';
+import uniqWith from 'lodash/uniqWith';
 import { createGroupFromEvent } from './EventUtility';
 import { notInTree } from './IntervalTreeUtility';
 
@@ -45,18 +47,19 @@ export const combineOverlappingGroups = (groups, tree) => {
     let changed = true;
 
     const doGroupsOverlap = (group1, group2) =>
-        group1.endTime >= group2.startTime &&
-        group2.endTime >= group1.startTime;
-
-    const processedGroups = new Set();
+        !(
+            group1.endTime < group2.startTime ||
+            group2.endTime < group1.startTime
+        );
 
     while (changed) {
         changed = false;
+
         for (let i = 0; i < groups.length; i += 1) {
-            if (processedGroups.has(i)) break;
+            if (groups[i].processed) break;
 
             for (let j = i + 1; j < groups.length; j += 1) {
-                if (processedGroups.has(j)) break;
+                if (groups[j].processed) break;
 
                 if (doGroupsOverlap(groups[i], groups[j])) {
                     const newGroupConstraints = [
@@ -70,28 +73,27 @@ export const combineOverlappingGroups = (groups, tree) => {
                             overlapGroup: groups[j],
                         });
 
-                        const test = tree.remove(
+                        tree.remove(
                             [groups[j].startTime, groups[j].endTime],
                             groups[j]
                         );
+                        groups.splice(j, 1);
 
-                        pullAt(groups, j);
-
-                        const test2 = tree.remove(
-                            newGroupConstraints,
-                            groups[i]
-                        );
-
+                        tree.remove(newGroupConstraints, groups[i]);
                         tree.insert(newGroupConstraints, groups[i]);
 
                         changed = true;
+                        groups[i].processed = true;
+                        break;
                     }
                 }
-
-                if (changed) break;
             }
-            if (changed) break;
         }
+
+        // Reset processed status for next iteration
+        groups.forEach((group) => {
+            group.processed = false;
+        });
     }
 
     return groups;
@@ -105,46 +107,35 @@ const findEventGroup = (tree, eventId) => {
 };
 
 const updatedGroup = (event, existingGroup, recordings) => {
-    const group = { ...existingGroup } || {
+    const group = existingGroup || {
         endTime: event.endTime,
         events: [event],
         startTime: event.startTime,
     };
 
-    if (group && group.events.length > 1 && !group.locked) {
-        let len = group.length;
-        const checkedGroups = [event];
+    if (group.events.length > 1 && !group.locked) {
+        const checkedEvents = [event];
 
-        if (group.events.length > 1) {
-            group.events.forEach((e, index) => {
-                const actualEvent = recordings.find((rec) => rec.id === e.id);
+        forEach(group.events, (e, index) => {
+            const currentEvent = find(recordings, { id: e.id });
 
+            if (index > 0) {
                 const previousEvent = group.events[index - 1];
-
-                const insideGroupBounds =
-                    actualEvent.startTime >= previousEvent?.startTime &&
-                    actualEvent.endTime <= previousEvent?.endTime;
-
-                if (insideGroupBounds) {
-                    len += actualEvent.eventLength;
-                    checkedGroups.push(actualEvent);
+                if (
+                    currentEvent.startTime >= previousEvent.startTime &&
+                    currentEvent.endTime <= previousEvent.endTime
+                ) {
+                    checkedEvents.push(currentEvent);
                 }
-            });
-        }
+            }
+        });
 
-        group.events = uniqBy(checkedGroups, 'id').sort(
-            (group1, group2) => group1.startTime - group2.startTime
+        group.events = uniqWith(checkedEvents, isEqual).sort(
+            (a, b) => a.startTime - b.startTime
         );
 
-        group.length = len;
-        group.endTime =
-            checkedGroups.length > 1
-                ? group.events[group.events.length - 1].endTime
-                : event.endTime;
-        group.startTime =
-            checkedGroups.length > 1
-                ? group.events[0].startTime
-                : event.startTime;
+        group.endTime = last(group.events).endTime;
+        group.startTime = first(group.events).startTime;
     }
 
     return group;

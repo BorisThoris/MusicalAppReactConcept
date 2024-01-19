@@ -47,11 +47,29 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         }
     }, [recordings, calculateOverlapsForAllInstruments]);
 
+    useEffect(() => {
+        const savedOverlapGroups = localStorage.getItem('overlapGroups');
+        if (savedOverlapGroups) {
+            try {
+                const parsedOverlapGroups = JSON.parse(savedOverlapGroups);
+
+                setOverlapGroups(parsedOverlapGroups);
+            } catch (e) {
+                console.error(
+                    'Failed to parse overlapGroups from localStorage',
+                    e
+                );
+            }
+        }
+    }, []);
+
     const recreateEvents = useCallback(() => {
         const savedRecordings = localStorage.getItem('recordings');
+
         if (savedRecordings) {
             const parsedRecordings = JSON.parse(savedRecordings);
             const newRecordings = {};
+
             Object.keys(parsedRecordings).forEach((instrumentName) => {
                 newRecordings[instrumentName] = parsedRecordings[
                     instrumentName
@@ -59,6 +77,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                     const eventInstance = createEventInstance(
                         recording.eventPath || 'Drum/Snare'
                     );
+
                     return createSound({
                         eventInstance,
                         eventPath: recording.eventPath || 'Drum/Snare',
@@ -68,6 +87,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                     });
                 });
             });
+
             setRecordings(newRecordings);
         }
     }, []);
