@@ -9,11 +9,22 @@ export const isExactMatch = (event, eventSet) =>
 export const createGroupFromEvent = (event, foundEvent) => {
     const existingEvent = foundEvent?.value;
 
+    const mappedEvents = [];
+    if (event.events?.length > 1) {
+        event.events.forEach((e) => {
+            mappedEvents.push({ ...e, events: undefined });
+        });
+    } else {
+        mappedEvents.push({ ...event, events: undefined });
+    }
+
+    // DIRTY GROUP FIX
     if (!existingEvent) {
         return {
+            ...event,
             endTime: event.endTime,
-            events: [event],
-            id: `${event.id}Group`,
+            events: mappedEvents,
+            id: `${event.id}`,
             instrumentName: event.instrumentName,
             length: event.eventLength,
             locked: event.locked,

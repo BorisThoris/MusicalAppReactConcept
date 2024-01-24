@@ -34,6 +34,7 @@ const SoundEventElement = React.memo(
         isOverlapping,
         isTargeted,
         openPanel,
+        parent,
         recording,
         setFocusedEvent,
         timelineHeight,
@@ -73,9 +74,10 @@ const SoundEventElement = React.memo(
                     index: id,
                     instrumentName,
                     newStartTime,
+                    parent,
                 });
             },
-            [eventLength, id, instrumentName, updateStartTime]
+            [eventLength, id, instrumentName, parent, updateStartTime]
         );
 
         const dragBoundFunc = useCallback(
@@ -157,6 +159,7 @@ SoundEventElement.propTypes = {
     isOverlapping: PropTypes.bool,
     isTargeted: PropTypes.bool,
     openPanel: PropTypes.func,
+    parent: PropTypes.object,
     recording: PropTypes.shape({
         eventInstance: PropTypes.object.isRequired,
         eventLength: PropTypes.number.isRequired,

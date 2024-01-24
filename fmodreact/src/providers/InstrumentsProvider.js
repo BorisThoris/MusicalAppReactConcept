@@ -1,4 +1,5 @@
-import { cloneDeep, isEqual } from 'lodash';
+/* eslint-disable no-restricted-syntax */
+import { cloneDeep } from 'lodash';
 import PropTypes from 'prop-types';
 import React, {
     createContext,
@@ -19,40 +20,65 @@ export const useInstrumentRecordings = () =>
     useContext(InstrumentRecordingsContext);
 
 export const InstrumentRecordingsProvider = React.memo(({ children }) => {
-    const [recordings, setRecordings] = useState({});
     const [overlapGroups, setOverlapGroups] = useState({});
     const prevOverlapGroupsRef = useRef({});
 
     const [localLoaded, setLocalLoaded] = useState(false);
 
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(
-        recordings,
+        overlapGroups,
         overlapGroups
     );
 
     useEffect(() => {
-        prevOverlapGroupsRef.current = overlapGroups;
-    }, [overlapGroups]);
-
-    useEffect(() => {
         const newOverlapGroups = calculateOverlapsForAllInstruments();
-        const isOverlapGroupsChanged = !isEqual(
-            newOverlapGroups,
-            prevOverlapGroupsRef.current
-        );
+
+        const isOverlapGroupsChanged =
+            JSON.stringify(newOverlapGroups) !==
+            JSON.stringify(prevOverlapGroupsRef.current);
+
+        function findDifferences(obj1, obj2, parentKey = '') {
+            if (obj1 === obj2) return;
+
+            if (
+                typeof obj1 !== 'object' ||
+                typeof obj2 !== 'object' ||
+                obj1 == null ||
+                obj2 == null
+            ) {
+                console.log(`Difference at ${parentKey}:`, obj1, obj2);
+                return;
+            }
+
+            const allKeys = new Set([
+                ...Object.keys(obj1),
+                ...Object.keys(obj2),
+            ]);
+            for (const key of allKeys) {
+                const newKey = parentKey ? `${parentKey}.${key}` : key;
+                findDifferences(obj1[key], obj2[key], newKey);
+            }
+        }
+
+        // Example usage
+        findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
 
         if (isOverlapGroupsChanged) {
+            console.log('YOOOOOOOOOO');
+
             setOverlapGroups(newOverlapGroups);
-            prevOverlapGroupsRef.current = newOverlapGroups;
+            prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);
         }
-    }, [recordings, calculateOverlapsForAllInstruments]);
+    }, [calculateOverlapsForAllInstruments]);
 
     useEffect(() => {
-        const savedOverlapGroups = localStorage.getItem('overlapGroups');
+        const savedOverlapGroups = JSON.parse(
+            localStorage.getItem('overlapGroups')
+        );
+
         if (savedOverlapGroups) {
             try {
-                const parsedOverlapGroups = JSON.parse(savedOverlapGroups);
-
+                const parsedOverlapGroups = savedOverlapGroups;
                 setOverlapGroups(parsedOverlapGroups);
             } catch (e) {
                 console.error(
@@ -64,10 +90,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     }, []);
 
     const recreateEvents = useCallback(() => {
-        const savedRecordings = localStorage.getItem('recordings');
-
-        if (savedRecordings) {
-            const parsedRecordings = JSON.parse(savedRecordings);
+        if (overlapGroups) {
+            const parsedRecordings = overlapGroups;
             const newRecordings = {};
 
             Object.keys(parsedRecordings).forEach((instrumentName) => {
@@ -78,40 +102,68 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                         recording.eventPath || 'Drum/Snare'
                     );
 
-                    return createSound({
+                    const event = createSound({
                         eventInstance,
                         eventPath: recording.eventPath || 'Drum/Snare',
                         instrumentName,
                         passedParams: recording.params,
                         startTime: recording.startTime,
                     });
+
+                    // DIRTY GROUP FIX
+                    // Create a new group object
+
+                    const mappedEvents = [];
+                    if (recording.events?.length > 1) {
+                        recording.events.forEach((e) => {
+                            mappedEvents.push({ ...e, events: undefined });
+                        });
+                    } else {
+                        mappedEvents.push({ ...event, events: undefined });
+                    }
+
+                    return {
+                        ...event,
+                        endTime: event.endTime,
+                        eventLength: event.eventLength,
+                        events: mappedEvents,
+                        id: `${event.id}`,
+                        instrumentName: event.instrumentName,
+                        length: event.eventLength,
+                        locked: event.locked,
+                        startTime: event.startTime,
+                    };
                 });
             });
 
-            setRecordings(newRecordings);
+            setOverlapGroups(newRecordings);
         }
-    }, []);
+    }, [overlapGroups]);
 
     useEffect(() => {
-        if (!localLoaded && Object.keys(recordings).length === 0) {
+        if (!localLoaded && Object.keys(overlapGroups).length > 0) {
+            console.log(
+                ' RECREATING RECREATING RECREATING RECREATING RECREATING'
+            );
+            console.log(overlapGroups);
+
             recreateEvents();
             setLocalLoaded(true);
         }
-    }, [localLoaded, recordings, recreateEvents]);
+    }, [localLoaded, overlapGroups, recreateEvents]);
 
     useEffect(() => {
-        localStorage.setItem('recordings', JSON.stringify(recordings));
         localStorage.setItem('overlapGroups', JSON.stringify(overlapGroups));
-    }, [recordings, overlapGroups]);
+    }, [overlapGroups]);
 
     const contextValue = useMemo(
         () => ({
             overlapGroups,
-            recordings,
+            recordings: overlapGroups,
             setOverlapGroups,
-            setRecordings,
+            setRecordings: setOverlapGroups,
         }),
-        [overlapGroups, recordings]
+        [overlapGroups]
     );
 
     return (

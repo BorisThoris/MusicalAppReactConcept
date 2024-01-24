@@ -27,7 +27,8 @@ const OverlapGroupElement = React.memo(
         timelineY,
         updateStartTime,
     }) => {
-        const { lockOverlapGroupById } = useInstrumentRecordingsOperations();
+        const { lockOverlapGroupById, updateOverlapGroupTimes } =
+            useInstrumentRecordingsOperations();
 
         const { endTime, events, id, instrumentName, locked, startTime } =
             groupData;
@@ -40,18 +41,13 @@ const OverlapGroupElement = React.memo(
                 const newGroupStart = e.target.x() / pixelToSecondRatio;
                 const timeShift = newGroupStart - startTime;
 
-                events.forEach((event) => {
-                    const newEventStart = event.startTime + timeShift;
-
-                    updateStartTime({
-                        ...event,
-                        eventLength: event.eventLength,
-                        index: event.id,
-                        newStartTime: newEventStart,
-                    });
+                updateOverlapGroupTimes({
+                    groupId: id,
+                    newEndTime: timeShift,
+                    newStartTime: newGroupStart,
                 });
             },
-            [events, startTime, updateStartTime]
+            [id, startTime, updateOverlapGroupTimes]
         );
 
         const handleClickOverlapGroup = useCallback(() => {
@@ -67,12 +63,15 @@ const OverlapGroupElement = React.memo(
             lockOverlapGroupById({ groupId: id });
         }, [id, lockOverlapGroupById]);
 
+        // console.log('LOCKED');
+        // console.log(locked);
+
         return (
             <Fragment>
                 <Group
                     key={index}
                     x={startingPositionInTimeline}
-                    draggable
+                    draggable={locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragEnd={handleDragEnd}
                 >
@@ -96,6 +95,7 @@ const OverlapGroupElement = React.memo(
                 <Group onClick={handleClickOverlapGroup}>
                     {events.map((event, eventIndex) => (
                         <SoundEventElement
+                            parent={groupData}
                             key={event.id}
                             index={eventIndex}
                             isOverlapping={events.length > 1}

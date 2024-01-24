@@ -17,58 +17,58 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
     );
 
     const processEvents = useCallback(
-        ({ overlapTree, recordingsForInstrument }) =>
-            reduce(
-                recordingsForInstrument,
-                (accGroups, recording) => {
-                    const interval = [recording.startTime, recording.endTime];
+        ({ overlapTree, recordingsForInstrument }) => {
+            const groups = [];
 
-                    const overlaps = findOverlappingGroups(
-                        recording,
-                        overlapTree
+            recordingsForInstrument.forEach((recording) => {
+                const interval = [recording.startTime, recording.endTime];
+                const overlaps = findOverlappingGroups(recording, overlapTree);
+
+                if (isEmpty(overlaps) && recording.events.length === 1) {
+                    groups.push(
+                        handleNonOverlappingEvent({
+                            interval,
+                            overlapTree,
+                            recording,
+                        })
                     );
-
-                    if (isEmpty(overlaps)) {
-                        const test = [
-                            ...accGroups,
-                            handleNonOverlappingEvent({
-                                interval,
-                                overlapTree,
-                                recording,
-                            }),
-                        ];
-
-                        return uniqBy(test, (e) => {
-                            return e.id;
-                        });
-                    }
-
+                } else {
                     const updatedGroups = mergeOverlappingEvents({
                         event: recording,
-                        groups: accGroups,
+                        groups,
                         overlaps,
                         recordings: recordingsForInstrument,
                         tree: overlapTree,
                     });
 
-                    return combineOverlappingGroups(updatedGroups, overlapTree);
-                },
-                []
-            ),
+                    // Combine and update the groups array in place
+                    const combinedGroups = combineOverlappingGroups(
+                        updatedGroups,
+                        overlapTree
+                    );
+                    groups.length = 0;
+                    groups.push(...combinedGroups);
+                }
+            });
+
+            return {
+                orhpans: [],
+                processedGroups: uniqBy(groups, (e) => e.id),
+            };
+        },
         []
     );
 
     const processOverlapCalculations = useCallback(
         (instrument) => {
             const recordingsForInstrument = recordings[instrument];
-
             const initialOverlapGroups = new Set(
                 initializedOverlapGroups[instrument] || []
             );
 
             const { tree } = insertGroupsIntoTree({ initialOverlapGroups });
 
-            const processedGroups = processEvents({
+            const { processedGroups } = processEvents({
                 overlapTree: tree,
                 recordingsForInstrument,
             });

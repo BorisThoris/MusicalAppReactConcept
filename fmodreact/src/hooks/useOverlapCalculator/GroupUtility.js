@@ -107,26 +107,58 @@ const findEventGroup = (tree, eventId) => {
 };
 
 const updatedGroup = (event, existingGroup, recordings) => {
+    // DIRTY GROUP FIX
+
+    const mappedEvents = [];
+    if (event.events?.length > 1) {
+        event.events.forEach((e) => {
+            mappedEvents.push({ ...e, events: undefined });
+        });
+    } else {
+        mappedEvents.push({ ...event, events: undefined });
+    }
+
     const group = existingGroup || {
         endTime: event.endTime,
-        events: [event],
+        events: mappedEvents,
         startTime: event.startTime,
     };
 
+    const orhpans = [];
+
     if (group.events.length > 1 && !group.locked) {
-        const checkedEvents = [event];
+        const checkedEvents = [];
+
+        // group.events = group.events.sort((a, b) => {
+        //     return a.startTime - b.startTime;
+        // });
 
         forEach(group.events, (e, index) => {
-            const currentEvent = find(recordings, { id: e.id });
+            const currentEvent = e;
 
             if (index > 0) {
                 const previousEvent = group.events[index - 1];
+
+                console.log(previousEvent.endTime);
+                console.log(currentEvent.endTime);
+
+                console.log(previousEvent.startTime);
+                console.log(currentEvent.startTime);
+
                 if (
-                    currentEvent.startTime >= previousEvent.startTime &&
-                    currentEvent.endTime <= previousEvent.endTime
+                    currentEvent.startTime < previousEvent.endTime &&
+                    currentEvent.endTime > previousEvent.startTime &&
+                    orhpans.length === 0
                 ) {
+                    console.log('yep');
+
                     checkedEvents.push(currentEvent);
+                } else {
+                    orhpans.push(currentEvent);
                 }
+            } else {
+                console.log('PUSHING');
+                checkedEvents.push(currentEvent);
             }
         });
 
@@ -138,15 +170,27 @@ const updatedGroup = (event, existingGroup, recordings) => {
         group.startTime = first(group.events).startTime;
     }
 
-    return group;
+    return { mergedGroup: group, orhpans };
 };
 
 export const mergeOverlappingEvents = ({ event, groups, recordings, tree }) => {
     const foundEvent = findEventGroup(tree, event.id);
     const eventGroup = createGroupFromEvent(event, foundEvent);
-    const mergedGroup = updatedGroup(event, eventGroup, recordings);
+    const { mergedGroup, orhpans } = updatedGroup(
+        event,
+        eventGroup,
+        recordings
+    );
 
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 
-    return [...groups, mergedGroup];
+    const events = orhpans.map((orphan) => {
+        const newEvent = createGroupFromEvent(orphan, false);
+
+        tree.insert([newEvent.startTime, newEvent.endTime], newEvent);
+
+        return newEvent;
+    });
+
+    return [...groups, mergedGroup, ...events];
 };
