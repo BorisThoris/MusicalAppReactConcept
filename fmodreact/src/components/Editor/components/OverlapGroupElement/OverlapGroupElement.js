@@ -63,15 +63,12 @@ const OverlapGroupElement = React.memo(
             lockOverlapGroupById({ groupId: id });
         }, [id, lockOverlapGroupById]);
 
-        // console.log('LOCKED');
-        // console.log(locked);
-
         return (
             <Fragment>
                 <Group
                     key={index}
                     x={startingPositionInTimeline}
-                    draggable={locked}
+                    draggable={!locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragEnd={handleDragEnd}
                 >

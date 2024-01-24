@@ -98,11 +98,30 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 newRecordings[instrumentName] = parsedRecordings[
                     instrumentName
                 ].map((recording) => {
+                    // Recreate each event in the events property
+                    const recreatedEvents = recording.events
+                        ? recording.events.map((subEvent) => {
+                              // Create an event instance for each subEvent
+                              const subEventInstance = createEventInstance(
+                                  subEvent.eventPath || 'Drum/Snare'
+                              );
+
+                              // Recreate the event
+                              return createSound({
+                                  eventInstance: subEventInstance,
+                                  eventPath: subEvent.eventPath || 'Drum/Snare',
+                                  instrumentName,
+                                  passedParams: subEvent.params,
+                                  startTime: subEvent.startTime,
+                              });
+                          })
+                        : [];
+
+                    // Create main event
                     const eventInstance = createEventInstance(
                         recording.eventPath || 'Drum/Snare'
                     );
-
-                    const event = createSound({
+                    const mainEvent = createSound({
                         eventInstance,
                         eventPath: recording.eventPath || 'Drum/Snare',
                         instrumentName,
@@ -110,28 +129,16 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                         startTime: recording.startTime,
                     });
 
-                    // DIRTY GROUP FIX
-                    // Create a new group object
-
-                    const mappedEvents = [];
-                    if (recording.events?.length > 1) {
-                        recording.events.forEach((e) => {
-                            mappedEvents.push({ ...e, events: undefined });
-                        });
-                    } else {
-                        mappedEvents.push({ ...event, events: undefined });
-                    }
-
                     return {
-                        ...event,
-                        endTime: event.endTime,
-                        eventLength: event.eventLength,
-                        events: mappedEvents,
-                        id: `${event.id}`,
-                        instrumentName: event.instrumentName,
-                        length: event.eventLength,
-                        locked: event.locked,
-                        startTime: event.startTime,
+                        ...mainEvent,
+                        endTime: mainEvent.endTime,
+                        eventLength: mainEvent.eventLength,
+                        events: recreatedEvents,
+                        id: `${mainEvent.id}`,
+                        instrumentName: mainEvent.instrumentName,
+                        length: mainEvent.eventLength,
+                        locked: mainEvent.locked,
+                        startTime: mainEvent.startTime,
                     };
                 });
             });
