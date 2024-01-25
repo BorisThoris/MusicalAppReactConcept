@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash/isEqual';
+import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React from 'react';
 import useParameter from '../../../../hooks/useParameter';
@@ -9,29 +9,36 @@ import {
     SliderInput,
 } from './ParameterControl.styles';
 
-const ParameterControl = React.memo(({ eventId, eventInstance, param }) => {
-    const [paramDetails, handleParamChange] = useParameter({
-        eventId,
-        eventInstance,
-        param,
-    });
+const ParameterControl = React.memo(
+    ({ eventId, eventInstance, param, parent }) => {
+        const [paramDetails, handleParamChange] = useParameter({
+            eventId,
+            eventInstance,
+            param,
+            parent,
+        });
 
-    return (
-        <ControlWrapper>
-            <div>
-                <ParamName>{param.name}</ParamName>
-                <ParamValue>{paramDetails.paramValue}</ParamValue>
-            </div>
-            <SliderInput
-                type="range"
-                min={paramDetails.paramMin}
-                max={paramDetails.paramMax}
-                value={paramDetails.paramValue}
-                onChange={handleParamChange}
-            />
-        </ControlWrapper>
-    );
-}, isEqual);
+        console.log('PARENT');
+        console.log(parent);
+
+        return (
+            <ControlWrapper>
+                <div>
+                    <ParamName>{param.name}</ParamName>
+                    <ParamValue>{paramDetails.paramValue}</ParamValue>
+                </div>
+                <SliderInput
+                    type="range"
+                    min={paramDetails.paramMin}
+                    max={paramDetails.paramMax}
+                    value={paramDetails.paramValue}
+                    onChange={handleParamChange}
+                />
+            </ControlWrapper>
+        );
+    },
+    isEqual
+);
 
 ParameterControl.propTypes = {
     eventInstance: PropTypes.object.isRequired,

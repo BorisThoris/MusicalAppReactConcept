@@ -25,30 +25,42 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateRecordingParams = useCallback(
-        (id, updatedParam) => {
+        ({ eventId, parent, updatedParam }) => {
             setOverlapGroups((prevRecordings) => {
                 const updatedRecordings = { ...prevRecordings };
+
                 Object.keys(updatedRecordings).forEach((instrumentName) => {
                     const recordings = updatedRecordings[instrumentName];
-                    const recordingIndex = recordings.findIndex(
-                        (recording) => recording.id === id
+                    const targetList = parent ? parent.events : recordings;
+
+                    const recordingIndex = targetList.findIndex(
+                        (recording) => recording.id === eventId
                     );
 
+                    console.log(eventId);
+                    console.log(targetList);
+                    console.log(parent);
+
+                    console.log(recordingIndex);
+
                     if (recordingIndex !== -1) {
-                        // Find the parameter to update within the recording
-                        const paramIndex = recordings[
-                            recordingIndex
-                        ].params.findIndex(
-                            (param) => param.name === updatedParam.name
-                        );
-                        if (paramIndex !== -1) {
-                            // Update only the targeted parameter
-                            recordings[recordingIndex].params[paramIndex] =
-                                updatedParam;
-                        }
+                        const updatedRecording = {
+                            ...targetList[recordingIndex],
+                            params: targetList[recordingIndex].params.map(
+                                (param) =>
+                                    param.name === updatedParam.name
+                                        ? updatedParam
+                                        : param
+                            ),
+                        };
+
+                        targetList[recordingIndex] = updatedRecording;
+                    } else {
+                        alert('Recording not found.');
                     }
                 });
-                return updatedRecordings;
+
+                return { ...updatedRecordings };
             });
         },
         [setOverlapGroups]
@@ -114,66 +126,6 @@ export const useInstrumentRecordingsOperations = () => {
         },
         [setOverlapGroups]
     );
-
-    // const updateAllRecordingStartTimes = useCallback(
-    //     ({ instrumentName, newStartTime, timeIncrement }) => {
-    //         setOverlapGroups((prevRecordings) => {
-    //             const recordingsCopy = { ...prevRecordings };
-    //             const instrumentRecordings = recordingsCopy[instrumentName];
-
-    //             if (
-    //                 !instrumentRecordings ||
-    //                 instrumentRecordings.length === 0
-    //             ) {
-    //                 alert('No recordings found for the specified instrument.');
-    //                 return prevRecordings;
-    //             }
-
-    //             let currentTime = newStartTime;
-
-    //             instrumentRecordings.forEach((recording, index) => {
-    //                 const roundedStartTime = Math.max(
-    //                     0,
-    //                     parseFloat(currentTime.toFixed(2))
-    //                 );
-    //                 const roundedEndTime = parseFloat(
-    //                     (roundedStartTime + recording.eventLength).toFixed(2)
-    //                 );
-
-    //                 recording.startTime = roundedStartTime;
-    //                 recording.endTime = roundedEndTime;
-
-    //                 currentTime += timeIncrement;
-
-    //                 // Update nested events if present
-    //                 if (recording.events && recording.events.length > 0) {
-    //                     recording.events.forEach((nestedEvent) => {
-    //                         const nestedRoundedStartTime = Math.max(
-    //                             0,
-    //                             parseFloat(currentTime.toFixed(2))
-    //                         );
-    //                         const nestedRoundedEndTime = parseFloat(
-    //                             (
-    //                                 nestedRoundedStartTime +
-    //                                 nestedEvent.eventLength
-    //                             ).toFixed(2)
-    //                         );
-
-    //                         nestedEvent.startTime = nestedRoundedStartTime;
-    //                         nestedEvent.endTime = nestedRoundedEndTime;
-
-    //                         currentTime += timeIncrement;
-    //                     });
-    //                 }
-    //             });
-
-    //             recordingsCopy[instrumentName] = instrumentRecordings;
-
-    //             return recordingsCopy;
-    //         });
-    //     },
-    //     [setOverlapGroups]
-    // );
 
     const updateOverlapGroupTimes = useCallback(
         ({ groupId, newEndTime, newStartTime }) => {

@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 
 const withValidation =
     (useParameterHook) =>
-    ({ eventId, eventInstance, param }) => {
+    ({ eventId, eventInstance, param, parent }) => {
         const [paramDetails, handleParamChange] = useParameterHook({
             eventId,
             eventInstance,
             paramData: param,
+            parent,
         });
 
         // Validate paramDetails structure
@@ -31,7 +32,7 @@ const withValidation =
         return [paramDetails, handleParamChange];
     };
 
-const useParameter = ({ eventId, eventInstance, paramData }) => {
+const useParameter = ({ eventId, eventInstance, paramData, parent }) => {
     const { updateRecordingParams } = useInstrumentRecordingsOperations();
 
     const { param, value } = paramData;
@@ -50,12 +51,17 @@ const useParameter = ({ eventId, eventInstance, paramData }) => {
             newValue = Math.min(Math.max(newValue, min), max);
 
             eventInstance.setParameterByName(paramName, newValue, false);
+
             setParamDetails((prevDetails) => ({
                 ...prevDetails,
                 paramValue: newValue,
             }));
 
-            updateRecordingParams(eventId, { ...paramData, value: newValue });
+            updateRecordingParams({
+                eventId,
+                parent,
+                updatedParam: { ...paramData, value: newValue },
+            });
         },
         [
             min,
@@ -64,6 +70,7 @@ const useParameter = ({ eventId, eventInstance, paramData }) => {
             paramName,
             updateRecordingParams,
             eventId,
+            parent,
             paramData,
         ]
     );

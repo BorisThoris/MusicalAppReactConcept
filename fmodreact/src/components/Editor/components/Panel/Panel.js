@@ -82,6 +82,7 @@ const Panel = ({
                 {events.map((event) => (
                     <EventItemComponent
                         key={event.id}
+                        parent={panelState.overlapGroup}
                         event={event}
                         onDelete={onDelete}
                         setFocusedEvent={setFocusedEvent}

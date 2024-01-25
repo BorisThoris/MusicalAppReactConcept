@@ -11,6 +11,7 @@ const EventItem = ({
     focusedEvent,
     onDelete,
     onPlay,
+    parent,
     setFocusedEvent,
     updateStartTime,
 }) => {
@@ -75,6 +76,7 @@ const EventItem = ({
                 <ParameterControlComponent
                     key={param.name}
                     param={param}
+                    parent={parent}
                     eventId={id}
                     eventInstance={eventInstance}
                 />

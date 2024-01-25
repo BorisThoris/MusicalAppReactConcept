@@ -64,8 +64,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
 
         if (isOverlapGroupsChanged) {
-            console.log('YOOOOOOOOOO');
-
             setOverlapGroups(newOverlapGroups);
             prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);
         }
@@ -81,10 +79,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 const parsedOverlapGroups = savedOverlapGroups;
                 setOverlapGroups(parsedOverlapGroups);
             } catch (e) {
-                console.error(
-                    'Failed to parse overlapGroups from localStorage',
-                    e
-                );
+                alert('Failed to parse overlapGroups from localStorage', e);
             }
         }
     }, []);
@@ -149,11 +144,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     useEffect(() => {
         if (!localLoaded && Object.keys(overlapGroups).length > 0) {
-            console.log(
-                ' RECREATING RECREATING RECREATING RECREATING RECREATING'
-            );
-            console.log(overlapGroups);
-
             recreateEvents();
             setLocalLoaded(true);
         }
