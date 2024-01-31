@@ -14,14 +14,14 @@ import {
 
 const Panel = ({
     focusedEvent,
-    onDelete,
     onDeleteGroup,
     onPressX,
     panelState,
     setFocusedEvent,
     updateStartTime,
 }) => {
-    const { duplicateEventInstances } = useInstrumentRecordingsOperations();
+    const { deleteRecording, duplicateOverlapGroup } =
+        useInstrumentRecordingsOperations();
 
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
     const { events, id, startTime: groupStartTime } = panelState.overlapGroup;
@@ -43,8 +43,8 @@ const Panel = ({
     }, [events, groupStartTime, setNewTimeout]);
 
     const deleteOverlapGroup = useCallback(
-        () => onDeleteGroup(id),
-        [id, onDeleteGroup]
+        () => deleteRecording(panelState.overlapGroup, undefined),
+        [deleteRecording, panelState.overlapGroup]
     );
 
     const isMultipleEvents = events.length > 1;
@@ -56,11 +56,17 @@ const Panel = ({
 
     const onDuplicateGroup = useCallback(
         () =>
-            duplicateEventInstances({
-                events: panelState.overlapGroup.events,
-                parentGroup: panelState.overlapGroup,
+            duplicateOverlapGroup({
+                overlapGroup: panelState.overlapGroup,
             }),
-        [duplicateEventInstances, panelState.overlapGroup]
+        [duplicateOverlapGroup, panelState.overlapGroup]
+    );
+
+    const deleteNote = useCallback(
+        ({ event, parent }) => {
+            deleteRecording(event, parent);
+        },
+        [deleteRecording]
     );
 
     return (
@@ -82,9 +88,9 @@ const Panel = ({
                 {events.map((event) => (
                     <EventItemComponent
                         key={event.id}
-                        parent={panelState.overlapGroup}
+                        overlapGroup={panelState.overlapGroup}
                         event={event}
-                        onDelete={onDelete}
+                        onDelete={deleteNote}
                         setFocusedEvent={setFocusedEvent}
                         focusedEvent={focusedEvent}
                         onPlay={handlePlayEvent}

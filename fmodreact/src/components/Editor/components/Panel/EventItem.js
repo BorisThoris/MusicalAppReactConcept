@@ -11,7 +11,7 @@ const EventItem = ({
     focusedEvent,
     onDelete,
     onPlay,
-    parent,
+    overlapGroup,
     setFocusedEvent,
     updateStartTime,
 }) => {
@@ -27,7 +27,10 @@ const EventItem = ({
 
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();
 
-    const handleDelete = useCallback(() => onDelete(id), [onDelete, id]);
+    const handleDelete = useCallback(
+        () => onDelete({ event, parent: overlapGroup }),
+        [onDelete, event, overlapGroup]
+    );
 
     const handleDuplicate = useCallback(() => {
         duplicateEventInstance(event);
@@ -48,9 +51,17 @@ const EventItem = ({
                 index: id,
                 instrumentName,
                 newStartTime: startTime + delta,
+                parent: overlapGroup,
             });
         },
-        [eventLength, id, instrumentName, startTime, updateStartTime]
+        [
+            eventLength,
+            id,
+            instrumentName,
+            overlapGroup,
+            startTime,
+            updateStartTime,
+        ]
     );
 
     return (
@@ -76,7 +87,7 @@ const EventItem = ({
                 <ParameterControlComponent
                     key={param.name}
                     param={param}
-                    parent={parent}
+                    overlapGroup={overlapGroup}
                     eventId={id}
                     eventInstance={eventInstance}
                 />

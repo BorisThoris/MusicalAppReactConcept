@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { find, findIndex, indexOf } from 'lodash';
+import { indexOf } from 'lodash';
 import { useCallback, useContext } from 'react';
 import {
     createEventInstance,
@@ -8,6 +8,7 @@ import {
 import createSound from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
     const { overlapGroups, setOverlapGroups } = useContext(
@@ -31,17 +32,12 @@ export const useInstrumentRecordingsOperations = () => {
 
                 Object.keys(updatedRecordings).forEach((instrumentName) => {
                     const recordings = updatedRecordings[instrumentName];
-                    const targetList = parent ? parent.events : recordings;
+                    const isGroup = parent.events.length > 1;
+                    const targetList = isGroup ? parent.events : recordings;
 
                     const recordingIndex = targetList.findIndex(
                         (recording) => recording.id === eventId
                     );
-
-                    console.log(eventId);
-                    console.log(targetList);
-                    console.log(parent);
-
-                    console.log(recordingIndex);
 
                     if (recordingIndex !== -1) {
                         const updatedRecording = {
@@ -128,7 +124,7 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateOverlapGroupTimes = useCallback(
-        ({ groupId, newEndTime, newStartTime }) => {
+        ({ groupId, newStartTime }) => {
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
                 Object.keys(updatedGroups).forEach((instrument) => {
@@ -140,8 +136,8 @@ export const useInstrumentRecordingsOperations = () => {
 
                                 const updatedGroup = {
                                     ...group,
-                                    endTime: newEndTime,
-                                    startTime: newStartTime,
+                                    endTime: group.endTime + timeShift,
+                                    startTime: group.startTime + timeShift,
                                 };
 
                                 updatedGroup.events = updatedGroup.events.map(
@@ -197,22 +193,36 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteEventInstance = useCallback(
-        (id) => {
-            setOverlapGroups((prev) => {
-                const updatedRecordings = Object.keys(prev).reduce(
-                    (acc, instrumentName) => {
-                        const filteredRecordings = prev[instrumentName].filter(
-                            (item) => item.id !== id
+        (event, parent) => {
+            setOverlapGroups((prevRecordings) => {
+                const updatedRecordings = { ...prevRecordings };
+                const eventId = event.id;
+
+                Object.keys(updatedRecordings).forEach((instrumentName) => {
+                    const recordings = updatedRecordings[instrumentName];
+
+                    // If the event is part of a group, update the group events
+                    if (parent && parent.events && parent.events.length > 1) {
+                        const updatedEvents = parent.events.filter(
+                            (recording) => recording.id !== eventId
                         );
 
-                        if (filteredRecordings.length > 0) {
-                            acc[instrumentName] = filteredRecordings;
+                        if (updatedEvents.length !== parent.events.length) {
+                            // Find the parent group in the recordings and update it
+                            updatedRecordings[instrumentName] = recordings.map(
+                                (group) =>
+                                    group === parent
+                                        ? { ...group, events: updatedEvents }
+                                        : group
+                            );
                         }
-
-                        return acc;
-                    },
-                    {}
-                );
+                    } else {
+                        // If the event is not part of a group, filter it out from the recordings
+                        updatedRecordings[instrumentName] = recordings.filter(
+                            (recording) => recording.id !== eventId
+                        );
+                    }
+                });
 
                 return updatedRecordings;
             });
@@ -272,9 +282,6 @@ export const useInstrumentRecordingsOperations = () => {
                 locked: false,
             };
 
-            console.log('NEW GROUP');
-            console.log(newGroup);
-
             // Update the overlapGroups state to include the new group
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
@@ -300,28 +307,11 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteRecording = useCallback(
-        (id) => {
-            deleteEventInstance(id);
+        (event, parent) => {
+            deleteEventInstance(event, parent);
         },
         [deleteEventInstance]
     );
-
-    const deleteOverlappingGroupById = (groupId) => {
-        Object.keys(overlapGroups).forEach((instrument) => {
-            overlapGroups[instrument] = overlapGroups[instrument].filter(
-                (group) => {
-                    if (group.id === groupId) {
-                        group.events.forEach((event) =>
-                            deleteRecording(event.id)
-                        );
-
-                        return true;
-                    }
-                    return false;
-                }
-            );
-        });
-    };
 
     const lockOverlapGroupById = useCallback(
         ({ groupId }) => {
@@ -347,17 +337,26 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
-    const duplicateEventInstances = useCallback(
-        ({ events, parentGroup }) => {
-            if (!parentGroup.locked) {
-                lockOverlapGroupById({ groupId: parentGroup.id });
-            }
+    const duplicateOverlapGroup = useCallback(
+        ({ overlapGroup }) => {
+            const newGroup = recreateEvents({
+                groupsToRecreate: [overlapGroup],
+            })[0];
 
-            events.forEach((event) => {
-                duplicateEventInstance(event);
+            newGroup.id += newGroup.id;
+            newGroup.locked = true;
+            newGroup.id = `${newGroup.id}`;
+
+            // Update the overlapGroups state to include the new group
+            setOverlapGroups((prevGroups) => {
+                const updatedGroups = { ...prevGroups };
+
+                updatedGroups[newGroup.instrumentName].push(newGroup);
+
+                return updatedGroups;
             });
         },
-        [duplicateEventInstance, lockOverlapGroupById]
+        [setOverlapGroups]
     );
 
     const updateRecording = useCallback(
@@ -382,10 +381,9 @@ export const useInstrumentRecordingsOperations = () => {
         addRecording,
         createOverlapGroup,
         deleteAllRecordingsForInstrument,
-        deleteOverlappingGroupById,
         deleteRecording,
         duplicateEventInstance,
-        duplicateEventInstances,
+        duplicateOverlapGroup,
         lockOverlapGroupById,
         resetRecordings,
         updateOverlapGroupTimes,

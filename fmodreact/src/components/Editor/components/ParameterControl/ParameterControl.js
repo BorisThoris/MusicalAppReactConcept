@@ -10,16 +10,16 @@ import {
 } from './ParameterControl.styles';
 
 const ParameterControl = React.memo(
-    ({ eventId, eventInstance, param, parent }) => {
+    ({ eventId, eventInstance, overlapGroup, param }) => {
         const [paramDetails, handleParamChange] = useParameter({
             eventId,
             eventInstance,
             param,
-            parent,
+            parent: overlapGroup,
         });
 
         console.log('PARENT');
-        console.log(parent);
+        console.log(overlapGroup);
 
         return (
             <ControlWrapper>

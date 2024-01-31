@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useContext } from 'react';
 import threeMinuteMs from '../../globalConstants/songLimit';
 import instrumentRecordingOperationsHook from '../../hooks/useInstrumentRecordingsOperations';
 import usePanelStateHook from '../../hooks/usePanelState';
@@ -12,12 +12,8 @@ import Timelines, {
 } from './components/Timelines/Timelines';
 
 const Editor = () => {
-    const {
-        deleteAllRecordingsForInstrument,
-        deleteOverlappingGroupById,
-        deleteRecording,
-        updateRecording,
-    } = instrumentRecordingOperationsHook();
+    const { deleteAllRecordingsForInstrument, updateRecording } =
+        instrumentRecordingOperationsHook();
 
     const { overlapGroups, recordings } = useContext(
         InstrumentRecordingsContext
@@ -29,13 +25,6 @@ const Editor = () => {
     const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
         recordings,
     });
-
-    const deleteNote = useCallback(
-        (id) => {
-            deleteRecording(id);
-        },
-        [deleteRecording]
-    );
 
     return (
         <StyledEditorWrapper>
@@ -63,8 +52,6 @@ const Editor = () => {
                         onPressX={closePanel}
                         updateStartTime={updateRecording}
                         panelState={panelState}
-                        onDelete={deleteNote}
-                        onDeleteGroup={deleteOverlappingGroupById}
                         setFocusedEvent={setFocusedEvent}
                         focusedEvent={focusedEvent}
                     />

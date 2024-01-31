@@ -39,15 +39,14 @@ const OverlapGroupElement = React.memo(
         const handleDragEnd = useCallback(
             (e) => {
                 const newGroupStart = e.target.x() / pixelToSecondRatio;
-                const timeShift = newGroupStart - startTime;
 
                 updateOverlapGroupTimes({
                     groupId: id,
-                    newEndTime: timeShift,
+
                     newStartTime: newGroupStart,
                 });
             },
-            [id, startTime, updateOverlapGroupTimes]
+            [id, updateOverlapGroupTimes]
         );
 
         const handleClickOverlapGroup = useCallback(() => {
@@ -68,7 +67,7 @@ const OverlapGroupElement = React.memo(
                 <Group
                     key={index}
                     x={startingPositionInTimeline}
-                    draggable={!locked}
+                    draggable
                     dragBoundFunc={dragBoundFunc}
                     onDragEnd={handleDragEnd}
                 >

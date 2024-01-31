@@ -8,6 +8,8 @@ import isEqual from 'lodash/isEqual';
 import last from 'lodash/last';
 import unionWith from 'lodash/unionWith';
 import uniqWith from 'lodash/uniqWith';
+import { createEventInstance } from '../../fmodLogic/eventInstanceHelpers';
+import createSound from '../../globalHelpers/createSound';
 import { createGroupFromEvent } from './EventUtility';
 import { notInTree } from './IntervalTreeUtility';
 
@@ -129,9 +131,9 @@ const updatedGroup = (event, existingGroup, recordings) => {
     if (group.events.length > 1 && !group.locked) {
         const checkedEvents = [];
 
-        // group.events = group.events.sort((a, b) => {
-        //     return a.startTime - b.startTime;
-        // });
+        group.events = group.events.sort((a, b) => {
+            return a.startTime - b.startTime;
+        });
 
         forEach(group.events, (e, index) => {
             const currentEvent = e;
@@ -194,3 +196,49 @@ export const mergeOverlappingEvents = ({ event, groups, recordings, tree }) => {
 
     return [...groups, mergedGroup, ...events];
 };
+
+export const recreateEvents = ({ groupsToRecreate }) =>
+    groupsToRecreate.map((group) => {
+        // Recreate each event in the events property
+        const recreatedEvents = group.events
+            ? group.events.map((subEvent) => {
+                  // Create an event instance for each subEvent
+                  const subEventInstance = createEventInstance(
+                      subEvent.eventPath || 'Drum/Snare'
+                  );
+
+                  // Recreate the event
+                  return createSound({
+                      eventInstance: subEventInstance,
+                      eventPath: subEvent.eventPath || 'Drum/Snare',
+                      instrumentName: group.instrumentName,
+                      passedParams: subEvent.params,
+                      startTime: subEvent.startTime,
+                  });
+              })
+            : [];
+
+        // Create main event
+        const eventInstance = createEventInstance(
+            group.eventPath || 'Drum/Snare'
+        );
+        const mainEvent = createSound({
+            eventInstance,
+            eventPath: group.eventPath || 'Drum/Snare',
+            instrumentName: group.instrumentName,
+            passedParams: group.params,
+            startTime: group.startTime,
+        });
+
+        return {
+            ...mainEvent,
+            endTime: mainEvent.endTime,
+            eventLength: mainEvent.eventLength,
+            events: recreatedEvents,
+            id: `${mainEvent.id}`,
+            instrumentName: mainEvent.instrumentName,
+            length: mainEvent.eventLength,
+            locked: mainEvent.locked,
+            startTime: mainEvent.startTime,
+        };
+    });

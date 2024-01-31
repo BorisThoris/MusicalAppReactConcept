@@ -60,7 +60,24 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
                 isPlaying: true,
             });
 
-            const instrumentRecordings = recordings[instrument] || [];
+            const flattenRecordings = (passedRec) => {
+                return passedRec
+                    .reduce((acc, recording) => {
+                        acc.push(recording);
+                        if (recording.events && recording.events.length) {
+                            acc.push(...flattenRecordings(recording.events));
+                        }
+                        return acc;
+                    }, [])
+                    .filter((rec) => !rec.events);
+            };
+
+            const instrumentRecordings = flattenRecordings(
+                recordings[instrument] || []
+            );
+
+            console.log(instrumentRecordings);
+
             instrumentRecordings.forEach(({ eventInstance, startTime }) => {
                 if (startTime > trackerPosition / pixelToSecondRatio) {
                     setNewTimeout(

@@ -115,7 +115,7 @@ const SoundEventElement = React.memo(
                 ref={groupRef}
                 key={index}
                 x={startingPositionInTimeline}
-                draggable
+                draggable={!parent?.locked}
                 dragBoundFunc={dragBoundFunc}
                 onDragEnd={handleDragEnd}
                 onClick={handleClick}
