@@ -18,20 +18,20 @@ const DrumButton = styled.button`
 `;
 
 const Drum = ({ instrumentName, name, recordEvent }) => {
-    const playEvent = useCallback(() => {
-        const eventInstance = createAndPlayEventIntance(
-            `${instrumentName}/${name}`
-        );
-        recordEvent(eventInstance, instrumentName);
-    }, [instrumentName, name, recordEvent]);
+  const playEvent = useCallback(() => {
+    const eventInstance = createAndPlayEventIntance(
+      `${instrumentName}/${name}`,
+    );
+    recordEvent(eventInstance, instrumentName);
+  }, [instrumentName, name, recordEvent]);
 
-    return <DrumButton onClick={playEvent}>{name}</DrumButton>;
+  return <DrumButton onClick={playEvent}>{name}</DrumButton>;
 };
 
 Drum.propTypes = {
-    instrumentName: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    recordEvent: PropTypes.func.isRequired,
+  instrumentName: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  recordEvent: PropTypes.func.isRequired,
 };
 
 export default Drum;
