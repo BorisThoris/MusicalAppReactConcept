@@ -73,8 +73,6 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
                 recordingsForInstrument,
             });
 
-            const mergedGroups = new Set([...processedGroups]);
-
             return Array.from(processedGroups);
         },
         [initializedOverlapGroups, processEvents, recordings]

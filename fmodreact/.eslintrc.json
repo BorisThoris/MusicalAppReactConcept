@@ -90,10 +90,6 @@
         "ignoreStrings": true
       }
     ],
-    "linebreak-style": [
-      "warn",
-      "unix"
-    ],
     "react-perf/jsx-no-new-object-as-prop": [
       "error",
       {

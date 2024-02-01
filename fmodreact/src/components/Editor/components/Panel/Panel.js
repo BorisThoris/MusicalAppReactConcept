@@ -33,6 +33,8 @@ const Panel = ({
         []
     );
 
+    console.log('lol');
+
     const handleReplayEvents = useCallback(() => {
         events.forEach((event) => {
             setNewTimeout(

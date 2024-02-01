@@ -1,10 +1,11 @@
+/* eslint-disable no-var */
+/* eslint-disable import/no-mutable-exports */
 /* eslint-disable prefer-const */
 // fmodLogic.js
 
 export const FMODConfig = { INITIAL_MEMORY: 80 * 1024 * 1024 };
 
 export const FMOD = {};
-// eslint-disable-next-line import/no-mutable-exports, no-var
 export var gSystem;
 
 let gSystemCore = null;
@@ -40,6 +41,7 @@ export function prerun() {
 
 function loadBank(name) {
     const bankhandle = {};
+
     CHECK_RESULT(
         gSystem.loadBankFile(
             `/${name}`,
@@ -135,7 +137,7 @@ export function initializeFMOD() {
     console.log('Initialize FMOD\n');
 
     const result4 = gSystem.initialize(
-        1024,
+        2048,
         FMOD.STUDIO_INIT_NORMAL,
         FMOD.INIT_NORMAL,
         null
