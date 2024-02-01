@@ -2,13 +2,7 @@
 import { cloneDeep } from 'lodash';
 import PropTypes from 'prop-types';
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { createEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import createSound from '../globalHelpers/createSound';
@@ -24,34 +18,22 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
   const [localLoaded, setLocalLoaded] = useState(false);
 
-  const { calculateOverlapsForAllInstruments } = useOverlapCalculator(
-    overlapGroups,
-    overlapGroups,
-  );
+  const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
 
   useEffect(() => {
     const newOverlapGroups = calculateOverlapsForAllInstruments();
 
-    const isOverlapGroupsChanged = JSON.stringify(newOverlapGroups)
-            !== JSON.stringify(prevOverlapGroupsRef.current);
+    const isOverlapGroupsChanged = JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
 
     function findDifferences(obj1, obj2, parentKey = '') {
       if (obj1 === obj2) return;
 
-      if (
-        typeof obj1 !== 'object'
-                || typeof obj2 !== 'object'
-                || obj1 == null
-                || obj2 == null
-      ) {
+      if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
         console.log(`Difference at ${parentKey}:`, obj1, obj2);
         return;
       }
 
-      const allKeys = new Set([
-        ...Object.keys(obj1),
-        ...Object.keys(obj2),
-      ]);
+      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
       for (const key of allKeys) {
         const newKey = parentKey ? `${parentKey}.${key}` : key;
         findDifferences(obj1[key], obj2[key], newKey);
@@ -68,9 +50,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
   }, [calculateOverlapsForAllInstruments]);
 
   useEffect(() => {
-    const savedOverlapGroups = JSON.parse(
-      localStorage.getItem('overlapGroups'),
-    );
+    const savedOverlapGroups = JSON.parse(localStorage.getItem('overlapGroups'));
 
     if (savedOverlapGroups) {
       try {
@@ -88,16 +68,12 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
       const newRecordings = {};
 
       Object.keys(parsedRecordings).forEach((instrumentName) => {
-        newRecordings[instrumentName] = parsedRecordings[
-          instrumentName
-        ].map((recording) => {
+        newRecordings[instrumentName] = parsedRecordings[instrumentName].map((recording) => {
           // Recreate each event in the events property
           const recreatedEvents = recording.events
             ? recording.events.map((subEvent) => {
               // Create an event instance for each subEvent
-              const subEventInstance = createEventInstance(
-                subEvent.eventPath || 'Drum/Snare',
-              );
+              const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
               // Recreate the event
               return createSound({
@@ -111,9 +87,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             : [];
 
           // Create main event
-          const eventInstance = createEventInstance(
-            recording.eventPath || 'Drum/Snare',
-          );
+          const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
           const mainEvent = createSound({
             eventInstance,
             eventPath: recording.eventPath || 'Drum/Snare',
@@ -161,11 +135,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     [overlapGroups],
   );
 
-  return (
-      <InstrumentRecordingsContext.Provider value={contextValue}>
-          {children}
-      </InstrumentRecordingsContext.Provider>
-  );
+  return <InstrumentRecordingsContext.Provider value={contextValue}>{children}</InstrumentRecordingsContext.Provider>;
 });
 
 InstrumentRecordingsProvider.propTypes = {

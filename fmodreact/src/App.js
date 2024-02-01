@@ -14,10 +14,10 @@ import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
 
 const NavContainer = styled.nav`
-    background-color: yellow;
-    display: flex;
-    flex-direction: row;
-    font-size: 40px;
+  background-color: yellow;
+  display: flex;
+  flex-direction: row;
+  font-size: 40px;
 `;
 
 const TopNav = () => {

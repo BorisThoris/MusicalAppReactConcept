@@ -1,181 +1,171 @@
 import { isEqual } from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback, useEffect, useRef, useState,
+} from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 
 const CONSTANTS = {
-    CORNER_RADIUS: 5,
-    GRADIENT_END: { x: 100, y: 0 },
-    GRADIENT_START: { x: 0, y: 0 },
-    SHADOW: { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 },
-    STROKE_WIDTH: 2,
-    TEXT_STYLE: { fill: 'black', fontSize: 15, x: 5, y: 15 },
-    TRANSPARENCY_VALUE: 0.8,
+  CORNER_RADIUS: 5,
+  GRADIENT_END: { x: 100, y: 0 },
+  GRADIENT_START: { x: 0, y: 0 },
+  SHADOW: { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 },
+  STROKE_WIDTH: 2,
+  TEXT_STYLE: {
+    fill: 'black', fontSize: 15, x: 5, y: 15,
+  },
+  TRANSPARENCY_VALUE: 0.8,
 };
 
 const getDynamicStroke = (isTargeted, isFocused) => {
-    if (isTargeted) return 'blue';
-    if (isFocused) return 'green';
-    return 'red';
+  if (isTargeted) return 'blue';
+  if (isFocused) return 'green';
+  return 'red';
 };
 
-const getDynamicShadowBlur = (isFocused) =>
-    isFocused ? 10 : CONSTANTS.SHADOW.BLUR;
+const getDynamicShadowBlur = (isFocused) => (isFocused ? 10 : CONSTANTS.SHADOW.BLUR);
 
-const getDynamicColorStops = (isOverlapping) =>
-    isOverlapping ? [0, 'red', 1, 'yellow'] : [1, 'red'];
+const getDynamicColorStops = (isOverlapping) => (isOverlapping ? [0, 'red', 1, 'yellow'] : [1, 'red']);
 
 const SoundEventElement = React.memo(
-    ({
-        index,
-        isFocused,
-        isOverlapping,
-        isTargeted,
-        openPanel,
-        parent,
-        recording,
-        setFocusedEvent,
-        timelineHeight,
-        timelineY,
-        updateStartTime,
-    }) => {
-        const {
-            eventInstance,
-            eventLength,
-            id,
-            instrumentName,
-            name,
-            startTime,
-        } = recording;
+  ({
+    index,
+    isFocused,
+    isOverlapping,
+    isTargeted,
+    openPanel,
+    parent,
+    recording,
+    setFocusedEvent,
+    timelineHeight,
+    timelineY,
+    updateStartTime,
+  }) => {
+    const {
+      eventInstance, eventLength, id, instrumentName, name, startTime,
+    } = recording;
 
-        const startingPositionInTimeline = startTime * pixelToSecondRatio;
-        const lengthBasedWidth = eventLength * pixelToSecondRatio;
-        const groupRef = useRef();
-        const [originalZIndex, setOriginalZIndex] = useState(0);
+    const startingPositionInTimeline = startTime * pixelToSecondRatio;
+    const lengthBasedWidth = eventLength * pixelToSecondRatio;
+    const groupRef = useRef();
+    const [originalZIndex, setOriginalZIndex] = useState(0);
 
-        useEffect(() => {
-            if (groupRef.current) {
-                setOriginalZIndex(groupRef.current.zIndex());
-            }
-        }, []);
+    useEffect(() => {
+      if (groupRef.current) {
+        setOriginalZIndex(groupRef.current.zIndex());
+      }
+    }, []);
 
-        const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
-        const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
-        const dynamicColorStops = getDynamicColorStops(isOverlapping);
+    const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
+    const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
+    const dynamicColorStops = getDynamicColorStops(isOverlapping);
 
-        const handleDragEnd = useCallback(
-            (e) => {
-                const newStartTime = e.target.x() / pixelToSecondRatio;
+    const handleDragEnd = useCallback(
+      (e) => {
+        const newStartTime = e.target.x() / pixelToSecondRatio;
 
-                updateStartTime({
-                    eventLength,
-                    index: id,
-                    instrumentName,
-                    newStartTime,
-                    parent,
-                });
-            },
-            [eventLength, id, instrumentName, parent, updateStartTime]
-        );
+        updateStartTime({
+          eventLength,
+          index: id,
+          instrumentName,
+          newStartTime,
+          parent,
+        });
+      },
+      [eventLength, id, instrumentName, parent, updateStartTime],
+    );
 
-        const dragBoundFunc = useCallback(
-            (pos) => ({
-                x: pos.x - 60 > 0 ? pos.x : 60,
-                y: timelineY,
-            }),
-            [timelineY]
-        );
+    const dragBoundFunc = useCallback(
+      (pos) => ({
+        x: pos.x - 60 > 0 ? pos.x : 60,
+        y: timelineY,
+      }),
+      [timelineY],
+    );
 
-        const handleClick = useCallback(() => {
-            if (openPanel) openPanel({ index, instrumentName });
-        }, [openPanel, index, instrumentName]);
+    const handleClick = useCallback(() => {
+      if (openPanel) openPanel({ index, instrumentName });
+    }, [openPanel, index, instrumentName]);
 
-        const handleDoubleClick = useCallback(
-            () => playEventInstance(eventInstance),
-            [eventInstance]
-        );
+    const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
 
-        const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
+    const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
 
-        const restoreZIndex = useCallback(() => {
-            groupRef.current.setZIndex(originalZIndex);
-            setFocusedEvent(-1);
-        }, [originalZIndex, setFocusedEvent]);
+    const restoreZIndex = useCallback(() => {
+      groupRef.current.setZIndex(originalZIndex);
+      setFocusedEvent(-1);
+    }, [originalZIndex, setFocusedEvent]);
 
-        useEffect(() => {
-            if (isFocused && groupRef.current) {
-                groupRef.current.moveToTop();
-            }
-        }, [isFocused, originalZIndex, restoreZIndex]);
+    useEffect(() => {
+      if (isFocused && groupRef.current) {
+        groupRef.current.moveToTop();
+      }
+    }, [isFocused, originalZIndex, restoreZIndex]);
 
-        return (
-            <Group
-                ref={groupRef}
-                key={index}
-                x={startingPositionInTimeline}
-                draggable={!parent?.locked}
-                dragBoundFunc={dragBoundFunc}
-                onDragEnd={handleDragEnd}
-                onClick={handleClick}
-                onDblClick={handleDoubleClick}
-                onDragStart={handleDragStart}
-            >
-                <Rect
-                    // eslint-disable-next-line max-len
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                    onMouseEnter={() => setFocusedEvent(id)}
-                    onMouseLeave={restoreZIndex}
-                    x={0}
-                    y={isFocused ? -4 : 0}
-                    width={lengthBasedWidth}
-                    height={timelineHeight * 0.8}
-                    fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
-                    fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
-                    fillLinearGradientColorStops={dynamicColorStops}
-                    stroke={dynamicStroke}
-                    strokeWidth={CONSTANTS.STROKE_WIDTH}
-                    cornerRadius={CONSTANTS.CORNER_RADIUS}
-                    shadowOffset={CONSTANTS.SHADOW.OFFSET}
-                    shadowBlur={dynamicShadowBlur}
-                    shadowOpacity={CONSTANTS.SHADOW.OPACITY}
-                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
-                />
-                <Text
-                    {...CONSTANTS.TEXT_STYLE}
-                    text={name}
-                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
-                />
-            </Group>
-        );
-    },
-    isEqual
+    return (
+        <Group
+            ref={groupRef}
+            key={index}
+            x={startingPositionInTimeline}
+            draggable={!parent?.locked}
+            dragBoundFunc={dragBoundFunc}
+            onDragEnd={handleDragEnd}
+            onClick={handleClick}
+            onDblClick={handleDoubleClick}
+            onDragStart={handleDragStart}
+        >
+            <Rect
+          // eslint-disable-next-line max-len
+          // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                onMouseEnter={() => setFocusedEvent(id)}
+                onMouseLeave={restoreZIndex}
+                x={0}
+                y={isFocused ? -4 : 0}
+                width={lengthBasedWidth}
+                height={timelineHeight * 0.8}
+                fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
+                fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
+                fillLinearGradientColorStops={dynamicColorStops}
+                stroke={dynamicStroke}
+                strokeWidth={CONSTANTS.STROKE_WIDTH}
+                cornerRadius={CONSTANTS.CORNER_RADIUS}
+                shadowOffset={CONSTANTS.SHADOW.OFFSET}
+                shadowBlur={dynamicShadowBlur}
+                shadowOpacity={CONSTANTS.SHADOW.OPACITY}
+                opacity={CONSTANTS.TRANSPARENCY_VALUE}
+            />
+            <Text {...CONSTANTS.TEXT_STYLE} text={name} opacity={CONSTANTS.TRANSPARENCY_VALUE} />
+        </Group>
+    );
+  },
+  isEqual,
 );
 
 SoundEventElement.propTypes = {
-    index: PropTypes.number.isRequired,
-    isFocused: PropTypes.bool.isRequired,
-    isOverlapping: PropTypes.bool,
-    isTargeted: PropTypes.bool,
-    openPanel: PropTypes.func,
-    parent: PropTypes.object,
-    recording: PropTypes.shape({
-        eventInstance: PropTypes.object.isRequired,
-        eventLength: PropTypes.number.isRequired,
-        id: PropTypes.number.isRequired,
-        instrumentName: PropTypes.string.isRequired,
-        startTime: PropTypes.number.isRequired,
-    }).isRequired,
-    timelineHeight: PropTypes.number.isRequired,
-    timelineY: PropTypes.number.isRequired,
-    updateStartTime: PropTypes.func.isRequired,
+  index: PropTypes.number.isRequired,
+  isFocused: PropTypes.bool.isRequired,
+  isOverlapping: PropTypes.bool,
+  isTargeted: PropTypes.bool,
+  openPanel: PropTypes.func,
+  parent: PropTypes.object,
+  recording: PropTypes.shape({
+    eventInstance: PropTypes.object.isRequired,
+    eventLength: PropTypes.number.isRequired,
+    id: PropTypes.number.isRequired,
+    instrumentName: PropTypes.string.isRequired,
+    startTime: PropTypes.number.isRequired,
+  }).isRequired,
+  timelineHeight: PropTypes.number.isRequired,
+  timelineY: PropTypes.number.isRequired,
+  updateStartTime: PropTypes.func.isRequired,
 };
 
 SoundEventElement.defaultProps = {
-    isOverlapping: false,
-    isTargeted: false,
-    openPanel: null,
+  isOverlapping: false,
+  isTargeted: false,
+  openPanel: null,
 };
 
 export default SoundEventElement;

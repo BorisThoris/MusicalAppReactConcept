@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-var */
 /* eslint-disable import/no-mutable-exports */
 /* eslint-disable prefer-const */
@@ -29,26 +30,14 @@ export function prerun() {
   fileNames.forEach((fileName) => {
     console.log(`${fileUrl}${fileName}`);
 
-    FMOD.FS_createPreloadedFile(
-      folderName,
-      fileName,
-      `${fileUrl}${fileName}`,
-      canRead,
-      canWrite,
-    );
+    FMOD.FS_createPreloadedFile(folderName, fileName, `${fileUrl}${fileName}`, canRead, canWrite);
   });
 }
 
 function loadBank(name) {
   const bankhandle = {};
 
-  CHECK_RESULT(
-    gSystem.loadBankFile(
-      `/${name}`,
-      FMOD.STUDIO_LOAD_BANK_NORMAL,
-      bankhandle,
-    ),
-  );
+  CHECK_RESULT(gSystem.loadBankFile(`/${name}`, FMOD.STUDIO_LOAD_BANK_NORMAL, bankhandle));
 }
 
 const resumeAudio = async () => {
@@ -95,14 +84,7 @@ function updateApplication() {
   CHECK_RESULT(result4);
 
   const sysrate = {};
-  const result5 = gSystemCore.getDriverInfo(
-    0,
-    null,
-    null,
-    sysrate,
-    null,
-    null,
-  );
+  const result5 = gSystemCore.getDriverInfo(0, null, null, sysrate, null, null);
   CHECK_RESULT(result5);
 
   const result6 = gSystem.update();
@@ -135,12 +117,7 @@ export function initializeFMOD() {
 
   console.log('Initialize FMOD\n');
 
-  const result4 = gSystem.initialize(
-    2048,
-    FMOD.STUDIO_INIT_NORMAL,
-    FMOD.INIT_NORMAL,
-    null,
-  );
+  const result4 = gSystem.initialize(2048, FMOD.STUDIO_INIT_NORMAL, FMOD.INIT_NORMAL, null);
   CHECK_RESULT(result4);
 
   loadBank('Master.bank');

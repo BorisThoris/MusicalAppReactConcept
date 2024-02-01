@@ -7,108 +7,75 @@ import EventHeaderComponent from './EventHeader';
 import TimeControlComponent from './TimeControl';
 
 const EventItem = ({
-    event,
-    focusedEvent,
-    onDelete,
-    onPlay,
-    overlapGroup,
-    setFocusedEvent,
-    updateStartTime,
+  event, focusedEvent, onDelete, onPlay, overlapGroup, setFocusedEvent, updateStartTime,
 }) => {
-    const {
-        endTime,
-        eventInstance,
+  const {
+    endTime, eventInstance, eventLength, id, instrumentName, params, startTime,
+  } = event;
+
+  const { duplicateEventInstance } = instrumentRecordingOperationsHook();
+
+  const handleDelete = useCallback(() => onDelete({ event, parent: overlapGroup }), [onDelete, event, overlapGroup]);
+
+  const handleDuplicate = useCallback(() => {
+    duplicateEventInstance(event);
+  }, [duplicateEventInstance, event]);
+
+  const handlePlay = useCallback(() => onPlay(eventInstance), [onPlay, eventInstance]);
+  const focusEvent = useCallback(() => {
+    setFocusedEvent(id);
+  }, [id, setFocusedEvent]);
+
+  const modifyStartTime = useCallback(
+    (delta) => {
+      updateStartTime({
         eventLength,
-        id,
+        index: id,
         instrumentName,
-        params,
-        startTime,
-    } = event;
+        newStartTime: startTime + delta,
+        parent: overlapGroup,
+      });
+    },
+    [eventLength, id, instrumentName, overlapGroup, startTime, updateStartTime],
+  );
 
-    const { duplicateEventInstance } = instrumentRecordingOperationsHook();
+  return (
+      <div
+          onMouseEnter={focusEvent}
+          style={{
+            backgroundColor: focusedEvent === id ? 'red' : 'transparent',
+          }}
+      >
+          <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
-    const handleDelete = useCallback(
-        () => onDelete({ event, parent: overlapGroup }),
-        [onDelete, event, overlapGroup]
-    );
+          <TimeControlComponent startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
 
-    const handleDuplicate = useCallback(() => {
-        duplicateEventInstance(event);
-    }, [duplicateEventInstance, event]);
-
-    const handlePlay = useCallback(
-        () => onPlay(eventInstance),
-        [onPlay, eventInstance]
-    );
-    const focusEvent = useCallback(() => {
-        setFocusedEvent(id);
-    }, [id, setFocusedEvent]);
-
-    const modifyStartTime = useCallback(
-        (delta) => {
-            updateStartTime({
-                eventLength,
-                index: id,
-                instrumentName,
-                newStartTime: startTime + delta,
-                parent: overlapGroup,
-            });
-        },
-        [
-            eventLength,
-            id,
-            instrumentName,
-            overlapGroup,
-            startTime,
-            updateStartTime,
-        ]
-    );
-
-    return (
-        <div
-            onMouseEnter={focusEvent}
-            style={{
-                backgroundColor: focusedEvent === id ? 'red' : 'transparent',
-            }}
-        >
-            <EventHeaderComponent
-                onPlay={handlePlay}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-            />
-
-            <TimeControlComponent
-                startTime={startTime}
-                endTime={endTime}
-                onModifyStartTime={modifyStartTime}
-            />
-
-            {params.map((param) => (
-                <ParameterControlComponent
-                    key={param.name}
-                    param={param}
-                    overlapGroup={overlapGroup}
-                    eventId={id}
-                    eventInstance={eventInstance}
-                />
-            ))}
-        </div>
-    );
+          {params.map((param) => (
+              <ParameterControlComponent
+                  key={param.name}
+                  param={param}
+                  overlapGroup={overlapGroup}
+                  eventId={id}
+                  eventInstance={eventInstance}
+              />
+          ))}
+      </div>
+  );
 };
 
 EventItem.propTypes = {
-    event: PropTypes.shape({
-        endTime: PropTypes.number,
-        eventInstance: PropTypes.object,
-        eventLength: PropTypes.number,
-        id: PropTypes.number,
-        instrumentName: PropTypes.string,
-        startTime: PropTypes.number,
-    }).isRequired,
-    onDelete: PropTypes.func.isRequired,
-    onPlay: PropTypes.func.isRequired,
-    setFocusedEvent: PropTypes.func.isRequired,
-    updateStartTime: PropTypes.func.isRequired,
+  event: PropTypes.shape({
+    endTime: PropTypes.number,
+    eventInstance: PropTypes.object,
+    eventLength: PropTypes.number,
+    id: PropTypes.number,
+    instrumentName: PropTypes.string,
+    startTime: PropTypes.number,
+  }).isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onPlay: PropTypes.func.isRequired,
+  setFocusedEvent: PropTypes.func.isRequired,
+  updateStartTime: PropTypes.func.isRequired,
 };
 
 export default EventItem;

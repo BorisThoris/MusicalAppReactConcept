@@ -20,14 +20,11 @@ export const getEventInstanceParamaters = (eventInstance) => {
   const eventInstanceParamsCount = {};
   eventDescription.val.getParameterDescriptionCount(eventInstanceParamsCount);
 
-  const parameters = Array.from(
-    { length: eventInstanceParamsCount.val },
-    (_, index) => {
-      const param = {};
-      eventDescription.val.getParameterDescriptionByIndex(0, param);
-      return param;
-    },
-  );
+  const parameters = Array.from({ length: eventInstanceParamsCount.val }, (_, index) => {
+    const param = {};
+    eventDescription.val.getParameterDescriptionByIndex(0, param);
+    return param;
+  });
 
   return parameters;
 };
@@ -112,11 +109,7 @@ export const getEventPath = (eventInstance) => {
 
   // Retrieve the path
   const retrieved = {};
-  const result = eventDescription.val.getPath(
-    pathBuffer,
-    bufferSize,
-    retrieved,
-  );
+  const result = eventDescription.val.getPath(pathBuffer, bufferSize, retrieved);
 
   const parts = pathBuffer.val.split('event:/');
   return parts.length > 1 ? parts[1] : '';
@@ -143,9 +136,7 @@ const guidToString = (guid) => {
 
       // If the element is an array, convert each element to a hex string
       if (Array.isArray(element)) {
-        stringRepresentation += element
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('');
+        stringRepresentation += element.map((b) => b.toString(16).padStart(2, '0')).join('');
       } else {
         // If the element is a number, convert it to a hex string
         stringRepresentation += element.toString(16).padStart(8, '0');

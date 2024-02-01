@@ -5,20 +5,11 @@ import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrume
 import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
 import {
-  CloseIcon,
-  DuplicateIcon,
-  FlexContainer,
-  PlayIcon,
-  TrashIcon,
+  CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon,
 } from './Panel.styles';
 
 const Panel = ({
-  focusedEvent,
-  onDeleteGroup,
-  onPressX,
-  panelState,
-  setFocusedEvent,
-  updateStartTime,
+  focusedEvent, onDeleteGroup, onPressX, panelState, setFocusedEvent, updateStartTime,
 }) => {
   // eslint-disable-next-line max-len
   const { deleteRecording, duplicateOverlapGroup } = useInstrumentRecordingsOperations();
@@ -28,19 +19,13 @@ const Panel = ({
 
   const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
-  const handlePlayEvent = useCallback(
-    (eventInstance) => playEventInstance(eventInstance),
-    [],
-  );
+  const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
 
   console.log('lol');
 
   const handleReplayEvents = useCallback(() => {
     events.forEach((event) => {
-      setNewTimeout(
-        () => playEventInstance(event.eventInstance),
-        event.startTime - groupStartTime,
-      );
+      setNewTimeout(() => playEventInstance(event.eventInstance), event.startTime - groupStartTime);
     });
   }, [events, groupStartTime, setNewTimeout]);
 
@@ -51,10 +36,7 @@ const Panel = ({
 
   const isMultipleEvents = events.length > 1;
 
-  const resetFocusedEvent = useCallback(
-    () => setFocusedEvent(-1),
-    [setFocusedEvent],
-  );
+  const resetFocusedEvent = useCallback(() => setFocusedEvent(-1), [setFocusedEvent]);
 
   const onDuplicateGroup = useCallback(
     () => duplicateOverlapGroup({
@@ -78,9 +60,7 @@ const Panel = ({
               <>
                   <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
                   <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
-                  <DuplicateIcon onClick={onDuplicateGroup}>
-                      Duplicate Group
-                  </DuplicateIcon>
+                  <DuplicateIcon onClick={onDuplicateGroup}>Duplicate Group</DuplicateIcon>
               </>
               )}
               <CloseIcon onClick={handleClose}>X</CloseIcon>
