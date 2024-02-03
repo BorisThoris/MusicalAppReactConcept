@@ -9,49 +9,47 @@ import PanelComponent from './components/Panel/Panel';
 import Timelines, { StyledEditorWrapper, StyledTimeline } from './components/Timelines/Timelines';
 
 const Editor = () => {
-  const { deleteAllRecordingsForInstrument, updateRecording } = instrumentRecordingOperationsHook();
+    const { deleteAllRecordingsForInstrument, updateRecording } = instrumentRecordingOperationsHook();
 
-  const { overlapGroups, recordings } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups, recordings } = useContext(InstrumentRecordingsContext);
 
-  const {
-    closePanel, focusedEvent, openPanel, panelState, setFocusedEvent,
-  } = usePanelStateHook({ overlapGroups });
+    const { closePanel, focusedEvent, openPanel, panelState, setFocusedEvent } = usePanelStateHook({ overlapGroups });
 
-  const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
-    recordings,
-  });
+    const { furthestEndTime, furthestEndTimes } = useStageWidthHook({
+        recordings
+    });
 
-  return (
-      <StyledEditorWrapper>
-          <Header />
+    return (
+        <StyledEditorWrapper>
+            <Header />
 
-          <StyledTimeline>
-              <Timelines
-                  recordings={overlapGroups}
-                  furthestEndTime={furthestEndTime}
-                  duration={threeMinuteMs}
-                  openPanel={openPanel}
-                  closePanel={closePanel}
-                  updateStartTime={updateRecording}
-                  panelFor={panelState?.overlapGroup?.id}
-                  focusedEvent={focusedEvent}
-                  setFocusedEvent={setFocusedEvent}
-                  deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
-                  furthestEndTimes={furthestEndTimes}
-              />
+            <StyledTimeline>
+                <Timelines
+                    recordings={overlapGroups}
+                    furthestEndTime={furthestEndTime}
+                    duration={threeMinuteMs}
+                    openPanel={openPanel}
+                    closePanel={closePanel}
+                    updateStartTime={updateRecording}
+                    panelFor={panelState?.overlapGroup?.id}
+                    focusedEvent={focusedEvent}
+                    setFocusedEvent={setFocusedEvent}
+                    deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
+                    furthestEndTimes={furthestEndTimes}
+                />
 
-              {panelState.isOpen && (
-              <PanelComponent
-                  onPressX={closePanel}
-                  updateStartTime={updateRecording}
-                  panelState={panelState}
-                  setFocusedEvent={setFocusedEvent}
-                  focusedEvent={focusedEvent}
-              />
-              )}
-          </StyledTimeline>
-      </StyledEditorWrapper>
-  );
+                {panelState.isOpen && (
+                    <PanelComponent
+                        onPressX={closePanel}
+                        updateStartTime={updateRecording}
+                        panelState={panelState}
+                        setFocusedEvent={setFocusedEvent}
+                        focusedEvent={focusedEvent}
+                    />
+                )}
+            </StyledTimeline>
+        </StyledEditorWrapper>
+    );
 };
 
 export default Editor;

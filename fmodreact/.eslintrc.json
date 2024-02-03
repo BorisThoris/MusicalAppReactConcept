@@ -12,6 +12,7 @@
     "plugin:import/warnings",
     "plugin:jsx-a11y/recommended",
     "airbnb-base",
+    "prettier",
     "plugin:react-perf/recommended"
   ],
   "parserOptions": {
@@ -27,9 +28,26 @@
     "react",
     "import",
     "jsx-a11y",
-    "react-hooks"
+    "react-hooks",
+    "prettier"
   ],
   "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "printWidth": 120,
+        "useTabs": false,
+        "tabWidth": 4,
+        "semi": true,
+        "singleQuote": true,
+        "bracketSpacing": true,
+        "arrowParens": "always",
+        "jsxSingleQuote": false,
+        "bracketSameLine": false,
+        "endOfLine": "auto",
+        "trailingComma": "none"
+      }
+    ],
     "arrow-body-style": "off",
     "prefer-arrow-callback": "off",
     "react/jsx-uses-react": "error",
@@ -71,15 +89,11 @@
     "max-len": [
       "warn",
       {
-        "code": 80,
+        "code": 120,
         "tabWidth": 4,
         "ignoreUrls": true,
         "ignoreStrings": true
       }
-    ],
-    "linebreak-style": [
-      "warn",
-      "unix"
     ],
     "react-perf/jsx-no-new-object-as-prop": [
       "error",

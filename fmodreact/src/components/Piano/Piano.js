@@ -7,46 +7,46 @@ import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import PianoKey from './PianoKey';
 
 const PianoContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 `;
 
 const pianoKeys = [
-  'pianoC',
-  'pianoC#',
-  'pianoD',
-  'pianoD#',
-  'pianoE',
-  'pianoF',
-  'pianoF#',
-  'pianoG',
-  'pianoG#',
-  'pianoA',
-  'pianoA#',
-  'pianoB',
+    'pianoC',
+    'pianoC#',
+    'pianoD',
+    'pianoD#',
+    'pianoE',
+    'pianoF',
+    'pianoF#',
+    'pianoG',
+    'pianoG#',
+    'pianoA',
+    'pianoA#',
+    'pianoB'
 ];
 
 const Piano = () => {
-  const instrumentName = Instruments.Piano;
-  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
-  const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
+    const instrumentName = Instruments.Piano;
+    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
-  const playEvent = (musicalEvent) => {
-    const eventInstance = createAndPlayEventIntance(musicalEvent);
+    const playEvent = (musicalEvent) => {
+        const eventInstance = createAndPlayEventIntance(musicalEvent);
 
-    recordEvent(eventInstance, instrumentName);
-  };
+        recordEvent(eventInstance, instrumentName);
+    };
 
-  return (
-      <PianoContainer>
-          <button onClick={toggleRecording}>Toggle Recording</button>
-          <button onClick={playRecordedSounds}>Replay Events</button>
-          {pianoKeys.map((key, index) => (
-              <PianoKey key={index} keyName={key} instrumentName={Instruments.Piano} playEvent={playEvent} />
-          ))}
-      </PianoContainer>
-  );
+    return (
+        <PianoContainer>
+            <button onClick={toggleRecording}>Toggle Recording</button>
+            <button onClick={playRecordedSounds}>Replay Events</button>
+            {pianoKeys.map((key, index) => (
+                <PianoKey key={index} keyName={key} instrumentName={Instruments.Piano} playEvent={playEvent} />
+            ))}
+        </PianoContainer>
+    );
 };
 
 export default Piano;
