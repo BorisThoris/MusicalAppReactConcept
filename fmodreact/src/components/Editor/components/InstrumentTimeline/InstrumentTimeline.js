@@ -30,12 +30,12 @@ const InstrumentTimeline = React.memo(
         const { mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
 
         // State for panel expansion
-        const [isExpanded, setIsExpanded] = useState(true);
+        const [isLocked, setisLocked] = useState(false);
 
         // Function to toggle expansion
-        const toggleExpansion = useCallback(() => {
-            setIsExpanded(!isExpanded);
-        }, [isExpanded]);
+        const toggleLocked = useCallback(() => {
+            setisLocked(!isLocked);
+        }, [isLocked]);
 
         const isMuted = mutedInstruments.includes(groupName);
 
@@ -83,28 +83,7 @@ const InstrumentTimeline = React.memo(
                     fill={isMuted ? 'red' : fillColor}
                 />
 
-                {/* Expansion button */}
-                <Rect
-                    x={timelineWidth - ExpansionButtonSize * 2} // Position the button to the left of the timeline's end
-                    y={-ExpansionButtonSize / 2} // Center the button vertically relative to the timeline's top edge
-                    width={ExpansionButtonSize}
-                    height={ExpansionButtonSize}
-                    fill={isExpanded ? '#CCCCCC' : '#AAAAAA'} // Change color based on expansion state
-                    cornerRadius={5}
-                    onClick={toggleExpansion}
-                    draggable={false}
-                />
-
-                <Text
-                    text={isExpanded ? '−' : '+'} // Use a dash for expanded state, plus for collapsed
-                    fontSize={16}
-                    fontFamily={'Arial'}
-                    fill={'#333333'}
-                    x={timelineWidth - ExpansionButtonSize * 1.5} // Center the text within the button
-                    y={-ExpansionButtonSize / 2 + 5} // Adjust for font size
-                    onClick={toggleExpansion}
-                    draggable={false}
-                />
+                {groupName && <Text text={groupName} y={0} />}
 
                 <InstrumentTimelinePanelComponent
                     timelineHeight={TimelineHeight}
@@ -112,11 +91,15 @@ const InstrumentTimeline = React.memo(
                     replayInstrumentRecordings={replayInstrumentRecordings}
                     deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
                     toggleMute={toggleMute}
+                    toggleLocked={toggleLocked}
+                    isLocked={isLocked}
                 />
 
-                {!isExpanded && (
-                    <Group offset={panelCompensationOffset}>{instrumentGroup.map(renderGroupElement)}</Group>
-                )}
+                <Group opacity={isLocked ? 0.5 : 1} offset={panelCompensationOffset}>
+                    {instrumentGroup.map(renderGroupElement)}
+                </Group>
+
+                {isLocked && <Rect offset={panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />}
             </Layer>
         );
     }

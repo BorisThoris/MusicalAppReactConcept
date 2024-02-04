@@ -5,8 +5,9 @@ import { Group, Text } from 'react-konva';
 const InstrumentTimelinePanel = ({
     deleteAllRecordingsForInstrument,
     groupName,
+    isLocked,
     replayInstrumentRecordings,
-    timelineHeight,
+    toggleLocked,
     toggleMute
 }) => {
     const onPlay = useCallback(() => {
@@ -24,7 +25,8 @@ const InstrumentTimelinePanel = ({
     const icons = [
         { callback: onPlay, icon: '▶' },
         { callback: onDelete, icon: '🗑️' },
-        { callback: onMute, icon: '🔇' }
+        { callback: onMute, icon: '🔇' },
+        { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' }
     ];
 
     const [widths, setWidths] = useState(Array(icons.length).fill(0));
@@ -66,8 +68,6 @@ const InstrumentTimelinePanel = ({
 
     return (
         <Group scale={groupScale}>
-            {groupName && <Text text={groupName} y={0} />}
-
             {icons.map((icon, index) => {
                 const onClick = icon.callback;
 
