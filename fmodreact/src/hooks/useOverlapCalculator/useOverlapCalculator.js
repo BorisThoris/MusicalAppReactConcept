@@ -25,14 +25,13 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
                 const updatedGroups = mergeOverlappingEvents({
                     event: recording,
                     groups,
-                    overlaps,
-                    recordings: recordingsForInstrument,
                     tree: overlapTree
                 });
 
-                // Combine and update the groups array in place
+                console.log('UPDATED GROUPS');
+                console.log(updatedGroups);
+
                 const combinedGroups = combineOverlappingGroups(updatedGroups, overlapTree);
-                groups.length = 0;
                 groups.push(...combinedGroups);
             }
         });

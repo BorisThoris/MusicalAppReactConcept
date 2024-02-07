@@ -90,9 +90,7 @@ const findEventGroup = (tree, eventId) => {
     });
 };
 
-const updatedGroup = (event, existingGroup, recordings) => {
-    // DIRTY GROUP FIX
-
+const updatedGroup = (event, existingGroup) => {
     const mappedEvents = [];
     if (event.events?.length > 1) {
         event.events.forEach((e) => {
@@ -102,7 +100,7 @@ const updatedGroup = (event, existingGroup, recordings) => {
         mappedEvents.push({ ...event, events: undefined });
     }
 
-    const group = existingGroup || {
+    const group = { ...existingGroup } || {
         endTime: event.endTime,
         events: mappedEvents,
         startTime: event.startTime
@@ -123,25 +121,16 @@ const updatedGroup = (event, existingGroup, recordings) => {
             if (index > 0) {
                 const previousEvent = group.events[index - 1];
 
-                console.log(previousEvent.endTime);
-                console.log(currentEvent.endTime);
-
-                console.log(previousEvent.startTime);
-                console.log(currentEvent.startTime);
-
                 if (
                     currentEvent.startTime < previousEvent.endTime &&
                     currentEvent.endTime > previousEvent.startTime &&
                     orhpans.length === 0
                 ) {
-                    console.log('yep');
-
                     checkedEvents.push(currentEvent);
                 } else {
                     orhpans.push(currentEvent);
                 }
             } else {
-                console.log('PUSHING');
                 checkedEvents.push(currentEvent);
             }
         });
@@ -155,10 +144,10 @@ const updatedGroup = (event, existingGroup, recordings) => {
     return { mergedGroup: group, orhpans };
 };
 
-export const mergeOverlappingEvents = ({ event, groups, recordings, tree }) => {
+export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     const foundEvent = findEventGroup(tree, event.id);
     const eventGroup = createGroupFromEvent(event, foundEvent);
-    const { mergedGroup, orhpans } = updatedGroup(event, eventGroup, recordings);
+    const { mergedGroup, orhpans } = updatedGroup(event, eventGroup);
 
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 

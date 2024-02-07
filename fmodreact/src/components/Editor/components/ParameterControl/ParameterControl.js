@@ -12,9 +12,6 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
         parent: overlapGroup
     });
 
-    console.log('PARENT');
-    console.log(overlapGroup);
-
     return (
         <ControlWrapper>
             <div>

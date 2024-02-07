@@ -95,6 +95,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                         startTime: recording.startTime
                     });
 
+                    console.log(mainEvent);
+
                     return {
                         ...mainEvent,
                         endTime: mainEvent.endTime,

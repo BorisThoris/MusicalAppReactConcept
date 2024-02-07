@@ -70,8 +70,6 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
 
             const instrumentRecordings = flattenRecordings(recordings[instrument] || []);
 
-            console.log(instrumentRecordings);
-
             instrumentRecordings.forEach(({ eventInstance, startTime }) => {
                 if (startTime > trackerPosition / pixelToSecondRatio) {
                     setNewTimeout(

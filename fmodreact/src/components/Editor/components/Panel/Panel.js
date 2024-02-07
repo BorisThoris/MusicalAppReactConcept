@@ -6,7 +6,7 @@ import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
 
-const Panel = ({ focusedEvent, onDeleteGroup, onPressX, panelState, setFocusedEvent, updateStartTime }) => {
+const Panel = ({ focusedEvent, onPressX, panelState, setFocusedEvent, updateStartTime }) => {
     // eslint-disable-next-line max-len
     const { deleteRecording, duplicateOverlapGroup } = useInstrumentRecordingsOperations();
 
@@ -16,8 +16,6 @@ const Panel = ({ focusedEvent, onDeleteGroup, onPressX, panelState, setFocusedEv
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
-
-    console.log('lol');
 
     const handleReplayEvents = useCallback(() => {
         events.forEach((event) => {

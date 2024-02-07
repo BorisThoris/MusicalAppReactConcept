@@ -1,16 +1,19 @@
-import { isEqual } from 'lodash/isEqual';
+import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
 const CONSTANTS = {
     CORNER_RADIUS: 5,
     GRADIENT_END: { x: 100, y: 0 },
     GRADIENT_START: { x: 0, y: 0 },
+    LOCK_OFFSET_Y: -10,
     SHADOW: { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 },
     STROKE_WIDTH: 2,
+    TEXT_FONT_SIZE: 18,
     TEXT_STYLE: {
         fill: 'black',
         fontSize: 15,
@@ -44,12 +47,18 @@ const SoundEventElement = React.memo(
         timelineY,
         updateStartTime
     }) => {
-        const { eventInstance, eventLength, id, instrumentName, name, startTime } = recording;
+        const { eventInstance, eventLength, id, instrumentName, locked, name, startTime } = recording;
+
+        const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
         const startingPositionInTimeline = startTime * pixelToSecondRatio;
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
         const groupRef = useRef();
         const [originalZIndex, setOriginalZIndex] = useState(0);
+
+        const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
+        const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
+        const dynamicColorStops = getDynamicColorStops(isOverlapping);
 
         useEffect(() => {
             if (groupRef.current) {
@@ -57,9 +66,16 @@ const SoundEventElement = React.memo(
             }
         }, []);
 
-        const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
-        const dynamicShadowBlur = getDynamicShadowBlur(isFocused);
-        const dynamicColorStops = getDynamicColorStops(isOverlapping);
+        const restoreZIndex = useCallback(() => {
+            groupRef.current.setZIndex(originalZIndex);
+            setFocusedEvent(-1);
+        }, [originalZIndex, setFocusedEvent]);
+
+        useEffect(() => {
+            if (isFocused && groupRef.current) {
+                groupRef.current.moveToTop();
+            }
+        }, [isFocused, originalZIndex, restoreZIndex]);
 
         const handleDragEnd = useCallback(
             (e) => {
@@ -92,16 +108,9 @@ const SoundEventElement = React.memo(
 
         const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
 
-        const restoreZIndex = useCallback(() => {
-            groupRef.current.setZIndex(originalZIndex);
-            setFocusedEvent(-1);
-        }, [originalZIndex, setFocusedEvent]);
-
-        useEffect(() => {
-            if (isFocused && groupRef.current) {
-                groupRef.current.moveToTop();
-            }
-        }, [isFocused, originalZIndex, restoreZIndex]);
+        const onLockSoundEventElement = useCallback(() => {
+            lockOverlapGroupById({ groupId: id });
+        }, [id, lockOverlapGroupById]);
 
         return (
             <Group
@@ -136,6 +145,17 @@ const SoundEventElement = React.memo(
                     opacity={CONSTANTS.TRANSPARENCY_VALUE}
                 />
                 <Text {...CONSTANTS.TEXT_STYLE} text={name} opacity={CONSTANTS.TRANSPARENCY_VALUE} />
+
+                {!parent && (
+                    <Text
+                        onClick={onLockSoundEventElement}
+                        x={-10}
+                        y={CONSTANTS.LOCK_OFFSET_Y}
+                        text={locked ? '🔒' : '✔️'}
+                        fontSize={CONSTANTS.TEXT_FONT_SIZE}
+                        fill="white"
+                    />
+                )}
             </Group>
         );
     },
