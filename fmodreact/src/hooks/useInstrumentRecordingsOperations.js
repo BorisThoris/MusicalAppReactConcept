@@ -8,7 +8,7 @@ import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { overlapGroups, setOverlapGroups } = useContext(InstrumentRecordingsContext);
+    const { setOverlapGroups } = useContext(InstrumentRecordingsContext);
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
@@ -113,14 +113,14 @@ export const useInstrumentRecordingsOperations = () => {
 
                             const updatedGroup = {
                                 ...group,
-                                endTime: group.endTime + timeShift,
-                                startTime: group.startTime + timeShift
+                                endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
+                                startTime: parseFloat((group.startTime + timeShift).toFixed(2))
                             };
 
                             updatedGroup.events = updatedGroup.events.map((event) => ({
                                 ...event,
-                                endTime: event.endTime + timeShift,
-                                startTime: event.startTime + timeShift
+                                endTime: parseFloat((event.endTime + timeShift).toFixed(2)),
+                                startTime: parseFloat((event.startTime + timeShift).toFixed(2))
                             }));
 
                             return updatedGroup;

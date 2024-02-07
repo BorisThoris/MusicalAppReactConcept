@@ -90,7 +90,7 @@ const findEventGroup = (tree, eventId) => {
     });
 };
 
-const updatedGroup = (event, existingGroup) => {
+export const updatedGroup = (event, existingGroup) => {
     const mappedEvents = [];
     if (event.events?.length > 1) {
         event.events.forEach((e) => {
@@ -137,8 +137,16 @@ const updatedGroup = (event, existingGroup) => {
 
         group.events = uniqWith(checkedEvents, isEqual).sort((a, b) => a.startTime - b.startTime);
 
-        group.endTime = last(group.events).endTime;
-        group.startTime = first(group.events).startTime;
+        const { endTime } = last(group.events);
+        const { startTime } = first(group.events);
+        console.log('ENDTIME ');
+        console.log(endTime);
+
+        group.endTime = parseFloat(endTime.toFixed(2));
+        group.startTime = parseFloat(startTime.toFixed(2));
+
+        console.log('ENDTIME');
+        // alert(group.startTime);
     }
 
     return { mergedGroup: group, orhpans };

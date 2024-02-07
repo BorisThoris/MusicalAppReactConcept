@@ -1,5 +1,7 @@
 /* eslint-disable no-restricted-syntax */
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+import first from 'lodash/first';
+import last from 'lodash/last';
 import PropTypes from 'prop-types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createEventInstance } from '../fmodLogic/eventInstanceHelpers';
@@ -68,6 +70,27 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
             Object.keys(parsedRecordings).forEach((instrumentName) => {
                 newRecordings[instrumentName] = parsedRecordings[instrumentName].map((recording) => {
+                    // Create main event
+                    const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+                    const mainEvent = createSound({
+                        eventInstance,
+                        eventPath: recording.eventPath || 'Drum/Snare',
+                        instrumentName,
+                        passedParams: recording.params,
+                        startTime: recording.startTime
+                    });
+
+                    const group = {
+                        ...mainEvent,
+                        endTime: mainEvent.endTime,
+                        eventLength: mainEvent.eventLength,
+                        id: `${mainEvent.id}`,
+                        instrumentName: mainEvent.instrumentName,
+                        length: mainEvent.eventLength,
+                        locked: mainEvent.locked,
+                        startTime: mainEvent.startTime
+                    };
+
                     // Recreate each event in the events property
                     const recreatedEvents = recording.events
                         ? recording.events.map((subEvent) => {
@@ -85,29 +108,12 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                           })
                         : [];
 
-                    // Create main event
-                    const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
-                    const mainEvent = createSound({
-                        eventInstance,
-                        eventPath: recording.eventPath || 'Drum/Snare',
-                        instrumentName,
-                        passedParams: recording.params,
-                        startTime: recording.startTime
-                    });
+                    group.events = recreatedEvents;
 
-                    console.log(mainEvent);
+                    group.endTime = last(group.events).endTime;
+                    group.startTime = first(group.events).startTime;
 
-                    return {
-                        ...mainEvent,
-                        endTime: mainEvent.endTime,
-                        eventLength: mainEvent.eventLength,
-                        events: recreatedEvents,
-                        id: `${mainEvent.id}`,
-                        instrumentName: mainEvent.instrumentName,
-                        length: mainEvent.eventLength,
-                        locked: mainEvent.locked,
-                        startTime: mainEvent.startTime
-                    };
+                    return group;
                 });
             });
 
