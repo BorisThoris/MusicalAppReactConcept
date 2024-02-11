@@ -18,6 +18,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const [localLoaded, setLocalLoaded] = useState(false);
 
+    console.log(overlapGroups);
+
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
 
     useEffect(() => {
@@ -42,7 +44,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         }
 
         // Example usage
-        findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
+        // findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
 
         if (isOverlapGroupsChanged) {
             setOverlapGroups(newOverlapGroups);
@@ -87,7 +89,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                         id: `${mainEvent.id}`,
                         instrumentName: mainEvent.instrumentName,
                         length: mainEvent.eventLength,
-                        locked: mainEvent.locked,
+                        locked: recording.locked,
                         startTime: mainEvent.startTime
                     };
 

@@ -5,13 +5,22 @@ import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrume
 import usePlayback from '../../../../hooks/usePlayback';
 import EventItemComponent from './EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
+import TimeControl from './TimeControl';
 
 const Panel = ({ focusedEvent, onPressX, panelState, setFocusedEvent, updateStartTime }) => {
     // eslint-disable-next-line max-len
-    const { deleteRecording, duplicateOverlapGroup } = useInstrumentRecordingsOperations();
+    const { deleteRecording, duplicateOverlapGroup, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
-    const { events, id, startTime: groupStartTime } = panelState.overlapGroup;
+    const {
+        endTime,
+        eventLength,
+        events,
+        id,
+        instrumentName,
+        startTime: groupStartTime,
+        startTime
+    } = panelState.overlapGroup;
 
     const handleClose = useCallback(() => onPressX(false), [onPressX]);
 
@@ -47,6 +56,16 @@ const Panel = ({ focusedEvent, onPressX, panelState, setFocusedEvent, updateStar
         [deleteRecording]
     );
 
+    const modifyGroupStartTime = useCallback(
+        (delta) => {
+            updateOverlapGroupTimes({
+                groupId: id,
+                newStartTime: startTime + delta
+            });
+        },
+        [id, startTime, updateOverlapGroupTimes]
+    );
+
     return (
         <div onMouseLeave={resetFocusedEvent}>
             <span>Group:</span>
@@ -60,6 +79,13 @@ const Panel = ({ focusedEvent, onPressX, panelState, setFocusedEvent, updateStar
                 )}
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
             </FlexContainer>
+
+            <div>
+                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
+            </div>
+
+            <span>{events.length} Events:</span>
+
             <FlexContainer>
                 {events.map((event) => (
                     <EventItemComponent

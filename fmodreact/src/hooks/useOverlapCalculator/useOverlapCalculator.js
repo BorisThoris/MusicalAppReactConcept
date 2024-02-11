@@ -28,16 +28,13 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
                     tree: overlapTree
                 });
 
-                console.log('UPDATED GROUPS');
-                console.log(updatedGroups);
-
                 const combinedGroups = combineOverlappingGroups(updatedGroups, overlapTree);
                 groups.push(...combinedGroups);
             }
         });
 
         return {
-            orhpans: [],
+            orphans: [],
             processedGroups: uniqBy(groups, (e) => e.id)
         };
     }, []);

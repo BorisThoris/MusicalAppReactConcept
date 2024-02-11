@@ -1,5 +1,7 @@
 /* eslint-disable max-len */
-import { indexOf } from 'lodash';
+import first from 'lodash/first';
+import indexOf from 'lodash/indexOf';
+import last from 'lodash/last';
 import { useCallback, useContext } from 'react';
 import { createEventInstance, getEventPath } from '../fmodLogic/eventInstanceHelpers';
 import createSound from '../globalHelpers/createSound';
@@ -53,7 +55,7 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateRecordingStartTime = useCallback(
-        ({ eventLength, index, instrumentName, newStartTime, parent }) => {
+        ({ eventLength, index, instrumentName, newStartTime, parent = undefined }) => {
             setOverlapGroups((prevRecordings) => {
                 const recordingsCopy = { ...prevRecordings };
                 const instrumentRecordings = recordingsCopy[instrumentName];
@@ -63,10 +65,9 @@ export const useInstrumentRecordingsOperations = () => {
                 const roundedStartTime = Math.max(0, parseFloat(newStartTime.toFixed(2)));
                 const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
 
-                const recordingToUpdate = targetList.find((recording) => recording.id === index);
+                const recordingToUpdate = targetList.find((recording) => `${recording.id}` === `${index}`);
 
                 if (!recordingToUpdate) {
-                    alert('Recording not found.');
                     return prevRecordings;
                 }
 
@@ -215,16 +216,23 @@ export const useInstrumentRecordingsOperations = () => {
 
             const { instrumentName, startTime: oldStartTime } = oldSound;
 
-            const newSound = createSound({
+            const event = createSound({
                 eventInstance,
                 eventPath,
                 instrumentName,
                 startTime: oldStartTime + 0.2
             });
 
+            // DIRTY GROUP FIX
+            const newGroup = {
+                ...event,
+                events: [],
+                locked: true
+            };
+
             setOverlapGroups((prev) => ({
                 ...prev,
-                [instrumentName]: [...(prev[instrumentName] || []), newSound]
+                [instrumentName]: [...(prev[instrumentName] || []), newGroup]
             }));
         },
         [setOverlapGroups]
@@ -311,6 +319,9 @@ export const useInstrumentRecordingsOperations = () => {
             newGroup.id += newGroup.id;
             newGroup.locked = true;
             newGroup.id = `${newGroup.id}`;
+
+            newGroup.endTime = last(newGroup.events).endTime;
+            newGroup.startTime = first(newGroup.events).startTime;
 
             // Update the overlapGroups state to include the new group
             setOverlapGroups((prevGroups) => {

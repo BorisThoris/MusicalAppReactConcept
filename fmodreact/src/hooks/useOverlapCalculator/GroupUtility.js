@@ -7,7 +7,6 @@ import forEach from 'lodash/forEach';
 import isEqual from 'lodash/isEqual';
 import last from 'lodash/last';
 import unionWith from 'lodash/unionWith';
-import uniqWith from 'lodash/uniqWith';
 import { createEventInstance } from '../../fmodLogic/eventInstanceHelpers';
 import createSound from '../../globalHelpers/createSound';
 import { createGroupFromEvent } from './EventUtility';
@@ -106,7 +105,7 @@ export const updatedGroup = (event, existingGroup) => {
         startTime: event.startTime
     };
 
-    const orhpans = [];
+    const orphans = [];
 
     if (group.events.length > 1 && !group.locked) {
         const checkedEvents = [];
@@ -118,54 +117,58 @@ export const updatedGroup = (event, existingGroup) => {
         forEach(group.events, (e, index) => {
             const currentEvent = e;
 
-            if (index > 0) {
-                const previousEvent = group.events[index - 1];
+            let previousEvent;
 
-                if (
-                    currentEvent.startTime < previousEvent.endTime &&
-                    currentEvent.endTime > previousEvent.startTime &&
-                    orhpans.length === 0
-                ) {
-                    checkedEvents.push(currentEvent);
-                } else {
-                    orhpans.push(currentEvent);
-                }
+            if (index > 0) {
+                previousEvent = group.events[index - 1];
             } else {
+                previousEvent = group;
+            }
+
+            if (
+                currentEvent.startTime < previousEvent.endTime &&
+                currentEvent.endTime > previousEvent.startTime &&
+                orphans.length === 0
+            ) {
                 checkedEvents.push(currentEvent);
+            } else {
+                orphans.push(currentEvent);
             }
         });
 
-        group.events = uniqWith(checkedEvents, isEqual).sort((a, b) => a.startTime - b.startTime);
+        group.events = checkedEvents;
 
-        const { endTime } = last(group.events);
-        const { startTime } = first(group.events);
-        console.log('ENDTIME ');
-        console.log(endTime);
+        const { endTime } = group.events.length > 0 ? last(group.events) : group;
+        const { startTime } = group.events.length > 0 ? first(group.events) : group;
+
+        group.id = group.events?.length > 0 ? group.events[0].id : group.id;
 
         group.endTime = parseFloat(endTime.toFixed(2));
         group.startTime = parseFloat(startTime.toFixed(2));
-
-        console.log('ENDTIME');
-        // alert(group.startTime);
     }
 
-    return { mergedGroup: group, orhpans };
+    return { mergedGroup: group, orphans };
 };
 
 export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     const foundEvent = findEventGroup(tree, event.id);
     const eventGroup = createGroupFromEvent(event, foundEvent);
-    const { mergedGroup, orhpans } = updatedGroup(event, eventGroup);
+    const { mergedGroup, orphans } = updatedGroup(event, eventGroup);
 
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 
-    const events = orhpans.map((orphan) => {
-        const newEvent = createGroupFromEvent(orphan, false);
+    console.log('ORPHANS');
+    console.log(orphans);
 
+    const events = orphans.map((orphan) => {
+        const newEvent = createGroupFromEvent(orphan, false);
         tree.insert([newEvent.startTime, newEvent.endTime], newEvent);
 
         return newEvent;
     });
+
+    console.log('events from orphans');
+    console.log(orphans);
 
     return [...groups, mergedGroup, ...events];
 };

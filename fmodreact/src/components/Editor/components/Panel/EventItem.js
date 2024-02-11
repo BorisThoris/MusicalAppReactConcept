@@ -1,10 +1,9 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo } from 'react';
-import { getEventInstanceParamaters } from '../../../../fmodLogic/eventInstanceHelpers';
+import React, { useCallback } from 'react';
 import instrumentRecordingOperationsHook from '../../../../hooks/useInstrumentRecordingsOperations';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import EventHeaderComponent from './EventHeader';
-import TimeControlComponent from './TimeControl';
+import TimeControl from './TimeControl';
 
 const EventItem = ({ event, focusedEvent, onDelete, onPlay, overlapGroup, setFocusedEvent, updateStartTime }) => {
     const { endTime, eventInstance, eventLength, id, instrumentName, params, startTime } = event;
@@ -39,12 +38,14 @@ const EventItem = ({ event, focusedEvent, onDelete, onPlay, overlapGroup, setFoc
         <div
             onMouseEnter={focusEvent}
             style={{
-                backgroundColor: focusedEvent === id ? 'red' : 'transparent'
+                backgroundColor: focusedEvent === id ? 'red' : 'transparent',
+                display: 'flex',
+                flexDirection: 'column'
             }}
         >
             <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
-            <TimeControlComponent startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
+            <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
 
             {params.map((param) => (
                 <ParameterControlComponent
