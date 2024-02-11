@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Group, Text } from 'react-konva';
+import { Group, Text } from 'react-konva/';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
 const InstrumentTimelinePanel = ({
     deleteAllRecordingsForInstrument,
@@ -10,6 +11,8 @@ const InstrumentTimelinePanel = ({
     toggleLocked,
     toggleMute
 }) => {
+    const { duplicateInstrument } = useInstrumentRecordingsOperations();
+
     const onPlay = useCallback(() => {
         replayInstrumentRecordings(groupName);
     }, [groupName, replayInstrumentRecordings]);
@@ -22,11 +25,16 @@ const InstrumentTimelinePanel = ({
         toggleMute(groupName);
     }, [groupName, toggleMute]);
 
+    const onCopy = useCallback(() => {
+        duplicateInstrument({ instrumentName: groupName });
+    }, [duplicateInstrument, groupName]);
+
     const icons = [
         { callback: onPlay, icon: '▶' },
         { callback: onDelete, icon: '🗑️' },
         { callback: onMute, icon: '🔇' },
-        { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' }
+        { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' },
+        { callback: onCopy, icon: '📄' }
     ];
 
     const [widths, setWidths] = useState(Array(icons.length).fill(0));
@@ -51,7 +59,7 @@ const InstrumentTimelinePanel = ({
     let accumulatedHeight = groupName ? 20 : 0;
     const yPositions = heights.map((h) => {
         const yPos = accumulatedHeight;
-        accumulatedHeight += h + 5;
+        accumulatedHeight += h + 2;
         return yPos;
     });
 

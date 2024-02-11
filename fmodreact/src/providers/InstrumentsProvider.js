@@ -18,8 +18,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const [localLoaded, setLocalLoaded] = useState(false);
 
-    console.log(overlapGroups);
-
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
 
     useEffect(() => {

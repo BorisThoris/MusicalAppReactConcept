@@ -7,7 +7,7 @@ import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 
-const TimelineHeight = 200;
+export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 const ExpansionButtonSize = 20;
 

@@ -157,18 +157,12 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
 
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 
-    console.log('ORPHANS');
-    console.log(orphans);
-
     const events = orphans.map((orphan) => {
         const newEvent = createGroupFromEvent(orphan, false);
         tree.insert([newEvent.startTime, newEvent.endTime], newEvent);
 
         return newEvent;
     });
-
-    console.log('events from orphans');
-    console.log(orphans);
 
     return [...groups, mergedGroup, ...events];
 };

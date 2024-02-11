@@ -5,7 +5,7 @@ import { Stage } from 'react-konva';
 import styled from 'styled-components';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
+import InstrumentTimeline, { TimelineHeight } from '../InstrumentTimeline/InstrumentTimeline';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
@@ -57,7 +57,7 @@ const Timelines = React.memo(
             window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
 
         const recordingsArr = Object.entries(recordings);
-        const EditorHeight = recordingsArr.length * 200 + markersHeight || 500;
+        const EditorHeight = recordingsArr.length * TimelineHeight + markersHeight || 500;
 
         return (
             <>

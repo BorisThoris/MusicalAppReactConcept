@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
 import first from 'lodash/first';
 import indexOf from 'lodash/indexOf';
@@ -50,6 +52,53 @@ export const useInstrumentRecordingsOperations = () => {
 
                 return { ...updatedRecordings };
             });
+        },
+        [setOverlapGroups]
+    );
+
+    const duplicateInstrument = useCallback(
+        ({ instrumentName }) => {
+            const nameRegex = /^(.*?)(?:\s+(\d+))?$/;
+            const match = instrumentName.match(nameRegex);
+
+            const baseName = match ? match[1] : instrumentName;
+            const number = match && match[2] ? parseInt(match[2], 10) + 1 : 2;
+
+            const newInstrumentName = `${baseName} ${number}`;
+
+            setOverlapGroups((prevGroups) => {
+                const originalGroups = prevGroups[instrumentName];
+
+                if (!originalGroups) {
+                    alert('Original instrument data not found. Cannot duplicate.');
+                    return prevGroups; // Early return with unchanged state if original data not found
+                }
+
+                // Use map to transform each original group into a new group, immutably
+                const duplicatedGroups = originalGroups.map((group) => {
+                    const recreatedGroup = recreateEvents({ groupsToRecreate: [group] })[0];
+
+                    // Generate new IDs for each duplicated group to ensure uniqueness
+                    const newGroupId = `${recreatedGroup.id}_dup`;
+
+                    // Return a new object for the group with updated properties
+                    return {
+                        ...recreatedGroup,
+                        id: newGroupId,
+                        instrumentName: newInstrumentName // Assign the new instrument name
+                        // Further modifications if needed
+                    };
+                });
+
+                // Return a new state object with the new instrument and its duplicated groups
+                return {
+                    ...prevGroups,
+                    [newInstrumentName]: duplicatedGroups
+                };
+            });
+
+            console.log(`Duplicated instrument: ${instrumentName} to ${newInstrumentName}`);
+            return newInstrumentName;
         },
         [setOverlapGroups]
     );
@@ -359,6 +408,7 @@ export const useInstrumentRecordingsOperations = () => {
         deleteAllRecordingsForInstrument,
         deleteRecording,
         duplicateEventInstance,
+        duplicateInstrument,
         duplicateOverlapGroup,
         lockOverlapGroupById,
         resetRecordings,
