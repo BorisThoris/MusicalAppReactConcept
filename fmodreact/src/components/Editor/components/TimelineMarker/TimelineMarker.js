@@ -1,9 +1,12 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Group, Layer, Line, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-const TimeMarker = ({ duration, height, panelCompensationOffset, pixelToSecond }) => {
+const TimeMarker = ({ duration, height, pixelToSecond }) => {
+    const { timelineState } = useContext(TimelineContext);
+
     const [width, setWidth] = useState(180 * pixelToSecondRatio);
     const markerHeight = 10;
     const secondMarkerHeight = 20;
@@ -48,7 +51,7 @@ const TimeMarker = ({ duration, height, panelCompensationOffset, pixelToSecond }
     }, [createMarker, duration, pixelToSecond, width]);
 
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-    return <Layer offset={panelCompensationOffset}>{markers}</Layer>;
+    return <Layer offset={timelineState.panelCompensationOffset}>{markers}</Layer>;
 };
 
 TimeMarker.propTypes = {

@@ -1,10 +1,11 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import { Stage } from 'react-konva';
 import styled from 'styled-components';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { TimelineContext } from '../../../../providers/TimelineProvider';
 import InstrumentTimeline, { TimelineHeight } from '../InstrumentTimeline/InstrumentTimeline';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
@@ -20,6 +21,7 @@ export const StyledTimeline = styled.div`
 `;
 
 const markersHeight = 50;
+const panelCompensationOffset = { x: -60 };
 
 const Timelines = React.memo(
     ({
@@ -36,12 +38,14 @@ const Timelines = React.memo(
         updateStartTime
     }) => {
         const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
+        const { timelineState, updateTimelineState } = useContext(TimelineContext);
+
+        useEffect(() => {
+            if (timelineState.panelCompensationOffset?.x !== panelCompensationOffset?.x)
+                updateTimelineState({ panelCompensationOffset });
+        }, [timelineState.panelCompensationOffset?.x, updateTimelineState]);
 
         const { currentInstrument, isPlaying } = playbackStatus;
-
-        const panelCompensationOffset = useMemo(() => {
-            return { x: -60 };
-        }, []);
 
         const closePanelOnTimelinePress = useCallback(
             (event) => {
@@ -76,7 +80,6 @@ const Timelines = React.memo(
                                     markersHeight={markersHeight}
                                     openPanel={openPanel}
                                     updateStartTime={updateStartTime}
-                                    panelCompensationOffset={panelCompensationOffset}
                                     focusedEvent={focusedEvent}
                                     deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
                                     currentPlayingInstrument={currentInstrument}
@@ -87,7 +90,6 @@ const Timelines = React.memo(
                         <TimelineTracker
                             furthestEndTime={furthestEndTimes[currentInstrument] || furthestEndTime}
                             shouldTrack={isPlaying}
-                            panelCompensationOffset={panelCompensationOffset}
                         />
 
                         <TimelineMarker
@@ -95,7 +97,6 @@ const Timelines = React.memo(
                             height={markersHeight}
                             pixelToSecond={105}
                             furthestEndTime={furthestEndTime}
-                            panelCompensationOffset={panelCompensationOffset}
                         />
                     </Stage>
                 </div>

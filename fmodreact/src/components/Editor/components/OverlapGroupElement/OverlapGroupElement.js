@@ -1,6 +1,7 @@
+/* eslint-disable no-unsafe-optional-chaining */
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { Fragment, useCallback } from 'react';
+import React, { Fragment, useCallback, useRef } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -17,6 +18,7 @@ const TEXT_FONT_SIZE = 18;
 
 const OverlapGroupElement = React.memo(
     ({
+        canvasOffsetY,
         focusedEvent,
         groupData,
         index,
@@ -27,6 +29,7 @@ const OverlapGroupElement = React.memo(
         timelineY,
         updateStartTime
     }) => {
+        const groupElmRef = useRef();
         const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
         const { endTime, events, id, instrumentName, locked, startTime } = groupData;
@@ -48,8 +51,13 @@ const OverlapGroupElement = React.memo(
         );
 
         const handleClickOverlapGroup = useCallback(() => {
-            openPanel({ index, instrumentName });
-        }, [index, instrumentName, openPanel]);
+            const fallbackX = 0;
+
+            const groupX = groupElmRef.current?.parent?.attrs?.x || fallbackX;
+            const groupY = timelineY + canvasOffsetY + groupElmRef.current?.attrs?.height;
+
+            openPanel({ index, instrumentName, x: groupX, y: groupY });
+        }, [timelineY, canvasOffsetY, openPanel, index, instrumentName]);
 
         const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);
 
@@ -58,21 +66,23 @@ const OverlapGroupElement = React.memo(
         }, [id, lockOverlapGroupById]);
 
         return (
-            <Fragment>
+            <Group onClick={handleClickOverlapGroup}>
                 <Group
                     key={index}
                     x={startingPositionInTimeline}
                     draggable
                     dragBoundFunc={dragBoundFunc}
-                    onDragEnd={handleDragEnd}
+                    width={groupWidth}
                 >
                     <Rect
+                        ref={groupElmRef}
                         width={groupWidth}
                         height={timelineHeight * 0.9}
                         fill={isTargeted ? 'red' : GROUP_COLOR}
                         opacity={GROUP_OPACITY}
                         strokeWidth={GROUP_STROKE_WIDTH}
                         stroke={GROUP_COLOR}
+                        onDragEnd={handleDragEnd}
                     />
                     <Text
                         x={TEXT_OFFSET_X}
@@ -81,34 +91,35 @@ const OverlapGroupElement = React.memo(
                         fontSize={TEXT_FONT_SIZE}
                         fill="white"
                     />
-                </Group>
 
-                <Group onClick={handleClickOverlapGroup}>
-                    {events.map((event, eventIndex) => (
-                        <SoundEventElement
-                            parent={groupData}
-                            key={event.id}
-                            index={eventIndex}
-                            isOverlapping={events.length > 1}
-                            recording={event}
-                            timelineHeight={timelineHeight}
-                            timelineY={timelineY}
-                            updateStartTime={updateStartTime}
-                            isFocused={event.id === focusedEvent}
-                            setFocusedEvent={setFocusedEvent}
-                        />
-                    ))}
-                </Group>
+                    <Group x={-startingPositionInTimeline}>
+                        {events.map((event, eventIndex) => (
+                            <SoundEventElement
+                                parent={groupData}
+                                key={event.id}
+                                index={eventIndex}
+                                isOverlapping={events.length > 1}
+                                recording={event}
+                                timelineHeight={timelineHeight}
+                                timelineY={timelineY}
+                                updateStartTime={updateStartTime}
+                                isFocused={event.id === focusedEvent}
+                                setFocusedEvent={setFocusedEvent}
+                                canvasOffsetY={canvasOffsetY}
+                            />
+                        ))}
+                    </Group>
 
-                <Text
-                    onClick={onLockOverlapGroup}
-                    x={startingPositionInTimeline - 10}
-                    y={LOCK_OFFSET_Y}
-                    text={locked ? '🔒' : '✔️'}
-                    fontSize={TEXT_FONT_SIZE}
-                    fill="white"
-                />
-            </Fragment>
+                    <Text
+                        onClick={onLockOverlapGroup}
+                        x={-10}
+                        y={LOCK_OFFSET_Y}
+                        text={locked ? '🔒' : '✔️'}
+                        fontSize={TEXT_FONT_SIZE}
+                        fill="white"
+                    />
+                </Group>
+            </Group>
         );
     },
     isEqual

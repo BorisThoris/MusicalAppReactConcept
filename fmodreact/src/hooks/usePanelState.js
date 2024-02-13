@@ -1,5 +1,5 @@
-import React, { useCallback, useContext, useEffect, useReducer, useState } from 'react';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+// @ts-nocheck
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 
 const initialState = {
     index: null,
@@ -19,38 +19,30 @@ const panelReducer = (state, action) => {
     }
 };
 
-const usePanelState = ({ overlapGroups }) => {
+export const usePanelState = ({ overlapGroups }) => {
     const [focusedEvent, setFocusedEvent] = useState(-1);
     const [state, dispatch] = useReducer(panelReducer, initialState);
-    const { index, instrumentName, isOpen, overlapGroup } = state;
 
-    const openPanelAction = (newIndex, newInstrumentName, newOverlapGroup) => {
-        dispatch({
-            payload: {
-                index: newIndex,
-                instrumentName: newInstrumentName,
-                overlapGroup: newOverlapGroup
-            },
-            type: 'OPEN_PANEL'
-        });
-    };
+    // Additional logic to calculate panelOverlapGroup and panelRecordings
+    const { panelOverlapGroup, panelRecordings } = useMemo(() => {
+        const { id: groupId, instrumentName } = state.overlapGroup || {};
+        const groupFromEvents = overlapGroups[instrumentName]?.find((group) => group.id === groupId);
+
+        return {
+            panelOverlapGroup: groupFromEvents,
+            panelRecordings: groupFromEvents?.events
+        };
+    }, [state.overlapGroup, overlapGroups]);
 
     const openPanel = useCallback(
-        ({ index: newIndex, instrumentName: newInstrumentName }) => {
-            const newOverlapGroup = overlapGroups[newInstrumentName]?.[newIndex];
-            const isPanelStateUnchanged =
-                isOpen &&
-                index === newIndex &&
-                instrumentName === newInstrumentName &&
-                overlapGroup === newOverlapGroup;
-
-            if (isPanelStateUnchanged) {
-                return;
-            }
-
-            openPanelAction(newIndex, newInstrumentName, newOverlapGroup);
+        ({ index, instrumentName, x, y }) => {
+            const overlapGroup = overlapGroups[instrumentName]?.[index];
+            dispatch({
+                payload: { index, instrumentName, isOpen: true, overlapGroup, x, y },
+                type: 'OPEN_PANEL'
+            });
         },
-        [overlapGroups, index, instrumentName, isOpen, overlapGroup]
+        [overlapGroups]
     );
 
     const closePanel = useCallback(() => {
@@ -58,21 +50,24 @@ const usePanelState = ({ overlapGroups }) => {
     }, []);
 
     useEffect(() => {
-        const isPanelOpenAndGroupDefined = isOpen && overlapGroup;
-        const currentOverlapGroup = overlapGroups[instrumentName]?.[index];
-        const hasOverlapGroupChanged = currentOverlapGroup && currentOverlapGroup !== overlapGroup;
-
-        if (isPanelOpenAndGroupDefined && hasOverlapGroupChanged) {
-            openPanelAction(index, instrumentName, currentOverlapGroup);
-        } else if (!currentOverlapGroup) {
-            closePanel();
+        if (state.isOpen && state.overlapGroup) {
+            const currentOverlapGroup = overlapGroups[state.instrumentName]?.[state.index];
+            if (currentOverlapGroup && currentOverlapGroup.id !== state.overlapGroup.id) {
+                dispatch({
+                    payload: { ...state, overlapGroup: currentOverlapGroup },
+                    type: 'OPEN_PANEL'
+                });
+            }
         }
-    }, [closePanel, index, instrumentName, isOpen, overlapGroup, overlapGroups]);
+    }, [overlapGroups, state]);
 
     return {
         closePanel,
         focusedEvent,
         openPanel,
+        panelOverlapGroup,
+        // Now accessible to components using this hook
+        panelRecordings,
         panelState: state,
         setFocusedEvent
     };

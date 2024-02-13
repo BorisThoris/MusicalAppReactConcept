@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Group, Layer, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { TimelineContext } from '../../../../providers/TimelineProvider';
 import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 
 export const TimelineHeight = 200;
 const Y_OFFSET = 20;
-const ExpansionButtonSize = 20;
 
 const InstrumentTimeline = React.memo(
     ({
@@ -22,12 +22,15 @@ const InstrumentTimeline = React.memo(
         instrumentGroup,
         markersHeight,
         openPanel,
-        panelCompensationOffset,
+
         panelFor,
         setFocusedEvent,
         updateStartTime
     }) => {
         const { mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
+        const { timelineState, updateTimelineState } = useContext(TimelineContext);
+
+        const timelineRef = useRef();
 
         // State for panel expansion
         const [isLocked, setisLocked] = useState(false);
@@ -43,41 +46,65 @@ const InstrumentTimeline = React.memo(
         const timelineWidth = furthestEndTime * pixelToSecondRatio;
         const fillColor = currentPlayingInstrument === groupName ? 'green' : 'transparent';
 
-        const renderGroupElement = (groupData, groupIndex) => {
-            const elementIsSelected = panelFor === groupData.id;
-            return groupData.events.length === 1 ? (
-                <SoundEventElement
-                    updateStartTime={updateStartTime}
-                    key={groupData.events[0].id}
-                    timelineHeight={TimelineHeight}
-                    recording={groupData.events[0]}
-                    index={groupIndex}
-                    openPanel={openPanel}
-                    timelineY={timelineY}
-                    isTargeted={elementIsSelected}
-                    isFocused={groupData.events[0].id === focusedEvent}
-                    setFocusedEvent={setFocusedEvent}
-                />
-            ) : (
-                <OverlapGroupElement
-                    key={`group-${groupIndex}`}
-                    groupData={groupData}
-                    index={groupIndex}
-                    openPanel={openPanel}
-                    timelineHeight={TimelineHeight}
-                    timelineY={timelineY}
-                    updateStartTime={updateStartTime}
-                    isTargeted={elementIsSelected}
-                    focusedEvent={focusedEvent}
-                    setFocusedEvent={setFocusedEvent}
-                />
-            );
-        };
+        useEffect(() => {
+            if (timelineRef.current) {
+                const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
+
+                updateTimelineState({
+                    canvasOffsetY,
+                    timelineY
+                });
+            }
+        }, [furthestEndTime, index, markersHeight, timelineY, updateTimelineState]);
+
+        const renderGroupElement = useCallback(
+            (groupData, groupIndex) => {
+                const elementIsSelected = panelFor === groupData.id;
+                return groupData.events.length === 1 ? (
+                    <SoundEventElement
+                        updateStartTime={updateStartTime}
+                        key={groupData.events[0].id}
+                        timelineHeight={TimelineHeight}
+                        recording={groupData.events[0]}
+                        index={groupIndex}
+                        openPanel={openPanel}
+                        timelineY={timelineY}
+                        isTargeted={elementIsSelected}
+                        isFocused={groupData.events[0].id === focusedEvent}
+                        setFocusedEvent={setFocusedEvent}
+                        canvasOffsetY={timelineState.canvasOffsetY || undefined}
+                    />
+                ) : (
+                    <OverlapGroupElement
+                        key={`group-${groupIndex}`}
+                        groupData={groupData}
+                        index={groupIndex}
+                        openPanel={openPanel}
+                        timelineHeight={TimelineHeight}
+                        timelineY={timelineY}
+                        updateStartTime={updateStartTime}
+                        isTargeted={elementIsSelected}
+                        focusedEvent={focusedEvent}
+                        setFocusedEvent={setFocusedEvent}
+                        canvasOffsetY={timelineState.canvasOffsetY || undefined}
+                    />
+                );
+            },
+            [
+                focusedEvent,
+                openPanel,
+                panelFor,
+                setFocusedEvent,
+                timelineState.canvasOffsetY,
+                timelineY,
+                updateStartTime
+            ]
+        );
 
         return (
-            <Layer y={timelineY}>
+            <Layer y={timelineY} ref={timelineRef}>
                 <Rect
-                    offset={panelCompensationOffset}
+                    offset={timelineState.panelCompensationOffset}
                     height={TimelineHeight}
                     width={timelineWidth}
                     fill={isMuted ? 'red' : fillColor}
@@ -95,11 +122,17 @@ const InstrumentTimeline = React.memo(
                     isLocked={isLocked}
                 />
 
-                <Group opacity={isLocked ? 0.5 : 1} offset={panelCompensationOffset}>
+                <Group opacity={isLocked ? 0.5 : 1} offset={timelineState.panelCompensationOffset}>
                     {instrumentGroup.map(renderGroupElement)}
                 </Group>
 
-                {isLocked && <Rect offset={panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />}
+                {isLocked && (
+                    <Rect
+                        offset={timelineState.panelCompensationOffset}
+                        height={TimelineHeight}
+                        width={timelineWidth}
+                    />
+                )}
             </Layer>
         );
     }

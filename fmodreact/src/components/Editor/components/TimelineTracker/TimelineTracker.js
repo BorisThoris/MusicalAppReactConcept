@@ -3,14 +3,12 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'reac
 import { Layer, Line } from 'react-konva/es/ReactKonvaCore';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-const TimelineTracker = ({
-    furthestEndTime,
-    panelCompensationOffset,
-
-    shouldTrack
-}) => {
+const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
     const trackerRef = useRef();
+
+    const { timelineState } = useContext(TimelineContext);
 
     const { setTrackerPosition, trackerPosition } = useContext(RecordingsPlayerContext);
 
@@ -61,7 +59,7 @@ const TimelineTracker = ({
     return (
         <Layer>
             <Line
-                offset={panelCompensationOffset}
+                offset={timelineState.panelCompensationOffset}
                 ref={trackerRef}
                 x={trackerPosition}
                 draggable

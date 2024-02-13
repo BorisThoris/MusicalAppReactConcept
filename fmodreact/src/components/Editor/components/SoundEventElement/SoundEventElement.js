@@ -35,6 +35,7 @@ const getDynamicColorStops = (isOverlapping) => (isOverlapping ? [0, 'red', 1, '
 
 const SoundEventElement = React.memo(
     ({
+        canvasOffsetY,
         index,
         isFocused,
         isOverlapping,
@@ -49,11 +50,13 @@ const SoundEventElement = React.memo(
     }) => {
         const { eventInstance, eventLength, id, instrumentName, locked, name, startTime } = recording;
 
-        const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
+        const { lockOverlapGroupById } = useInstrumentRecordingsOperations();
 
         const startingPositionInTimeline = startTime * pixelToSecondRatio;
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
         const groupRef = useRef();
+        const elementRef = useRef();
+
         const [originalZIndex, setOriginalZIndex] = useState(0);
 
         const dynamicStroke = getDynamicStroke(isTargeted, isFocused);
@@ -101,8 +104,15 @@ const SoundEventElement = React.memo(
         );
 
         const handleClick = useCallback(() => {
-            if (openPanel) openPanel({ index, instrumentName });
-        }, [openPanel, index, instrumentName]);
+            if (openPanel && !parent) {
+                const groupX = startingPositionInTimeline;
+                let groupY = timelineY + canvasOffsetY;
+
+                groupY += elementRef.current.attrs.height;
+
+                openPanel({ index, instrumentName, x: groupX, y: groupY });
+            }
+        }, [openPanel, parent, startingPositionInTimeline, timelineY, canvasOffsetY, index, instrumentName]);
 
         const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
 
@@ -129,6 +139,7 @@ const SoundEventElement = React.memo(
                     // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                     onMouseEnter={() => setFocusedEvent(id)}
                     onMouseLeave={restoreZIndex}
+                    ref={elementRef}
                     x={0}
                     y={isFocused ? -4 : 0}
                     width={lengthBasedWidth}

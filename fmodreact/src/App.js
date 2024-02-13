@@ -10,6 +10,7 @@ import Tambourine from './components/Tambourine/Tambourine';
 import { gSystem } from './fmodLogic';
 import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
+import { TimelineProvider } from './providers/TimelineProvider';
 
 const NavContainer = styled.nav`
     background-color: yellow;
@@ -49,22 +50,24 @@ function App() {
     }
 
     return (
-        <InstrumentRecordingsProvider>
-            <RecordingsPlayerProvider>
-                <Router>
-                    <TopNav />
+        <TimelineProvider>
+            <InstrumentRecordingsProvider>
+                <RecordingsPlayerProvider>
+                    <Router>
+                        <TopNav />
 
-                    <Routes>
-                        <Route path="/" element={<h1>Welcome to the App</h1>} />
-                        <Route path="/guitar" element={<Guitar />} />
-                        <Route path="/piano" element={<Piano />} />
-                        <Route path="/tambourine" element={<Tambourine />} />
-                        <Route path="/drums" element={<Drums />} />
-                        <Route path="/editor" element={<Editor />} />
-                    </Routes>
-                </Router>
-            </RecordingsPlayerProvider>
-        </InstrumentRecordingsProvider>
+                        <Routes>
+                            <Route path="/" element={<h1>Welcome to the App</h1>} />
+                            <Route path="/guitar" element={<Guitar />} />
+                            <Route path="/piano" element={<Piano />} />
+                            <Route path="/tambourine" element={<Tambourine />} />
+                            <Route path="/drums" element={<Drums />} />
+                            <Route path="/editor" element={<Editor />} />
+                        </Routes>
+                    </Router>
+                </RecordingsPlayerProvider>
+            </InstrumentRecordingsProvider>
+        </TimelineProvider>
     );
 }
 
