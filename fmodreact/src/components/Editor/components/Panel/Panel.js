@@ -5,7 +5,7 @@ import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrume
 import usePlayback from '../../../../hooks/usePlayback';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import EventItemComponent from './EventItem';
-import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from './Panel.styles';
+import { CloseIcon, DuplicateIcon, FlexContainer, PanelContainer, PlayIcon, TrashIcon } from './Panel.styles';
 import TimeControl from './TimeControl';
 
 function useEventHandlers(targetedGroup, setFocusedEvent, onPressX) {
@@ -94,10 +94,10 @@ export const Panel = ({
             : {};
 
     return (
-        <div onMouseLeave={resetFocusedEvent} style={positioningStyle}>
+        <PanelContainer onMouseLeave={resetFocusedEvent} x={x} y={y} timelineState={timelineState}>
             <span>Group:</span>
             <FlexContainer>
-                {panelRecordings.length > 1 && (
+                {panelRecordings?.length > 1 && (
                     <>
                         <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
                         <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
@@ -126,28 +126,39 @@ export const Panel = ({
                     />
                 ))}
             </FlexContainer>
-        </div>
+        </PanelContainer>
     );
 };
 
 Panel.propTypes = {
+    focusedEvent: PropTypes.number, // Assuming focusedEvent is a number. Use PropTypes.string if it's a string.
     onPressX: PropTypes.func.isRequired,
-    panelState: PropTypes.shape({
-        overlapGroup: PropTypes.shape({
-            events: PropTypes.arrayOf(
-                PropTypes.shape({
-                    endTime: PropTypes.number.isRequired,
-                    eventInstance: PropTypes.object.isRequired,
-                    id: PropTypes.any.isRequired,
-                    startTime: PropTypes.number.isRequired
-                })
-            ).isRequired,
-            id: PropTypes.any.isRequired,
+    panelRecordings: PropTypes.arrayOf(
+        PropTypes.shape({
+            endTime: PropTypes.number.isRequired,
+            eventInstance: PropTypes.object.isRequired,
+            id: PropTypes.any.isRequired, // Consider using PropTypes.number or PropTypes.string if the type is known
             startTime: PropTypes.number.isRequired
-        }).isRequired
-    }).isRequired,
+        })
+    ).isRequired,
+    // Assuming panelState is not directly used as a prop and thus removed from PropTypes
     setFocusedEvent: PropTypes.func.isRequired,
-    updateStartTime: PropTypes.func.isRequired
+    targetedGroup: PropTypes.shape({
+        endTime: PropTypes.number,
+        id: PropTypes.any.isRequired, // Again, consider using PropTypes.number or PropTypes.string
+        startTime: PropTypes.number.isRequired
+        // If there are more properties used from targetedGroup, define them here
+    }),
+    updateStartTime: PropTypes.func.isRequired,
+    x: PropTypes.number,
+    y: PropTypes.number
+};
+
+Panel.defaultProps = {
+    focusedEvent: null,
+    targetedGroup: null,
+    x: undefined,
+    y: undefined
 };
 
 export default Panel;

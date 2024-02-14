@@ -1,7 +1,7 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { Fragment, useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -30,6 +30,7 @@ const OverlapGroupElement = React.memo(
         updateStartTime
     }) => {
         const groupElmRef = useRef();
+        const [isDragged, setIsDragged] = useState(false);
         const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
         const { endTime, events, id, instrumentName, locked, startTime } = groupData;
@@ -39,11 +40,11 @@ const OverlapGroupElement = React.memo(
 
         const handleDragEnd = useCallback(
             (e) => {
-                const newGroupStart = e.target.x() / pixelToSecondRatio;
+                setIsDragged(false);
 
+                const newGroupStart = e.target.x() / pixelToSecondRatio;
                 updateOverlapGroupTimes({
                     groupId: id,
-
                     newStartTime: newGroupStart
                 });
             },
@@ -52,12 +53,11 @@ const OverlapGroupElement = React.memo(
 
         const handleClickOverlapGroup = useCallback(() => {
             const fallbackX = 0;
-
             const groupX = groupElmRef.current?.parent?.attrs?.x || fallbackX;
+            // eslint-disable-next-line no-unsafe-optional-chaining
             const groupY = timelineY + canvasOffsetY + groupElmRef.current?.attrs?.height;
-
             openPanel({ index, instrumentName, x: groupX, y: groupY });
-        }, [timelineY, canvasOffsetY, openPanel, index, instrumentName]);
+        }, [canvasOffsetY, index, instrumentName, openPanel, timelineY]);
 
         const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);
 
@@ -65,13 +65,20 @@ const OverlapGroupElement = React.memo(
             lockOverlapGroupById({ groupId: id });
         }, [id, lockOverlapGroupById]);
 
+        const onDragStart = useCallback(() => {
+            setIsDragged(true);
+        }, []);
+
         return (
             <Group onClick={handleClickOverlapGroup}>
                 <Group
                     key={index}
                     x={startingPositionInTimeline}
-                    draggable
+                    draggable={!locked}
+                    onDragEnd={handleDragEnd}
                     dragBoundFunc={dragBoundFunc}
+                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                    onDragStart={onDragStart}
                     width={groupWidth}
                 >
                     <Rect
@@ -82,7 +89,6 @@ const OverlapGroupElement = React.memo(
                         opacity={GROUP_OPACITY}
                         strokeWidth={GROUP_STROKE_WIDTH}
                         stroke={GROUP_COLOR}
-                        onDragEnd={handleDragEnd}
                     />
                     <Text
                         x={TEXT_OFFSET_X}
@@ -91,8 +97,38 @@ const OverlapGroupElement = React.memo(
                         fontSize={TEXT_FONT_SIZE}
                         fill="white"
                     />
+                    <Text
+                        onClick={onLockOverlapGroup}
+                        x={-10}
+                        y={LOCK_OFFSET_Y}
+                        text={locked ? '🔒' : '✔️'}
+                        fontSize={TEXT_FONT_SIZE}
+                        fill="white"
+                    />
 
-                    <Group x={-startingPositionInTimeline}>
+                    {isDragged && (
+                        <Group x={-startingPositionInTimeline}>
+                            {events.map((event, eventIndex) => (
+                                <SoundEventElement
+                                    parent={groupData}
+                                    key={event.id}
+                                    index={eventIndex}
+                                    isOverlapping={events.length > 1}
+                                    recording={event}
+                                    timelineHeight={timelineHeight}
+                                    timelineY={timelineY}
+                                    updateStartTime={updateStartTime}
+                                    isFocused={event.id === focusedEvent}
+                                    setFocusedEvent={setFocusedEvent}
+                                    canvasOffsetY={canvasOffsetY}
+                                />
+                            ))}
+                        </Group>
+                    )}
+                </Group>
+
+                {!isDragged && (
+                    <Group>
                         {events.map((event, eventIndex) => (
                             <SoundEventElement
                                 parent={groupData}
@@ -109,16 +145,7 @@ const OverlapGroupElement = React.memo(
                             />
                         ))}
                     </Group>
-
-                    <Text
-                        onClick={onLockOverlapGroup}
-                        x={-10}
-                        y={LOCK_OFFSET_Y}
-                        text={locked ? '🔒' : '✔️'}
-                        fontSize={TEXT_FONT_SIZE}
-                        fill="white"
-                    />
-                </Group>
+                )}
             </Group>
         );
     },
@@ -126,6 +153,7 @@ const OverlapGroupElement = React.memo(
 );
 
 OverlapGroupElement.propTypes = {
+    canvasOffsetY: PropTypes.number.isRequired,
     focusedEvent: PropTypes.number.isRequired,
     groupData: PropTypes.shape({
         endTime: PropTypes.number.isRequired,
@@ -133,16 +161,20 @@ OverlapGroupElement.propTypes = {
             PropTypes.shape({
                 eventInstance: PropTypes.object.isRequired,
                 eventLength: PropTypes.number.isRequired,
+                id: PropTypes.string.isRequired,
                 instrumentName: PropTypes.string.isRequired,
                 startTime: PropTypes.number.isRequired
             })
         ).isRequired,
+        id: PropTypes.string.isRequired,
         instrumentName: PropTypes.string.isRequired,
+        locked: PropTypes.bool,
         startTime: PropTypes.number.isRequired
     }).isRequired,
     index: PropTypes.number.isRequired,
     isTargeted: PropTypes.bool.isRequired,
     openPanel: PropTypes.func.isRequired,
+    setFocusedEvent: PropTypes.func.isRequired,
     timelineHeight: PropTypes.number.isRequired,
     timelineY: PropTypes.number.isRequired,
     updateStartTime: PropTypes.func.isRequired

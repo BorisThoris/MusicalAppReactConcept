@@ -50,12 +50,14 @@ const InstrumentTimeline = React.memo(
             if (timelineRef.current) {
                 const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
 
-                updateTimelineState({
-                    canvasOffsetY,
-                    timelineY
-                });
+                if (timelineState.canvasOffsetY !== canvasOffsetY) {
+                    updateTimelineState({
+                        canvasOffsetY,
+                        timelineY
+                    });
+                }
             }
-        }, [furthestEndTime, index, markersHeight, timelineY, updateTimelineState]);
+        }, [furthestEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
         const renderGroupElement = useCallback(
             (groupData, groupIndex) => {

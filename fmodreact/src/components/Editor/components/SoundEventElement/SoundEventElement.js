@@ -115,8 +115,8 @@ const SoundEventElement = React.memo(
         }, [openPanel, parent, startingPositionInTimeline, timelineY, canvasOffsetY, index, instrumentName]);
 
         const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
-
         const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
+        const handleMouseEnter = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
 
         const onLockSoundEventElement = useCallback(() => {
             lockOverlapGroupById({ groupId: id });
@@ -135,9 +135,7 @@ const SoundEventElement = React.memo(
                 onDragStart={handleDragStart}
             >
                 <Rect
-                    // eslint-disable-next-line max-len
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                    onMouseEnter={() => setFocusedEvent(id)}
+                    onMouseEnter={handleMouseEnter}
                     onMouseLeave={restoreZIndex}
                     ref={elementRef}
                     x={0}
@@ -174,8 +172,9 @@ const SoundEventElement = React.memo(
 );
 
 SoundEventElement.propTypes = {
+    canvasOffsetY: PropTypes.number.isRequired,
     index: PropTypes.number.isRequired,
-    isFocused: PropTypes.bool.isRequired,
+    isFocused: PropTypes.bool,
     isOverlapping: PropTypes.bool,
     isTargeted: PropTypes.bool,
     openPanel: PropTypes.func,
@@ -185,14 +184,18 @@ SoundEventElement.propTypes = {
         eventLength: PropTypes.number.isRequired,
         id: PropTypes.number.isRequired,
         instrumentName: PropTypes.string.isRequired,
+        locked: PropTypes.bool,
+        name: PropTypes.string.isRequired,
         startTime: PropTypes.number.isRequired
     }).isRequired,
+    setFocusedEvent: PropTypes.func.isRequired,
     timelineHeight: PropTypes.number.isRequired,
     timelineY: PropTypes.number.isRequired,
     updateStartTime: PropTypes.func.isRequired
 };
 
 SoundEventElement.defaultProps = {
+    isFocused: false,
     isOverlapping: false,
     isTargeted: false,
     openPanel: null
