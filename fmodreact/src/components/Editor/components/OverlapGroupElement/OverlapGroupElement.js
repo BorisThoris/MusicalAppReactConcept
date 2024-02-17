@@ -48,8 +48,11 @@ const OverlapGroupElement = React.memo((props) => {
     );
 
     const handleClickOverlapGroup = useCallback(() => {
-        const groupX = get(groupElmRef, '.current?.parent?.attrs?.x') || 0;
-        const groupY = timelineY + canvasOffsetY + get(groupElmRef, '.current.attrs.height');
+        const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
+
+        console.log(groupElmRef.current?.parent?.attrs?.x);
+
+        const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
         openPanel({ index, instrumentName, x: groupX, y: groupY });
     }, [canvasOffsetY, index, instrumentName, openPanel, timelineY]);
 

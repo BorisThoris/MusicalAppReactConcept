@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
+import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import usePlayback from '../../../../hooks/usePlayback';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
@@ -44,20 +45,15 @@ function useReplayEvents(events, groupStartTime, setNewTimeout) {
     }, [events, groupStartTime, setNewTimeout]);
 }
 
-export const Panel = ({
-    focusedEvent,
-    onPressX,
-    panelRecordings,
-    panelState,
-    setFocusedEvent,
-    targetedGroup,
-    updateStartTime,
-    x,
-    y
-}) => {
+export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocusedEvent, updateStartTime, x, y }) => {
     const { timelineState } = useContext(TimelineContext);
+    const { index: targetIndex, instrumentName: targetInstrumentGroup } = panelState;
 
-    const { endTime, id, startTime: groupStartTime, startTime } = targetedGroup || {};
+    const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
+
+    const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
+
+    const targetEvents = targetInRecordings?.events;
 
     const {
         deleteOverlapGroup,
@@ -70,7 +66,7 @@ export const Panel = ({
         updateOverlapGroupTimes
     } = useEventHandlers(panelState, setFocusedEvent, onPressX);
 
-    const handleReplayEvents = useReplayEvents(panelRecordings, groupStartTime, setNewTimeout);
+    const handleReplayEvents = useReplayEvents(targetEvents, groupStartTime, setNewTimeout);
 
     const modifyGroupStartTime = useCallback(
         (delta) => {
@@ -82,65 +78,53 @@ export const Panel = ({
         [id, startTime, updateOverlapGroupTimes]
     );
 
-    const positioningStyle =
-        x && y
-            ? {
-                  backgroundColor: 'green',
-                  left: 0,
-                  position: 'absolute',
-                  top: 0,
-                  transform: `translate(${-timelineState.panelCompensationOffset.x + x}px, ${y}px)`
-              }
-            : {};
+    if (targetInRecordings)
+        return (
+            <PanelContainer
+                onMouseLeave={resetFocusedEvent}
+                x={targetInRecordings.startTime * pixelToSecondRatio}
+                y={y}
+                timelineState={timelineState}
+            >
+                <span>Group:</span>
+                <FlexContainer>
+                    {targetEvents?.length > 1 && (
+                        <>
+                            <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
+                            <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
+                            <DuplicateIcon onClick={onDuplicateGroup}>Duplicate Group</DuplicateIcon>
+                        </>
+                    )}
+                    <CloseIcon onClick={handleClose}>X</CloseIcon>
+                </FlexContainer>
 
-    return (
-        <PanelContainer onMouseLeave={resetFocusedEvent} x={x} y={y} timelineState={timelineState}>
-            <span>Group:</span>
-            <FlexContainer>
-                {panelRecordings?.length > 1 && (
-                    <>
-                        <PlayIcon onClick={handleReplayEvents}>▶</PlayIcon>
-                        <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
-                        <DuplicateIcon onClick={onDuplicateGroup}>Duplicate Group</DuplicateIcon>
-                    </>
-                )}
-                <CloseIcon onClick={handleClose}>X</CloseIcon>
-            </FlexContainer>
+                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
 
-            <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
-
-            <span>{panelRecordings.length} Events:</span>
-            <FlexContainer>
-                {panelRecordings?.map((event) => (
-                    <EventItemComponent
-                        key={event.id}
-                        overlapGroup={targetedGroup}
-                        event={event}
-                        // eslint-disable-next-line no-undef, react-perf/jsx-no-new-function-as-prop
-                        onDelete={() => deleteRecording(event, targetedGroup)}
-                        setFocusedEvent={setFocusedEvent}
-                        focusedEvent={focusedEvent}
-                        onPlay={handlePlayEvent}
-                        onClose={handleClose}
-                        updateStartTime={updateStartTime}
-                    />
-                ))}
-            </FlexContainer>
-        </PanelContainer>
-    );
+                <span>{targetEvents.length} Events:</span>
+                <FlexContainer>
+                    {targetEvents?.map((event) => (
+                        <EventItemComponent
+                            key={event.id}
+                            overlapGroup={targetInRecordings}
+                            event={event}
+                            // eslint-disable-next-line no-undef, react-perf/jsx-no-new-function-as-prop
+                            onDelete={() => deleteRecording(event, targetInRecordings)}
+                            setFocusedEvent={setFocusedEvent}
+                            focusedEvent={focusedEvent}
+                            onPlay={handlePlayEvent}
+                            onClose={handleClose}
+                            updateStartTime={updateStartTime}
+                        />
+                    ))}
+                </FlexContainer>
+            </PanelContainer>
+        );
+    return null;
 };
 
 Panel.propTypes = {
     focusedEvent: PropTypes.number, // Assuming focusedEvent is a number. Use PropTypes.string if it's a string.
     onPressX: PropTypes.func.isRequired,
-    panelRecordings: PropTypes.arrayOf(
-        PropTypes.shape({
-            endTime: PropTypes.number.isRequired,
-            eventInstance: PropTypes.object.isRequired,
-            id: PropTypes.any.isRequired, // Consider using PropTypes.number or PropTypes.string if the type is known
-            startTime: PropTypes.number.isRequired
-        })
-    ).isRequired,
     // Assuming panelState is not directly used as a prop and thus removed from PropTypes
     setFocusedEvent: PropTypes.func.isRequired,
     targetedGroup: PropTypes.shape({
@@ -149,6 +133,14 @@ Panel.propTypes = {
         startTime: PropTypes.number.isRequired
         // If there are more properties used from targetedGroup, define them here
     }),
+    targetEvents: PropTypes.arrayOf(
+        PropTypes.shape({
+            endTime: PropTypes.number.isRequired,
+            eventInstance: PropTypes.object.isRequired,
+            id: PropTypes.any.isRequired, // Consider using PropTypes.number or PropTypes.string if the type is known
+            startTime: PropTypes.number.isRequired
+        })
+    ).isRequired,
     updateStartTime: PropTypes.func.isRequired,
     x: PropTypes.number,
     y: PropTypes.number

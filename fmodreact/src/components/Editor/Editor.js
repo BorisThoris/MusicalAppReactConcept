@@ -11,8 +11,7 @@ import Timelines, { StyledEditorWrapper, StyledTimeline } from './components/Tim
 const Editor = () => {
     const { deleteAllRecordingsForInstrument, updateRecording } = useInstrumentRecordingsOperations();
     const { overlapGroups, recordings } = useContext(InstrumentRecordingsContext);
-    const { closePanel, focusedEvent, openPanel, panelOverlapGroup, panelRecordings, panelState, setFocusedEvent } =
-        usePanelState({ overlapGroups });
+    const { closePanel, focusedEvent, openPanel, panelState, setFocusedEvent } = usePanelState({ overlapGroups });
     const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings });
 
     return (
@@ -34,11 +33,10 @@ const Editor = () => {
                 />
                 {panelState.isOpen && (
                     <Panel
+                        recordings={overlapGroups}
                         onPressX={closePanel}
                         updateStartTime={updateRecording}
                         panelState={panelState}
-                        targetedGroup={panelOverlapGroup}
-                        panelRecordings={panelRecordings}
                         setFocusedEvent={setFocusedEvent}
                         focusedEvent={focusedEvent}
                         x={panelState.x}
