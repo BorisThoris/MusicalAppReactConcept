@@ -5,7 +5,16 @@ import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import EventHeaderComponent from './EventHeader';
 import TimeControl from './TimeControl';
 
-const EventItem = ({ event, focusedEvent, onDelete, onPlay, overlapGroup, setFocusedEvent, updateStartTime }) => {
+const EventItem = ({
+    event,
+    focusedEvent,
+    isLocked,
+    onDelete,
+    onPlay,
+    overlapGroup,
+    setFocusedEvent,
+    updateStartTime
+}) => {
     const { endTime, eventInstance, eventLength, id, instrumentName, params, startTime } = event;
 
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();

@@ -41,9 +41,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             }
         }
 
-        // Example usage
-        // findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
-
         if (isOverlapGroupsChanged) {
             setOverlapGroups(newOverlapGroups);
             prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);

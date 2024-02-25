@@ -107,7 +107,7 @@ export const updatedGroup = (event, existingGroup) => {
 
     const orphans = [];
 
-    if (group.events.length > 1 && !group.locked) {
+    if (group.events.length > 1) {
         const checkedEvents = [];
 
         group.events = group.events.sort((a, b) => {

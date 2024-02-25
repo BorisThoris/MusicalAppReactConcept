@@ -41,7 +41,7 @@ const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = 
         instrumentName,
         name,
         params,
-        startTime: parseFloat(startTime.toFixed(2))
+        startTime: parseFloat(startTime?.toFixed(2))
     };
 };
 

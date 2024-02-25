@@ -50,8 +50,6 @@ const OverlapGroupElement = React.memo((props) => {
     const handleClickOverlapGroup = useCallback(() => {
         const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
 
-        console.log(groupElmRef.current?.parent?.attrs?.x);
-
         const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
         openPanel({ index, instrumentName, x: groupX, y: groupY });
     }, [canvasOffsetY, index, instrumentName, openPanel, timelineY]);
@@ -68,7 +66,6 @@ const OverlapGroupElement = React.memo((props) => {
         events.map((event, eventIndex) => (
             <SoundEventElement
                 key={event.id}
-                // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
                 parent={groupData}
                 index={eventIndex}
                 isOverlapping={events.length > 1}
@@ -87,7 +84,7 @@ const OverlapGroupElement = React.memo((props) => {
             <Group
                 key={index}
                 x={startingPositionInTimeline}
-                draggable={!locked}
+                draggable
                 onDragEnd={handleDragEnd}
                 dragBoundFunc={dragBoundFunc}
                 onDragStart={onDragStart}

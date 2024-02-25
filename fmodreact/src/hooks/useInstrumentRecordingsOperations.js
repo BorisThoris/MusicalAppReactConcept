@@ -62,42 +62,40 @@ export const useInstrumentRecordingsOperations = () => {
             const match = instrumentName.match(nameRegex);
 
             const baseName = match ? match[1] : instrumentName;
-            const number = match && match[2] ? parseInt(match[2], 10) + 1 : 2;
-
-            const newInstrumentName = `${baseName} ${number}`;
+            let number = match && match[2] ? parseInt(match[2], 10) : 1; // Start from 1 if no number is present
+            let newInstrumentName = `${baseName} ${number}`;
 
             setOverlapGroups((prevGroups) => {
                 const originalGroups = prevGroups[instrumentName];
 
                 if (!originalGroups) {
                     alert('Original instrument data not found. Cannot duplicate.');
-                    return prevGroups; // Early return with unchanged state if original data not found
+                    return prevGroups;
                 }
 
-                // Use map to transform each original group into a new group, immutably
+                while (Object.prototype.hasOwnProperty.call(prevGroups, newInstrumentName)) {
+                    number += 1;
+                    newInstrumentName = `${baseName} ${number}`;
+                }
+
                 const duplicatedGroups = originalGroups.map((group) => {
                     const recreatedGroup = recreateEvents({ groupsToRecreate: [group] })[0];
 
-                    // Generate new IDs for each duplicated group to ensure uniqueness
                     const newGroupId = `${recreatedGroup.id}_dup`;
 
-                    // Return a new object for the group with updated properties
                     return {
                         ...recreatedGroup,
                         id: newGroupId,
-                        instrumentName: newInstrumentName // Assign the new instrument name
-                        // Further modifications if needed
+                        instrumentName: newInstrumentName
                     };
                 });
 
-                // Return a new state object with the new instrument and its duplicated groups
                 return {
                     ...prevGroups,
                     [newInstrumentName]: duplicatedGroups
                 };
             });
 
-            console.log(`Duplicated instrument: ${instrumentName} to ${newInstrumentName}`);
             return newInstrumentName;
         },
         [setOverlapGroups]
@@ -121,9 +119,7 @@ export const useInstrumentRecordingsOperations = () => {
                 }
 
                 if (parent?.id === index) {
-                    // eslint-disable-next-line no-param-reassign
                     parent.startTime = roundedStartTime;
-                    // eslint-disable-next-line no-param-reassign
                     parent.endTime = roundedEndTime;
                 }
 
@@ -225,18 +221,15 @@ export const useInstrumentRecordingsOperations = () => {
                 Object.keys(updatedRecordings).forEach((instrumentName) => {
                     const recordings = updatedRecordings[instrumentName];
 
-                    // If the event is part of a group, update the group events
                     if (parent && parent.events && parent.events.length > 1) {
                         const updatedEvents = parent.events.filter((recording) => recording.id !== eventId);
 
                         if (updatedEvents.length !== parent.events.length) {
-                            // Find the parent group in the recordings and update it
                             updatedRecordings[instrumentName] = recordings.map((group) =>
                                 group === parent ? { ...group, events: updatedEvents } : group
                             );
                         }
                     } else {
-                        // If the event is not part of a group, filter it out from the recordings
                         updatedRecordings[instrumentName] = recordings.filter((recording) => recording.id !== eventId);
                     }
                 });
@@ -306,11 +299,9 @@ export const useInstrumentRecordingsOperations = () => {
                 locked: false
             };
 
-            // Update the overlapGroups state to include the new group
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
 
-                // If the instrument already has groups, add to them, otherwise create a new array
                 if (updatedGroups[event.instrumentName]) {
                     updatedGroups[event.instrumentName].push(newGroup);
                 } else {
@@ -372,7 +363,6 @@ export const useInstrumentRecordingsOperations = () => {
             newGroup.endTime = last(newGroup.events).endTime;
             newGroup.startTime = first(newGroup.events).startTime;
 
-            // Update the overlapGroups state to include the new group
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
 
