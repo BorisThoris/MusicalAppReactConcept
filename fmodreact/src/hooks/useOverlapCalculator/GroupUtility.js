@@ -168,10 +168,10 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
 };
 
 export const recreateEvents = ({ groupsToRecreate }) =>
-    groupsToRecreate.map((group) => {
+    groupsToRecreate.map((existingGroup) => {
         // Recreate each event in the events property
-        const recreatedEvents = group.events
-            ? group.events.map((subEvent) => {
+        const recreatedEvents = existingGroup.events
+            ? existingGroup.events.map((subEvent) => {
                   // Create an event instance for each subEvent
                   const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
@@ -179,7 +179,7 @@ export const recreateEvents = ({ groupsToRecreate }) =>
                   return createSound({
                       eventInstance: subEventInstance,
                       eventPath: subEvent.eventPath || 'Drum/Snare',
-                      instrumentName: group.instrumentName,
+                      instrumentName: existingGroup.instrumentName,
                       passedParams: subEvent.params,
                       startTime: subEvent.startTime
                   });
@@ -187,13 +187,13 @@ export const recreateEvents = ({ groupsToRecreate }) =>
             : [];
 
         // Create main event
-        const eventInstance = createEventInstance(group.eventPath || 'Drum/Snare');
+        const eventInstance = createEventInstance(existingGroup.eventPath || 'Drum/Snare');
         const mainEvent = createSound({
             eventInstance,
-            eventPath: group.eventPath || 'Drum/Snare',
-            instrumentName: group.instrumentName,
-            passedParams: group.params,
-            startTime: group.startTime
+            eventPath: existingGroup.eventPath || 'Drum/Snare',
+            instrumentName: existingGroup.instrumentName,
+            passedParams: existingGroup.params,
+            startTime: existingGroup.startTime
         });
 
         return {
@@ -204,7 +204,7 @@ export const recreateEvents = ({ groupsToRecreate }) =>
             id: `${mainEvent.id}`,
             instrumentName: mainEvent.instrumentName,
             length: mainEvent.eventLength,
-            locked: mainEvent.locked,
+            locked: existingGroup.locked,
             startTime: mainEvent.startTime
         };
     });

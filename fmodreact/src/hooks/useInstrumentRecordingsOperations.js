@@ -62,7 +62,7 @@ export const useInstrumentRecordingsOperations = () => {
             const match = instrumentName.match(nameRegex);
 
             const baseName = match ? match[1] : instrumentName;
-            let number = match && match[2] ? parseInt(match[2], 10) : 1; // Start from 1 if no number is present
+            let number = match && match[2] ? parseInt(match[2], 10) : 1;
             let newInstrumentName = `${baseName} ${number}`;
 
             setOverlapGroups((prevGroups) => {
@@ -89,6 +89,9 @@ export const useInstrumentRecordingsOperations = () => {
                         instrumentName: newInstrumentName
                     };
                 });
+
+                console.log('duplicated group');
+                console.log(duplicatedGroups);
 
                 return {
                     ...prevGroups,
