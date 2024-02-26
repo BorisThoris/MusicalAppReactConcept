@@ -1,3 +1,3 @@
-const threeMinuteMs = 180000;
+const threeMinuteMs = 180000
 
-export default threeMinuteMs;
+export default threeMinuteMs

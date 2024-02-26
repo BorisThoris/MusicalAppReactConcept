@@ -1,3 +1,3 @@
-const pixelToSecondRatio = 105;
+const pixelToSecondRatio = 105
 
-export default pixelToSecondRatio;
+export default pixelToSecondRatio
