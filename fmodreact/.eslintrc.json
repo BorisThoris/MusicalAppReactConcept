@@ -44,7 +44,7 @@
         "arrowParens": "always",
         "jsxSingleQuote": false,
         "bracketSameLine": false,
-        "endOfLine": "auto",
+        "endOfLine": "lf",
         "trailingComma": "none"
       }
     ],

@@ -1,58 +1,58 @@
-import React, { useRef } from "react";
-import styled from "styled-components";
-import { createAndPlayEventIntance } from "../../fmodLogic/eventInstanceHelpers";
-import Instruments from "../../globalConstants/instrumentNames";
-import useRecorder from "../../hooks/useRecorder";
-import useRecordingsPlayer from "../../hooks/useRecordingsPlayer";
-import { useGuitarDrawing } from "./useGuitarDrawing";
+import React, { useRef } from 'react';
+import styled from 'styled-components';
+import { createAndPlayEventIntance } from '../../fmodLogic/eventInstanceHelpers';
+import Instruments from '../../globalConstants/instrumentNames';
+import useRecorder from '../../hooks/useRecorder';
+import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import { useGuitarDrawing } from './useGuitarDrawing';
 
 const StyledGuitarSvg = styled.svg`
-  width: 90vw;
-  height: 90vh;
-  background: yellow;
+    width: 90vw;
+    height: 90vh;
+    background: yellow;
 `;
 
 const StyledGuitarNeck = styled.rect`
-  x: 130;
-  y: 50;
-  width: 100%;
-  height: 100%;
-  fill: green;
+    x: 130;
+    y: 50;
+    width: 100%;
+    height: 100%;
+    fill: green;
 `;
 
 const Wrapper = styled.div`
-  display: flex;
-  flex-direction: collumn;
+    display: flex;
+    flex-direction: collumn;
 `;
 
 const Guitar = () => {
-  const instrumentName = Instruments.Guitar;
-  const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
-  const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
+    const instrumentName = Instruments.Guitar;
+    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
-  const playEvent = (musicalEvent) => {
-    const eventInstance = createAndPlayEventIntance(musicalEvent);
-    recordEvent(eventInstance, instrumentName);
-  };
+    const playEvent = (musicalEvent) => {
+        const eventInstance = createAndPlayEventIntance(musicalEvent);
+        recordEvent(eventInstance, instrumentName);
+    };
 
-  const handlePlayEvent = (musicalEvent) => {
-    playEvent(musicalEvent);
-  };
+    const handlePlayEvent = (musicalEvent) => {
+        playEvent(musicalEvent);
+    };
 
-  const guitarSvgRef = useRef(null);
+    const guitarSvgRef = useRef(null);
 
-  useGuitarDrawing(guitarSvgRef, handlePlayEvent);
+    useGuitarDrawing(guitarSvgRef, handlePlayEvent);
 
-  return (
-    <Wrapper>
-      <button onClick={toggleRecording}>Toggle Recording</button>
-      <button onClick={playRecordedSounds}>Replay Events</button>
+    return (
+        <Wrapper>
+            <button onClick={toggleRecording}>Toggle Recording</button>
+            <button onClick={playRecordedSounds}>Replay Events</button>
 
-      <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
-        <StyledGuitarNeck />
-      </StyledGuitarSvg>
-    </Wrapper>
-  );
+            <StyledGuitarSvg ref={guitarSvgRef} xmlns="http://www.w3.org/2000/svg">
+                <StyledGuitarNeck />
+            </StyledGuitarSvg>
+        </Wrapper>
+    );
 };
 
 export default Guitar;

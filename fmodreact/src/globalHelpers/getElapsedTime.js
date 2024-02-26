@@ -1,4 +1,4 @@
-import convertToSeconds from "./convertToSeconds";
+import convertToSeconds from './convertToSeconds';
 
 const getElapsedTime = (startTime) => convertToSeconds(Date.now() - startTime);
 
