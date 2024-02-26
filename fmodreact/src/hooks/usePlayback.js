@@ -1,31 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
-import { stopAllPlayback } from '../fmodLogic/eventInstanceHelpers'
+import { useCallback, useEffect, useState } from "react";
+import { stopAllPlayback } from "../fmodLogic/eventInstanceHelpers";
 
 const usePlayback = ({ playbackStatus }) => {
-  const [timeouts, setTimeouts] = useState([])
+  const [timeouts, setTimeouts] = useState([]);
 
   const clearAllTimeouts = useCallback(() => {
-    timeouts.forEach(clearTimeout)
-    setTimeouts([])
+    timeouts.forEach(clearTimeout);
+    setTimeouts([]);
 
-    stopAllPlayback()
-  }, [timeouts])
+    stopAllPlayback();
+  }, [timeouts]);
 
   const setNewTimeout = useCallback((callback, delay) => {
-    const timeoutId = setTimeout(() => callback(), delay * 1000)
+    const timeoutId = setTimeout(() => callback(), delay * 1000);
 
-    setTimeouts(prevTimeouts => {
-      return [...prevTimeouts, timeoutId]
-    })
-  }, [])
+    setTimeouts((prevTimeouts) => {
+      return [...prevTimeouts, timeoutId];
+    });
+  }, []);
 
   useEffect(() => {
     if (timeouts.length > 0 && !playbackStatus) {
-      clearAllTimeouts()
+      clearAllTimeouts();
     }
-  }, [clearAllTimeouts, playbackStatus, timeouts.length])
+  }, [clearAllTimeouts, playbackStatus, timeouts.length]);
 
-  return { clearAllTimeouts, setNewTimeout }
-}
+  return { clearAllTimeouts, setNewTimeout };
+};
 
-export default usePlayback
+export default usePlayback;

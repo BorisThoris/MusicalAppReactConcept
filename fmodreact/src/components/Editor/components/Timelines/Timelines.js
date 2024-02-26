@@ -1,29 +1,29 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
-import PropTypes from 'prop-types'
-import React, { useCallback, useContext, useEffect, useMemo } from 'react'
-import { Stage } from 'react-konva'
-import styled from 'styled-components'
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds'
-import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider'
-import { TimelineContext } from '../../../../providers/TimelineProvider'
+import PropTypes from "prop-types";
+import React, { useCallback, useContext, useEffect, useMemo } from "react";
+import { Stage } from "react-konva";
+import styled from "styled-components";
+import pixelToSecondRatio from "../../../../globalConstants/pixelToSeconds";
+import { RecordingsPlayerContext } from "../../../../providers/RecordingsPlayerProvider";
+import { TimelineContext } from "../../../../providers/TimelineProvider";
 import InstrumentTimeline, {
   TimelineHeight,
-} from '../InstrumentTimeline/InstrumentTimeline'
-import TimelineMarker from '../TimelineMarker/TimelineMarker'
-import TimelineTracker from '../TimelineTracker/TimelineTracker'
+} from "../InstrumentTimeline/InstrumentTimeline";
+import TimelineMarker from "../TimelineMarker/TimelineMarker";
+import TimelineTracker from "../TimelineTracker/TimelineTracker";
 
 export const StyledEditorWrapper = styled.div`
   background-color: white;
   opacity: 0.7;
-`
+`;
 
 export const StyledTimeline = styled.div`
   flex-direction: column;
   overflow-y: scroll;
-`
+`;
 
-const markersHeight = 50
-const panelCompensationOffset = { x: -60 }
+const markersHeight = 50;
+const panelCompensationOffset = { x: -60 };
 
 const Timelines = React.memo(
   ({
@@ -41,43 +41,43 @@ const Timelines = React.memo(
   }) => {
     const { playbackStatus, replayAllRecordedSounds } = useContext(
       RecordingsPlayerContext,
-    )
-    const { timelineState, updateTimelineState } = useContext(TimelineContext)
+    );
+    const { timelineState, updateTimelineState } = useContext(TimelineContext);
 
     useEffect(() => {
       if (
         timelineState.panelCompensationOffset?.x !== panelCompensationOffset?.x
       )
-        updateTimelineState({ panelCompensationOffset })
-    }, [timelineState.panelCompensationOffset?.x, updateTimelineState])
+        updateTimelineState({ panelCompensationOffset });
+    }, [timelineState.panelCompensationOffset?.x, updateTimelineState]);
 
-    const { currentInstrument, isPlaying } = playbackStatus
+    const { currentInstrument, isPlaying } = playbackStatus;
 
     const closePanelOnTimelinePress = useCallback(
-      event => {
-        if (event.target.className !== 'Rect') {
-          closePanel()
+      (event) => {
+        if (event.target.className !== "Rect") {
+          closePanel();
         }
       },
       [closePanel],
-    )
+    );
 
-    const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio
+    const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
     const calculatedStageWidth =
       window.innerWidth > widthBasedOnLastSound
         ? window.innerWidth
-        : widthBasedOnLastSound
+        : widthBasedOnLastSound;
 
-    const recordingsArr = Object.entries(recordings)
+    const recordingsArr = Object.entries(recordings);
     const EditorHeight =
-      recordingsArr.length * TimelineHeight + markersHeight || 500
+      recordingsArr.length * TimelineHeight + markersHeight || 500;
 
     return (
       <>
         <button onClick={replayAllRecordedSounds}>
-          {isPlaying ? 'Pause' : 'Start'}
+          {isPlaying ? "Pause" : "Start"}
         </button>
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: "flex" }}>
           <Stage
             width={calculatedStageWidth}
             height={EditorHeight}
@@ -120,9 +120,9 @@ const Timelines = React.memo(
           </Stage>
         </div>
       </>
-    )
+    );
   },
-)
+);
 
 Timelines.propTypes = {
   closePanel: PropTypes.func.isRequired,
@@ -146,12 +146,12 @@ Timelines.propTypes = {
   setTrackerPosition: PropTypes.func.isRequired,
   trackerPosition: PropTypes.number,
   updateStartTime: PropTypes.func.isRequired,
-}
+};
 
 Timelines.defaultProps = {
   focusedEvent: null,
   panelFor: null,
   trackerPosition: 0,
-}
+};
 
-export default Timelines
+export default Timelines;

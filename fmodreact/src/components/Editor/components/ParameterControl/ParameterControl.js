@@ -1,13 +1,13 @@
-import isEqual from 'lodash/isEqual'
-import PropTypes from 'prop-types'
-import React from 'react'
-import useParameter from '../../../../hooks/useParameter'
+import isEqual from "lodash/isEqual";
+import PropTypes from "prop-types";
+import React from "react";
+import useParameter from "../../../../hooks/useParameter";
 import {
   ControlWrapper,
   ParamName,
   ParamValue,
   SliderInput,
-} from './ParameterControl.styles'
+} from "./ParameterControl.styles";
 
 const ParameterControl = React.memo(
   ({ eventId, eventInstance, overlapGroup, param }) => {
@@ -16,7 +16,7 @@ const ParameterControl = React.memo(
       eventInstance,
       param,
       parent: overlapGroup,
-    })
+    });
 
     return (
       <ControlWrapper>
@@ -25,17 +25,17 @@ const ParameterControl = React.memo(
           <ParamValue>{paramDetails.paramValue}</ParamValue>
         </div>
         <SliderInput
-          type='range'
+          type="range"
           min={paramDetails.paramMin}
           max={paramDetails.paramMax}
           value={paramDetails.paramValue}
           onChange={handleParamChange}
         />
       </ControlWrapper>
-    )
+    );
   },
   isEqual,
-)
+);
 
 ParameterControl.propTypes = {
   eventInstance: PropTypes.object.isRequired,
@@ -44,6 +44,6 @@ ParameterControl.propTypes = {
     minimum: PropTypes.number,
     name: PropTypes.string,
   }).isRequired,
-}
+};
 
-export default ParameterControl
+export default ParameterControl;

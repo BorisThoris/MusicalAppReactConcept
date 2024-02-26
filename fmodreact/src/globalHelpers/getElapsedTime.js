@@ -1,5 +1,5 @@
-import convertToSeconds from './convertToSeconds'
+import convertToSeconds from "./convertToSeconds";
 
-const getElapsedTime = startTime => convertToSeconds(Date.now() - startTime)
+const getElapsedTime = (startTime) => convertToSeconds(Date.now() - startTime);
 
-export default getElapsedTime
+export default getElapsedTime;

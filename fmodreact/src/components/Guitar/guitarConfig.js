@@ -5,10 +5,10 @@ const GUITAR_CONFIG = {
   STRING_START_X_OFFSET: 135,
   STRING_START_Y: 50,
   STRING_WIDTH_PERCENT: 0.2,
-  STRINGS: ['A', 'B', 'D', 'E', 'G'],
+  STRINGS: ["A", "B", "D", "E", "G"],
 
   TOTAL_WAVES: 20,
   WAVE_HEIGHT: 2,
-}
+};
 
-export default GUITAR_CONFIG
+export default GUITAR_CONFIG;

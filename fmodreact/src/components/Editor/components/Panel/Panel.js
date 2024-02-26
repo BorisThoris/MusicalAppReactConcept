@@ -1,9 +1,9 @@
-import PropTypes from 'prop-types'
-import React, { useCallback, useContext } from 'react'
-import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers'
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds'
-import { TimelineContext } from '../../../../providers/TimelineProvider'
-import EventItemComponent from './EventItem'
+import PropTypes from "prop-types";
+import React, { useCallback, useContext } from "react";
+import { playEventInstance } from "../../../../fmodLogic/eventInstanceHelpers";
+import pixelToSecondRatio from "../../../../globalConstants/pixelToSeconds";
+import { TimelineContext } from "../../../../providers/TimelineProvider";
+import EventItemComponent from "./EventItem";
 import {
   CloseIcon,
   DuplicateIcon,
@@ -11,9 +11,9 @@ import {
   PanelContainer,
   PlayIcon,
   TrashIcon,
-} from './Panel.styles'
-import TimeControl from './TimeControl'
-import { useEventHandlers } from './useEventsHandlers'
+} from "./Panel.styles";
+import TimeControl from "./TimeControl";
+import { useEventHandlers } from "./useEventsHandlers";
 
 export const Panel = ({
   focusedEvent,
@@ -25,18 +25,18 @@ export const Panel = ({
   x,
   y,
 }) => {
-  const { timelineState } = useContext(TimelineContext)
+  const { timelineState } = useContext(TimelineContext);
   const { index: targetIndex, instrumentName: targetInstrumentGroup } =
-    panelState
+    panelState;
 
-  const targetInRecordings = recordings[targetInstrumentGroup][targetIndex]
+  const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
   const {
     endTime,
     id,
     startTime: groupStartTime,
     startTime,
-  } = targetInRecordings || {}
-  const targetEvents = targetInRecordings?.events
+  } = targetInRecordings || {};
+  const targetEvents = targetInRecordings?.events;
 
   const {
     deleteOverlapGroup,
@@ -47,33 +47,33 @@ export const Panel = ({
     resetFocusedEvent,
     setNewTimeout,
     updateOverlapGroupTimes,
-  } = useEventHandlers(panelState.overlapGroup, setFocusedEvent, onPressX)
+  } = useEventHandlers(panelState.overlapGroup, setFocusedEvent, onPressX);
 
   const useReplayEvents = useCallback(
     () =>
-      targetEvents.forEach(event => {
+      targetEvents.forEach((event) => {
         setNewTimeout(
           () => playEventInstance(event.eventInstance),
           event.startTime - groupStartTime,
-        )
+        );
       }),
     [groupStartTime, setNewTimeout, targetEvents],
-  )
+  );
 
   const modifyGroupStartTime = useCallback(
-    delta => {
+    (delta) => {
       updateOverlapGroupTimes({
         groupId: id,
         newStartTime: startTime + delta,
-      })
+      });
     },
     [id, startTime, updateOverlapGroupTimes],
-  )
+  );
 
   const renderEvents = () =>
-    targetEvents?.map(event => {
+    targetEvents?.map((event) => {
       // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-      const onDelteNote = () => deleteRecording(event, targetInRecordings)
+      const onDelteNote = () => deleteRecording(event, targetInRecordings);
 
       return (
         <EventItemComponent
@@ -87,8 +87,8 @@ export const Panel = ({
           onClose={handleClose}
           updateStartTime={updateStartTime}
         />
-      )
-    })
+      );
+    });
 
   if (targetInRecordings)
     return (
@@ -123,9 +123,9 @@ export const Panel = ({
 
         <FlexContainer>{renderEvents()}</FlexContainer>
       </PanelContainer>
-    )
-  return null
-}
+    );
+  return null;
+};
 
 Panel.propTypes = {
   focusedEvent: PropTypes.number,
@@ -147,13 +147,13 @@ Panel.propTypes = {
   updateStartTime: PropTypes.func.isRequired,
   x: PropTypes.number,
   y: PropTypes.number,
-}
+};
 
 Panel.defaultProps = {
   focusedEvent: null,
   targetedGroup: null,
   x: undefined,
   y: undefined,
-}
+};
 
-export default Panel
+export default Panel;

@@ -1,42 +1,42 @@
 // @ts-nocheck
-import React, { useCallback, useReducer, useState } from 'react'
+import React, { useCallback, useReducer, useState } from "react";
 
 const initialState = {
   index: null,
-  instrumentName: '',
+  instrumentName: "",
   isOpen: false,
   overlapGroup: null,
-}
+};
 
 const panelReducer = (state, action) => {
   switch (action.type) {
-    case 'OPEN_PANEL':
-      return { ...state, ...action.payload, isOpen: true }
-    case 'CLOSE_PANEL':
-      return initialState
+    case "OPEN_PANEL":
+      return { ...state, ...action.payload, isOpen: true };
+    case "CLOSE_PANEL":
+      return initialState;
     default:
-      return state
+      return state;
   }
-}
+};
 
 export const usePanelState = ({ overlapGroups }) => {
-  const [focusedEvent, setFocusedEvent] = useState(-1)
-  const [state, dispatch] = useReducer(panelReducer, initialState)
+  const [focusedEvent, setFocusedEvent] = useState(-1);
+  const [state, dispatch] = useReducer(panelReducer, initialState);
 
   const openPanel = useCallback(
     ({ index, instrumentName, x, y }) => {
-      const overlapGroup = overlapGroups[instrumentName]?.[index]
+      const overlapGroup = overlapGroups[instrumentName]?.[index];
       dispatch({
         payload: { index, instrumentName, isOpen: true, overlapGroup, x, y },
-        type: 'OPEN_PANEL',
-      })
+        type: "OPEN_PANEL",
+      });
     },
     [overlapGroups],
-  )
+  );
 
   const closePanel = useCallback(() => {
-    dispatch({ type: 'CLOSE_PANEL' })
-  }, [])
+    dispatch({ type: "CLOSE_PANEL" });
+  }, []);
 
   return {
     closePanel,
@@ -44,7 +44,7 @@ export const usePanelState = ({ overlapGroups }) => {
     openPanel,
     panelState: state,
     setFocusedEvent,
-  }
-}
+  };
+};
 
-export default usePanelState
+export default usePanelState;

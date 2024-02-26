@@ -1,3 +1,3 @@
-const convertToSeconds = milliseconds => milliseconds / 1000
+const convertToSeconds = (milliseconds) => milliseconds / 1000;
 
-export default convertToSeconds
+export default convertToSeconds;

@@ -1,21 +1,21 @@
 export const isExactMatch = (event, eventSet) =>
   [...eventSet].some(
-    existingEvent =>
+    (existingEvent) =>
       existingEvent.id === event.id &&
       existingEvent.startTime === event.startTime &&
       existingEvent.endTime === event.endTime,
-  )
+  );
 
 export const createGroupFromEvent = (event, foundEvent) => {
-  const existingEvent = foundEvent?.value
+  const existingEvent = foundEvent?.value;
 
-  const mappedEvents = []
+  const mappedEvents = [];
   if (event.events?.length > 1) {
-    event.events.forEach(e => {
-      mappedEvents.push({ ...e, events: undefined })
-    })
+    event.events.forEach((e) => {
+      mappedEvents.push({ ...e, events: undefined });
+    });
   } else {
-    mappedEvents.push({ ...event, events: undefined })
+    mappedEvents.push({ ...event, events: undefined });
   }
 
   // DIRTY GROUP FIX
@@ -29,8 +29,8 @@ export const createGroupFromEvent = (event, foundEvent) => {
       length: event.eventLength,
       locked: event.locked,
       startTime: event.startTime,
-    }
+    };
   }
 
-  return existingEvent
-}
+  return existingEvent;
+};

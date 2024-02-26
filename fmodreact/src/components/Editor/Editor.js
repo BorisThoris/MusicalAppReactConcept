@@ -1,23 +1,23 @@
-import React, { useContext } from 'react'
-import threeMinuteMs from '../../globalConstants/songLimit'
-import { useInstrumentRecordingsOperations } from '../../hooks/useInstrumentRecordingsOperations'
-import { usePanelState } from '../../hooks/usePanelState'
-import useStageWidth from '../../hooks/useStageWidth'
-import { InstrumentRecordingsContext } from '../../providers/InstrumentsProvider'
-import Header from './components/Header/Header'
-import { Panel } from './components/Panel/Panel'
+import React, { useContext } from "react";
+import threeMinuteMs from "../../globalConstants/songLimit";
+import { useInstrumentRecordingsOperations } from "../../hooks/useInstrumentRecordingsOperations";
+import { usePanelState } from "../../hooks/usePanelState";
+import useStageWidth from "../../hooks/useStageWidth";
+import { InstrumentRecordingsContext } from "../../providers/InstrumentsProvider";
+import Header from "./components/Header/Header";
+import { Panel } from "./components/Panel/Panel";
 import Timelines, {
   StyledEditorWrapper,
   StyledTimeline,
-} from './components/Timelines/Timelines'
+} from "./components/Timelines/Timelines";
 
 const Editor = () => {
   const { deleteAllRecordingsForInstrument, updateRecording } =
-    useInstrumentRecordingsOperations()
-  const { overlapGroups, recordings } = useContext(InstrumentRecordingsContext)
+    useInstrumentRecordingsOperations();
+  const { overlapGroups, recordings } = useContext(InstrumentRecordingsContext);
   const { closePanel, focusedEvent, openPanel, panelState, setFocusedEvent } =
-    usePanelState({ overlapGroups })
-  const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings })
+    usePanelState({ overlapGroups });
+  const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings });
 
   return (
     <StyledEditorWrapper>
@@ -50,7 +50,7 @@ const Editor = () => {
         )}
       </StyledTimeline>
     </StyledEditorWrapper>
-  )
-}
+  );
+};
 
-export default Editor
+export default Editor;

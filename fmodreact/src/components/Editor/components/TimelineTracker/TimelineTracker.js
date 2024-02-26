@@ -1,30 +1,30 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types";
 import React, {
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
-} from 'react'
-import { Layer, Line } from 'react-konva/es/ReactKonvaCore'
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds'
-import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider'
-import { TimelineContext } from '../../../../providers/TimelineProvider'
+} from "react";
+import { Layer, Line } from "react-konva/es/ReactKonvaCore";
+import pixelToSecondRatio from "../../../../globalConstants/pixelToSeconds";
+import { RecordingsPlayerContext } from "../../../../providers/RecordingsPlayerProvider";
+import { TimelineContext } from "../../../../providers/TimelineProvider";
 
 const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
-  const trackerRef = useRef()
+  const trackerRef = useRef();
 
-  const { timelineState } = useContext(TimelineContext)
+  const { timelineState } = useContext(TimelineContext);
 
   const { setTrackerPosition, trackerPosition } = useContext(
     RecordingsPlayerContext,
-  )
+  );
 
   const trackerPositionInSec = useMemo(
     () => trackerPosition / pixelToSecondRatio,
     [trackerPosition],
-  )
-  const trackerPositionInSecHalf = trackerPositionInSec / 2
+  );
+  const trackerPositionInSecHalf = trackerPositionInSec / 2;
 
   const calculatePoints = useMemo(
     () => [
@@ -34,7 +34,7 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
       window.innerHeight,
     ],
     [trackerPositionInSecHalf],
-  )
+  );
 
   useEffect(() => {
     if (shouldTrack && trackerRef?.current) {
@@ -42,9 +42,9 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
         duration: furthestEndTime - trackerPositionInSec,
         scaleY: Math.random() + 0.8,
         x: furthestEndTime * pixelToSecondRatio,
-      })
+      });
     }
-  }, [furthestEndTime, setTrackerPosition, shouldTrack, trackerPositionInSec])
+  }, [furthestEndTime, setTrackerPosition, shouldTrack, trackerPositionInSec]);
 
   useEffect(() => {
     if (!shouldTrack) {
@@ -52,25 +52,25 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
         duration: 0,
         scaleY: Math.random() + 0.8,
         x: 0,
-      })
+      });
     }
-  }, [shouldTrack])
+  }, [shouldTrack]);
 
   const handleDragEndCallback = useCallback(
-    e => {
-      const newStartTime = e.target.x()
-      const normalizedNewStartTime = newStartTime > 0 ? newStartTime : 0
+    (e) => {
+      const newStartTime = e.target.x();
+      const normalizedNewStartTime = newStartTime > 0 ? newStartTime : 0;
 
       trackerRef.current.to({
         duration: 0,
         scaleY: Math.random() + 0.8,
         x: normalizedNewStartTime,
-      })
+      });
 
-      setTrackerPosition(normalizedNewStartTime)
+      setTrackerPosition(normalizedNewStartTime);
     },
     [setTrackerPosition],
-  )
+  );
 
   return (
     <Layer>
@@ -80,13 +80,13 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
         x={trackerPosition}
         draggable
         points={calculatePoints}
-        stroke='red'
+        stroke="red"
         strokeWidth={10}
         onDragEnd={handleDragEndCallback}
       />
     </Layer>
-  )
-}
+  );
+};
 
 TimelineTracker.propTypes = {
   furthestEndTime: PropTypes.number.isRequired,
@@ -94,6 +94,6 @@ TimelineTracker.propTypes = {
   setTrackerPosition: PropTypes.func.isRequired,
   shouldTrack: PropTypes.bool.isRequired,
   trackerPosition: PropTypes.number,
-}
+};
 
-export default TimelineTracker
+export default TimelineTracker;

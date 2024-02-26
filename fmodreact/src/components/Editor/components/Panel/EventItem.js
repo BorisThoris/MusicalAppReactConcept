@@ -1,9 +1,9 @@
-import PropTypes from 'prop-types'
-import React, { useCallback } from 'react'
-import instrumentRecordingOperationsHook from '../../../../hooks/useInstrumentRecordingsOperations'
-import ParameterControlComponent from '../ParameterControl/ParameterControl'
-import EventHeaderComponent from './EventHeader'
-import TimeControl from './TimeControl'
+import PropTypes from "prop-types";
+import React, { useCallback } from "react";
+import instrumentRecordingOperationsHook from "../../../../hooks/useInstrumentRecordingsOperations";
+import ParameterControlComponent from "../ParameterControl/ParameterControl";
+import EventHeaderComponent from "./EventHeader";
+import TimeControl from "./TimeControl";
 
 const EventItem = ({
   event,
@@ -23,47 +23,47 @@ const EventItem = ({
     instrumentName,
     params,
     startTime,
-  } = event
+  } = event;
 
-  const { duplicateEventInstance } = instrumentRecordingOperationsHook()
+  const { duplicateEventInstance } = instrumentRecordingOperationsHook();
 
   const handleDelete = useCallback(
     () => onDelete({ event, parent: overlapGroup }),
     [onDelete, event, overlapGroup],
-  )
+  );
 
   const handleDuplicate = useCallback(() => {
-    duplicateEventInstance(event)
-  }, [duplicateEventInstance, event])
+    duplicateEventInstance(event);
+  }, [duplicateEventInstance, event]);
 
   const handlePlay = useCallback(
     () => onPlay(eventInstance),
     [onPlay, eventInstance],
-  )
+  );
   const focusEvent = useCallback(() => {
-    setFocusedEvent(id)
-  }, [id, setFocusedEvent])
+    setFocusedEvent(id);
+  }, [id, setFocusedEvent]);
 
   const modifyStartTime = useCallback(
-    delta => {
+    (delta) => {
       updateStartTime({
         eventLength,
         index: id,
         instrumentName,
         newStartTime: startTime + delta,
         parent: overlapGroup,
-      })
+      });
     },
     [eventLength, id, instrumentName, overlapGroup, startTime, updateStartTime],
-  )
+  );
 
   return (
     <div
       onMouseEnter={focusEvent}
       style={{
-        backgroundColor: focusedEvent === id ? 'red' : 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
+        backgroundColor: focusedEvent === id ? "red" : "transparent",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <EventHeaderComponent
@@ -78,7 +78,7 @@ const EventItem = ({
         onModifyStartTime={modifyStartTime}
       />
 
-      {params.map(param => (
+      {params.map((param) => (
         <ParameterControlComponent
           key={param.name}
           param={param}
@@ -88,8 +88,8 @@ const EventItem = ({
         />
       ))}
     </div>
-  )
-}
+  );
+};
 
 EventItem.propTypes = {
   event: PropTypes.shape({
@@ -104,6 +104,6 @@ EventItem.propTypes = {
   onPlay: PropTypes.func.isRequired,
   setFocusedEvent: PropTypes.func.isRequired,
   updateStartTime: PropTypes.func.isRequired,
-}
+};
 
-export default EventItem
+export default EventItem;

@@ -1,5 +1,5 @@
-import React from 'react'
-import { Actions, Description, HeaderContainer } from './Header.styles' // Importing styled components
+import React from "react";
+import { Actions, Description, HeaderContainer } from "./Header.styles"; // Importing styled components
 
 const Header = () => (
   <HeaderContainer>
@@ -15,6 +15,6 @@ const Header = () => (
       <div>Undo</div>
     </Actions>
   </HeaderContainer>
-)
+);
 
-export default Header
+export default Header;

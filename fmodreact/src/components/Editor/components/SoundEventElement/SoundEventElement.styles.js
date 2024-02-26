@@ -1,14 +1,14 @@
 /* eslint-disable import/prefer-default-export */
-import styled from 'styled-components'
+import styled from "styled-components";
 
 export const SoundElement = styled.div`
   /* Positioning */
   position: absolute;
 
-  transform: translateX(${props => props.positionInTimeline}px);
+  transform: translateX(${(props) => props.positionInTimeline}px);
 
   /* Dimension and Spacing */
-  width: ${props => props.lengthBasedWidth || 10}px;
+  width: ${(props) => props.lengthBasedWidth || 10}px;
 
   /* Flexbox Settings */
   flex-direction: column;
@@ -29,4 +29,4 @@ export const SoundElement = styled.div`
 
   /* Transition and Transform */
   transition: 1s;
-`
+`;
