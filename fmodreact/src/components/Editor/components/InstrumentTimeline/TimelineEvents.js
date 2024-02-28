@@ -1,28 +1,23 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Group } from 'react-konva';
+import { PanelContext } from '../../../../hooks/usePanelState';
+import { TimelineContext } from '../../../../providers/TimelineProvider';
 import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
-export const TimelineEvents = ({
-    canvasOffsetY,
-    eventGroups,
-    focusedEvent,
-    openPanel,
-    panelFor,
-    setFocusedEvent,
-    timelineHeight,
-    timelineY,
-    updateStartTime
-}) => {
+export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {
+    const { timelineState } = useContext(TimelineContext);
+
+    const { focusedEvent, openPanel, panelState, setFocusedEvent } = useContext(PanelContext);
+    const panelFor = panelState?.overlapGroup?.id;
+
     return (
-        <Group offset={canvasOffsetY}>
+        <Group offset={timelineState.panelCompensationOffset}>
             {eventGroups.map((groupData, index) => {
                 const elementIsSelected = panelFor === groupData.id;
                 if (groupData.events && groupData.events.length === 1) {
-                    // Render SoundEventElement for single events
                     return (
                         <SoundEventElement
-                            updateStartTime={updateStartTime}
                             key={groupData.events[0].id}
                             timelineHeight={timelineHeight}
                             recording={groupData.events[0]}
@@ -32,12 +27,11 @@ export const TimelineEvents = ({
                             isTargeted={elementIsSelected}
                             isFocused={groupData.events[0].id === focusedEvent}
                             setFocusedEvent={setFocusedEvent}
-                            canvasOffsetY={canvasOffsetY}
+                            canvasOffsetY={timelineState.canvasOffsetY || undefined}
                         />
                     );
                 }
                 if (groupData.events && groupData.events.length > 1) {
-                    // Render OverlapGroupElement for event groups
                     return (
                         <OverlapGroupElement
                             key={`group-${index}`}
@@ -46,15 +40,14 @@ export const TimelineEvents = ({
                             openPanel={openPanel}
                             timelineHeight={timelineHeight}
                             timelineY={timelineY}
-                            updateStartTime={updateStartTime}
                             isTargeted={elementIsSelected}
                             focusedEvent={focusedEvent}
                             setFocusedEvent={setFocusedEvent}
-                            canvasOffsetY={canvasOffsetY}
+                            canvasOffsetY={timelineState.canvasOffsetY || undefined}
                         />
                     );
                 }
-                // In case there's an unexpected structure
+
                 return null;
             })}
         </Group>

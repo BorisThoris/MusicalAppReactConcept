@@ -3,11 +3,11 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import usePlayback from '../../../../hooks/usePlayback';
 
-export const useEventHandlers = (targetedGroup, setFocusedEvent, onPressX) => {
+export const useEventHandlers = (targetedGroup, setFocusedEvent, clsoePanel) => {
     const { deleteRecording, duplicateOverlapGroup, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
-    const handleClose = useCallback(() => onPressX(false), [onPressX]);
+    const handleClose = useCallback(() => clsoePanel(false), [clsoePanel]);
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
     const resetFocusedEvent = useCallback(() => setFocusedEvent(-1), [setFocusedEvent]);
     const deleteOverlapGroup = useCallback(

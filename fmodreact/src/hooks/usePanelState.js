@@ -1,5 +1,7 @@
-// @ts-nocheck
-import React, { useCallback, useReducer, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useReducer, useState } from 'react';
+import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+
+export const PanelContext = createContext();
 
 const initialState = {
     index: null,
@@ -19,13 +21,15 @@ const panelReducer = (state, action) => {
     }
 };
 
-export const usePanelState = ({ overlapGroups }) => {
+export const PanelProvider = ({ children }) => {
     const [focusedEvent, setFocusedEvent] = useState(-1);
+    const { overlapGroups } = useContext(InstrumentRecordingsContext);
     const [state, dispatch] = useReducer(panelReducer, initialState);
 
     const openPanel = useCallback(
         ({ index, instrumentName, x, y }) => {
             const overlapGroup = overlapGroups[instrumentName]?.[index];
+            // @ts-ignore
             dispatch({
                 payload: { index, instrumentName, isOpen: true, overlapGroup, x, y },
                 type: 'OPEN_PANEL'
@@ -35,16 +39,16 @@ export const usePanelState = ({ overlapGroups }) => {
     );
 
     const closePanel = useCallback(() => {
+        // @ts-ignore
         dispatch({ type: 'CLOSE_PANEL' });
     }, []);
 
-    return {
-        closePanel,
-        focusedEvent,
-        openPanel,
-        panelState: state,
-        setFocusedEvent
-    };
+    const value = useMemo(() => {
+        return { closePanel, focusedEvent, openPanel, panelState: state, setFocusedEvent };
+    }, [closePanel, focusedEvent, openPanel, state]);
+
+    // @ts-ignore
+    return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;
 };
 
-export default usePanelState;
+export default PanelProvider;

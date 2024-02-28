@@ -11,109 +11,69 @@ import { TimelineEvents } from './TimelineEvents';
 export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 
-const InstrumentTimeline = React.memo(
-    ({
-        currentPlayingInstrument,
-        deleteAllRecordingsForInstrument,
-        focusedEvent,
-        furthestEndTime,
-        groupName,
-        index,
-        instrumentGroup,
-        markersHeight,
-        openPanel,
-        panelFor,
-        setFocusedEvent,
-        updateStartTime
-    }) => {
-        const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } =
-            useContext(RecordingsPlayerContext);
-        const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, markersHeight }) => {
+    const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
+    const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+    const { furthestEndTimes } = timelineState;
 
-        const timelineRef = useRef();
+    const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
-        // Use the `toggleLock` from the context instead of local state
-        // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-        const handleToggleLock = () => {
-            toggleLock();
-        };
+    const timelineRef = useRef();
+    const isMuted = mutedInstruments.includes(groupName);
+    const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
+    const furthestGroupEndTime = furthestEndTimes[groupName];
+    const timelineWidth = furthestGroupEndTime * pixelToSecondRatio;
+    const fillColor = currentPlayingInstrument === groupName ? 'green' : 'transparent';
 
-        const isMuted = mutedInstruments.includes(groupName);
+    useEffect(() => {
+        if (timelineRef.current) {
+            const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
 
-        const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
-        const timelineWidth = furthestEndTime * pixelToSecondRatio;
-        const fillColor = currentPlayingInstrument === groupName ? 'green' : 'transparent';
-
-        useEffect(() => {
-            if (timelineRef.current) {
-                const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
-
-                if (timelineState.canvasOffsetY !== canvasOffsetY) {
-                    updateTimelineState({
-                        canvasOffsetY,
-                        timelineY
-                    });
-                }
+            if (timelineState.canvasOffsetY !== canvasOffsetY) {
+                updateTimelineState({ canvasOffsetY, timelineY });
             }
-        }, [furthestEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
+        }
+    }, [furthestGroupEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-        const { Cursor, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
-            parentY: timelineY
-        });
+    const { Cursor, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({ parentY: timelineY });
 
-        return (
-            <Layer y={timelineY} ref={timelineRef}>
-                <Rect
-                    offset={timelineState.panelCompensationOffset}
-                    height={TimelineHeight}
-                    width={timelineWidth}
-                    fill={isMuted ? 'red' : fillColor}
-                    onMouseMove={handleMouseMove}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                />
+    return (
+        <Layer y={timelineY} ref={timelineRef}>
+            <Rect
+                offset={timelineState.panelCompensationOffset}
+                height={TimelineHeight}
+                width={timelineWidth}
+                fill={isMuted ? 'red' : fillColor}
+                onMouseMove={handleMouseMove}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            />
 
-                <InstrumentTimelinePanelComponent
-                    timelineHeight={TimelineHeight}
-                    groupName={groupName}
-                    replayInstrumentRecordings={replayInstrumentRecordings}
-                    deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
-                    toggleMute={toggleMute}
-                    toggleLocked={handleToggleLock}
-                    isLocked={isLocked}
-                />
+            <InstrumentTimelinePanelComponent
+                timelineHeight={TimelineHeight}
+                groupName={groupName}
+                replayInstrumentRecordings={replayInstrumentRecordings}
+                toggleMute={toggleMute}
+                toggleLocked={toggleLock}
+                isLocked={isLocked}
+            />
 
-                <TimelineEvents
-                    eventGroups={instrumentGroup}
-                    canvasOffsetY={timelineState.canvasOffsetY || undefined}
-                    focusedEvent={focusedEvent}
-                    openPanel={openPanel}
-                    panelFor={panelFor}
-                    setFocusedEvent={setFocusedEvent}
-                    timelineHeight={TimelineHeight}
-                    timelineY={timelineY}
-                    updateStartTime={updateStartTime}
-                />
+            <TimelineEvents eventGroups={instrumentGroup} timelineHeight={TimelineHeight} timelineY={timelineY} />
 
-                {isLocked && (
-                    <Rect
-                        offset={timelineState.panelCompensationOffset}
-                        height={TimelineHeight}
-                        width={timelineWidth}
-                    />
-                )}
+            {isLocked && (
+                <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
+            )}
 
-                {Cursor}
-            </Layer>
-        );
-    }
-);
+            {Cursor}
+        </Layer>
+    );
+});
 
 InstrumentTimeline.propTypes = {
     currentPlayingInstrument: PropTypes.string,
     deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
     focusedEvent: PropTypes.number,
-    furthestEndTime: PropTypes.number.isRequired,
+    furthestGroupEndTime: PropTypes.number.isRequired,
     groupName: PropTypes.string.isRequired,
     index: PropTypes.number.isRequired,
     instrumentGroup: PropTypes.arrayOf(

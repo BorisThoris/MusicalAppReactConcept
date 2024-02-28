@@ -2,14 +2,19 @@ import PropTypes from 'prop-types';
 import React, { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { PanelContext } from '../../../../hooks/usePanelState';
+import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import EventItemComponent from './EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PanelContainer, PlayIcon, TrashIcon } from './Panel.styles';
 import TimeControl from './TimeControl';
 import { useEventHandlers } from './useEventsHandlers';
 
-export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocusedEvent, updateStartTime, y }) => {
+export const Panel = ({ y }) => {
+    const { recordings } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
+
+    const { closePanel, focusedEvent, panelState, setFocusedEvent } = useContext(PanelContext);
     const { index: targetIndex, instrumentName: targetInstrumentGroup } = panelState;
 
     const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
@@ -25,7 +30,7 @@ export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocus
         resetFocusedEvent,
         setNewTimeout,
         updateOverlapGroupTimes
-    } = useEventHandlers(panelState.overlapGroup, setFocusedEvent, onPressX);
+    } = useEventHandlers(panelState.overlapGroup, setFocusedEvent, closePanel);
 
     const useReplayEvents = useCallback(
         () =>
@@ -60,7 +65,6 @@ export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocus
                     focusedEvent={focusedEvent}
                     onPlay={handlePlayEvent}
                     onClose={handleClose}
-                    updateStartTime={updateStartTime}
                 />
             );
         });

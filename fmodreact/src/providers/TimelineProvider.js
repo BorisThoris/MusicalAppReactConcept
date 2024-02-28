@@ -1,16 +1,34 @@
-import React, { createContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import useStageWidth from '../hooks/useStageWidth';
+import { InstrumentRecordingsContext } from './InstrumentsProvider';
 
 export const TimelineContext = createContext();
 
 export const TimelineProvider = ({ children }) => {
-    const [timelineState, setTimelineState] = useState({
-        canvasOffsetY: undefined,
-        // Assuming a global lock state, adjust as necessary for per-timeline locks
-        focusedEvent: null,
-        isLocked: false,
+    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings });
 
-        timelineY: undefined // Adjust based on how focused events are determined
+    const [timelineState, setTimelineState] = useState({
+        furthestEndTime: 0,
+        furthestEndTimes: 0,
+        panelCompensationOffset: { x: -60 },
+        stageWidth: 0
     });
+
+    // Calculate stage width based on recordings
+    useEffect(() => {
+        const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
+        const calculatedStageWidth =
+            window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+
+        setTimelineState((prevState) => ({
+            ...prevState,
+            furthestEndTime,
+            furthestEndTimes,
+            stageWidth: calculatedStageWidth
+        }));
+    }, [furthestEndTime, furthestEndTimes, recordings]); // React to changes in recordings
 
     const updateTimelineState = (updates) => {
         setTimelineState((prevState) => ({
@@ -19,20 +37,10 @@ export const TimelineProvider = ({ children }) => {
         }));
     };
 
-    // Add any other relevant state updates or utility functions here
-    const toggleLock = () => {
-        setTimelineState((prevState) => ({
-            ...prevState,
-            isLocked: !prevState.isLocked
-        }));
-    };
-
-    // Memoize the context value
+    // Memoize the context value to avoid unnecessary re-renders
     const value = useMemo(
         () => ({
-            setTimelineState,
             timelineState,
-            toggleLock,
             updateTimelineState
         }),
         [timelineState]
@@ -40,5 +48,3 @@ export const TimelineProvider = ({ children }) => {
 
     return <TimelineContext.Provider value={value}>{children}</TimelineContext.Provider>;
 };
-
-export default TimelineProvider;

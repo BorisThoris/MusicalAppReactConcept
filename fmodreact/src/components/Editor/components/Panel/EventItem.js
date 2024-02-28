@@ -1,22 +1,16 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
-import instrumentRecordingOperationsHook from '../../../../hooks/useInstrumentRecordingsOperations';
+import instrumentRecordingOperationsHook, {
+    useInstrumentRecordingsOperations
+} from '../../../../hooks/useInstrumentRecordingsOperations';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import EventHeaderComponent from './EventHeader';
 import TimeControl from './TimeControl';
 
-const EventItem = ({
-    event,
-    focusedEvent,
-    isLocked,
-    onDelete,
-    onPlay,
-    overlapGroup,
-    setFocusedEvent,
-    updateStartTime
-}) => {
+const EventItem = ({ event, focusedEvent, onDelete, onPlay, overlapGroup, setFocusedEvent }) => {
     const { endTime, eventInstance, eventLength, id, instrumentName, params, startTime } = event;
 
+    const { updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();
 
     const handleDelete = useCallback(() => onDelete({ event, parent: overlapGroup }), [onDelete, event, overlapGroup]);

@@ -26,15 +26,18 @@ const OverlapGroupElement = React.memo((props) => {
         openPanel,
         setFocusedEvent,
         timelineHeight,
-        timelineY,
-        updateStartTime
+        timelineY
     } = props;
 
     const { endTime, events, id, instrumentName, locked, startTime } = groupData;
 
     const groupElmRef = useRef();
     const [isDragged, setIsDragged] = useState(false);
-    const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
+    const {
+        lockOverlapGroupById,
+        updateOverlapGroupTimes,
+        updateRecording: updateStartTime
+    } = useInstrumentRecordingsOperations();
 
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const groupWidth = (endTime - startTime) * pixelToSecondRatio;

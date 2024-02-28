@@ -45,9 +45,9 @@ const SoundEventElement = React.memo(
         recording,
         setFocusedEvent,
         timelineHeight,
-        timelineY,
-        updateStartTime
+        timelineY
     }) => {
+        const { updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
         const { eventInstance, eventLength, id, instrumentName, locked, name, startTime } = recording;
 
         const { lockOverlapGroupById } = useInstrumentRecordingsOperations();
@@ -107,6 +107,9 @@ const SoundEventElement = React.memo(
             if (openPanel && !parent) {
                 const groupX = startingPositionInTimeline;
                 let groupY = timelineY + canvasOffsetY;
+
+                console.log('Group Y');
+                console.log(groupY);
 
                 groupY += elementRef.current.attrs.height;
 

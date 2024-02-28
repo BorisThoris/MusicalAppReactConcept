@@ -3,14 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Text } from 'react-konva/';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
-const InstrumentTimelinePanel = ({
-    deleteAllRecordingsForInstrument,
-    groupName,
-    isLocked,
-    replayInstrumentRecordings,
-    toggleLocked,
-    toggleMute
-}) => {
+const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordings, toggleLocked, toggleMute }) => {
+    const { deleteAllRecordingsForInstrument } = useInstrumentRecordingsOperations();
     const { duplicateInstrument } = useInstrumentRecordingsOperations();
 
     const onPlay = useCallback(() => {
