@@ -29,13 +29,34 @@ const InstrumentTimelinePanel = ({
         duplicateInstrument({ instrumentName: groupName });
     }, [duplicateInstrument, groupName]);
 
-    const icons = [
-        { callback: onPlay, icon: '▶' },
-        { callback: onDelete, icon: '🗑️' },
-        { callback: onMute, icon: '🔇' },
-        { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' },
-        { callback: onCopy, icon: '📄' }
-    ];
+    // Dynamically add icons based on groupName (instrumentName), with case-insensitive checks
+    const icons = useMemo(() => {
+        const baseIcons = [
+            { callback: onPlay, icon: '▶' },
+            { callback: onDelete, icon: '🗑️' },
+            { callback: onMute, icon: '🔇' },
+            { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' },
+            { callback: onCopy, icon: '📄' }
+        ];
+
+        const groupNameLower = groupName.toLowerCase();
+
+        // Dynamically adding specific actions for different instruments
+        if (groupNameLower.includes('guitar')) {
+            baseIcons.push({ callback: () => alert('Guitar-specific action'), icon: '🎸' });
+        }
+        if (groupNameLower.includes('drum')) {
+            baseIcons.push({ callback: () => alert('Drums-specific action'), icon: '🥁' });
+        }
+        if (groupNameLower.includes('tambourine')) {
+            baseIcons.push({ callback: () => alert('Tambourine-specific action'), icon: '🎵' });
+        }
+        if (groupNameLower.includes('piano')) {
+            baseIcons.push({ callback: () => alert('Piano-specific action'), icon: '🎹' });
+        }
+
+        return baseIcons;
+    }, [groupName, isLocked, onCopy, onDelete, onMute, onPlay, toggleLocked]);
 
     const [widths, setWidths] = useState(Array(icons.length).fill(0));
     const [heights, setHeights] = useState(Array(icons.length).fill(0));
@@ -63,33 +84,22 @@ const InstrumentTimelinePanel = ({
         return yPos;
     });
 
-    const groupScale = useMemo(() => {
-        return { x: 2, y: 2 };
-    }, []);
+    const groupScale = useMemo(() => ({ x: 2, y: 2 }), []);
 
-    const x = useCallback(
-        (index) => {
-            return parentWidth ? (parentWidth - widths[index]) / 2 : 0;
-        },
-        [parentWidth, widths]
-    );
+    const x = useCallback((index) => (parentWidth ? (parentWidth - widths[index]) / 2 : 0), [parentWidth, widths]);
 
     return (
         <Group scale={groupScale}>
-            {icons.map((icon, index) => {
-                const onClick = icon.callback;
-
-                return (
-                    <Text
-                        key={icon.icon}
-                        text={icon.icon}
-                        x={x(index)}
-                        y={yPositions[index]}
-                        ref={textRefs.current[index]}
-                        onClick={onClick}
-                    />
-                );
-            })}
+            {icons.map((icon, index) => (
+                <Text
+                    key={icon.icon}
+                    text={icon.icon}
+                    x={x(index)}
+                    y={yPositions[index]}
+                    ref={textRefs.current[index]}
+                    onClick={icon.callback}
+                />
+            ))}
         </Group>
     );
 };
@@ -98,7 +108,9 @@ InstrumentTimelinePanel.propTypes = {
     deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
     groupName: PropTypes.string,
     replayInstrumentRecordings: PropTypes.func.isRequired,
-    timelineHeight: PropTypes.number
+    timelineHeight: PropTypes.number,
+    toggleLocked: PropTypes.func.isRequired,
+    toggleMute: PropTypes.func.isRequired
 };
 
 export default InstrumentTimelinePanel;

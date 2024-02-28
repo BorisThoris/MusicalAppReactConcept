@@ -1,0 +1,45 @@
+import React, { useCallback, useState } from 'react';
+import { Group, Path, Text } from 'react-konva';
+
+export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
+    const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+    const [isVisible, setIsVisible] = useState(initialVisibility);
+
+    const handleMouseMove = useCallback(
+        (event) => {
+            const stage = event.target.getStage();
+            const pointerPosition = stage ? stage.getPointerPosition() : { x: 0, y: 0 };
+            setCursorPos({ x: pointerPosition.x, y: pointerPosition.y - parentY + 10 });
+        },
+        [parentY]
+    );
+
+    const handleMouseEnter = useCallback(() => {
+        setIsVisible(true);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        setIsVisible(false);
+    }, []);
+
+    const pointerPath = 'M10 0 L0 20 L10 10 L20 20 Z';
+
+    const Cursor = isVisible && (
+        <Group x={cursorPos.x + 10} y={cursorPos.y - 10}>
+            <Text text={'sadec'} />
+            <Path data={pointerPath} fill="black" />
+        </Group>
+    );
+
+    return {
+        Cursor,
+        cursorPos,
+        handleMouseEnter,
+        handleMouseLeave,
+        handleMouseMove,
+        isVisible,
+        pointerPath
+    };
+};
+
+export default useCustomCursor;

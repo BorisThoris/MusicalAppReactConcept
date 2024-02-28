@@ -8,7 +8,7 @@ import { CloseIcon, DuplicateIcon, FlexContainer, PanelContainer, PlayIcon, Tras
 import TimeControl from './TimeControl';
 import { useEventHandlers } from './useEventsHandlers';
 
-export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocusedEvent, updateStartTime, x, y }) => {
+export const Panel = ({ focusedEvent, onPressX, panelState, recordings, setFocusedEvent, updateStartTime, y }) => {
     const { timelineState } = useContext(TimelineContext);
     const { index: targetIndex, instrumentName: targetInstrumentGroup } = panelState;
 

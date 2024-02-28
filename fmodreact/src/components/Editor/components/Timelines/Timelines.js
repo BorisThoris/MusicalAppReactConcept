@@ -66,73 +66,42 @@ const Timelines = React.memo(
         return (
             <>
                 <button onClick={replayAllRecordedSounds}>{isPlaying ? 'Pause' : 'Start'}</button>
-                <div style={{ display: 'flex' }}>
-                    <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
-                        {recordingsArr &&
-                            recordingsArr.map(([groupName, instrumentGroup], index) => (
-                                <InstrumentTimeline
-                                    panelFor={panelFor}
-                                    key={groupName}
-                                    groupName={groupName}
-                                    instrumentGroup={instrumentGroup}
-                                    furthestEndTime={furthestEndTimes[groupName]}
-                                    index={index}
-                                    markersHeight={markersHeight}
-                                    openPanel={openPanel}
-                                    updateStartTime={updateStartTime}
-                                    focusedEvent={focusedEvent}
-                                    deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
-                                    currentPlayingInstrument={currentInstrument}
-                                    setFocusedEvent={setFocusedEvent}
-                                />
-                            ))}
 
-                        <TimelineTracker
-                            furthestEndTime={furthestEndTimes[currentInstrument] || furthestEndTime}
-                            shouldTrack={isPlaying}
-                        />
+                <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
+                    {recordingsArr &&
+                        recordingsArr.map(([groupName, instrumentGroup], index) => (
+                            <InstrumentTimeline
+                                panelFor={panelFor}
+                                key={groupName}
+                                groupName={groupName}
+                                instrumentGroup={instrumentGroup}
+                                furthestEndTime={furthestEndTimes[groupName]}
+                                index={index}
+                                markersHeight={markersHeight}
+                                openPanel={openPanel}
+                                updateStartTime={updateStartTime}
+                                focusedEvent={focusedEvent}
+                                deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
+                                currentPlayingInstrument={currentInstrument}
+                                setFocusedEvent={setFocusedEvent}
+                            />
+                        ))}
 
-                        <TimelineMarker
-                            duration={duration}
-                            height={markersHeight}
-                            pixelToSecond={105}
-                            furthestEndTime={furthestEndTime}
-                        />
-                    </Stage>
-                </div>
+                    <TimelineTracker
+                        furthestEndTime={furthestEndTimes[currentInstrument] || furthestEndTime}
+                        shouldTrack={isPlaying}
+                    />
+
+                    <TimelineMarker
+                        duration={duration}
+                        height={markersHeight}
+                        pixelToSecond={pixelToSecondRatio}
+                        furthestEndTime={furthestEndTime}
+                    />
+                </Stage>
             </>
         );
     }
 );
-
-Timelines.propTypes = {
-    closePanel: PropTypes.func.isRequired,
-    deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
-    duration: PropTypes.number.isRequired,
-    focusedEvent: PropTypes.number,
-    furthestEndTime: PropTypes.number.isRequired,
-    furthestEndTimes: PropTypes.object.isRequired,
-    isPlaying: PropTypes.bool.isRequired,
-    openPanel: PropTypes.func.isRequired,
-    panelFor: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    recordings: PropTypes.objectOf(
-        PropTypes.arrayOf(
-            PropTypes.shape({
-                eventInstance: PropTypes.object,
-                instrumentName: PropTypes.string,
-                startTime: PropTypes.number
-            })
-        )
-    ).isRequired,
-    setTrackerPosition: PropTypes.func.isRequired,
-    trackerPosition: PropTypes.number,
-    updateStartTime: PropTypes.func.isRequired
-};
-
-Timelines.defaultProps = {
-    focusedEvent: null,
-    panelFor: null,
-    trackerPosition: 0
-};
 
 export default Timelines;

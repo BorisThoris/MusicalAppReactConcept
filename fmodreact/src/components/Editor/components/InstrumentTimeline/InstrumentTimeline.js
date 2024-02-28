@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Group, Layer, Rect, Text } from 'react-konva';
+import React, { useContext, useEffect, useRef } from 'react';
+import { Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { useCustomCursor } from '../../../../hooks/useCustomCursor';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
-import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
-import SoundEventElement from '../SoundEventElement/SoundEventElement';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
+import { TimelineEvents } from './TimelineEvents';
 
 export const TimelineHeight = 200;
 const Y_OFFSET = 20;
@@ -22,23 +22,21 @@ const InstrumentTimeline = React.memo(
         instrumentGroup,
         markersHeight,
         openPanel,
-
         panelFor,
         setFocusedEvent,
         updateStartTime
     }) => {
-        const { mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
-        const { timelineState, updateTimelineState } = useContext(TimelineContext);
+        const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } =
+            useContext(RecordingsPlayerContext);
+        const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
 
         const timelineRef = useRef();
 
-        // State for panel expansion
-        const [isLocked, setisLocked] = useState(false);
-
-        // Function to toggle expansion
-        const toggleLocked = useCallback(() => {
-            setisLocked(!isLocked);
-        }, [isLocked]);
+        // Use the `toggleLock` from the context instead of local state
+        // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+        const handleToggleLock = () => {
+            toggleLock();
+        };
 
         const isMuted = mutedInstruments.includes(groupName);
 
@@ -59,49 +57,9 @@ const InstrumentTimeline = React.memo(
             }
         }, [furthestEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-        const renderGroupElement = useCallback(
-            (groupData, groupIndex) => {
-                const elementIsSelected = panelFor === groupData.id;
-                return groupData.events.length === 1 ? (
-                    <SoundEventElement
-                        updateStartTime={updateStartTime}
-                        key={groupData.events[0].id}
-                        timelineHeight={TimelineHeight}
-                        recording={groupData.events[0]}
-                        index={groupIndex}
-                        openPanel={openPanel}
-                        timelineY={timelineY}
-                        isTargeted={elementIsSelected}
-                        isFocused={groupData.events[0].id === focusedEvent}
-                        setFocusedEvent={setFocusedEvent}
-                        canvasOffsetY={timelineState.canvasOffsetY || undefined}
-                    />
-                ) : (
-                    <OverlapGroupElement
-                        key={`group-${groupIndex}`}
-                        groupData={groupData}
-                        index={groupIndex}
-                        openPanel={openPanel}
-                        timelineHeight={TimelineHeight}
-                        timelineY={timelineY}
-                        updateStartTime={updateStartTime}
-                        isTargeted={elementIsSelected}
-                        focusedEvent={focusedEvent}
-                        setFocusedEvent={setFocusedEvent}
-                        canvasOffsetY={timelineState.canvasOffsetY || undefined}
-                    />
-                );
-            },
-            [
-                focusedEvent,
-                openPanel,
-                panelFor,
-                setFocusedEvent,
-                timelineState.canvasOffsetY,
-                timelineY,
-                updateStartTime
-            ]
-        );
+        const { Cursor, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
+            parentY: timelineY
+        });
 
         return (
             <Layer y={timelineY} ref={timelineRef}>
@@ -110,9 +68,10 @@ const InstrumentTimeline = React.memo(
                     height={TimelineHeight}
                     width={timelineWidth}
                     fill={isMuted ? 'red' : fillColor}
+                    onMouseMove={handleMouseMove}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                 />
-
-                {groupName && <Text text={groupName} y={0} />}
 
                 <InstrumentTimelinePanelComponent
                     timelineHeight={TimelineHeight}
@@ -120,13 +79,21 @@ const InstrumentTimeline = React.memo(
                     replayInstrumentRecordings={replayInstrumentRecordings}
                     deleteAllRecordingsForInstrument={deleteAllRecordingsForInstrument}
                     toggleMute={toggleMute}
-                    toggleLocked={toggleLocked}
+                    toggleLocked={handleToggleLock}
                     isLocked={isLocked}
                 />
 
-                <Group opacity={isLocked ? 0.5 : 1} offset={timelineState.panelCompensationOffset}>
-                    {instrumentGroup.map(renderGroupElement)}
-                </Group>
+                <TimelineEvents
+                    eventGroups={instrumentGroup}
+                    canvasOffsetY={timelineState.canvasOffsetY || undefined}
+                    focusedEvent={focusedEvent}
+                    openPanel={openPanel}
+                    panelFor={panelFor}
+                    setFocusedEvent={setFocusedEvent}
+                    timelineHeight={TimelineHeight}
+                    timelineY={timelineY}
+                    updateStartTime={updateStartTime}
+                />
 
                 {isLocked && (
                     <Rect
@@ -135,6 +102,8 @@ const InstrumentTimeline = React.memo(
                         width={timelineWidth}
                     />
                 )}
+
+                {Cursor}
             </Layer>
         );
     }

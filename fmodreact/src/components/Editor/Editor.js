@@ -1,3 +1,4 @@
+/* eslint-disable react-perf/jsx-no-new-function-as-prop */
 import React, { useContext } from 'react';
 import threeMinuteMs from '../../globalConstants/songLimit';
 import { useInstrumentRecordingsOperations } from '../../hooks/useInstrumentRecordingsOperations';
