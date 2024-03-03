@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import { Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursor } from '../../../../hooks/useCustomCursor';
+import { INSTRUMENTS_PANEL_ID, PanelContext } from '../../../../hooks/usePanelState';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
@@ -12,6 +14,7 @@ export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 
 const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, markersHeight }) => {
+    const { openPanel } = useContext(PanelContext);
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
     const { furthestEndTimes } = timelineState;
@@ -22,7 +25,7 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
     const isMuted = mutedInstruments.includes(groupName);
     const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
     const furthestGroupEndTime = furthestEndTimes[groupName];
-    const timelineWidth = furthestGroupEndTime * pixelToSecondRatio;
+    const timelineWidth = threeMinuteMs / pixelToSecondRatio;
     const fillColor = currentPlayingInstrument === groupName ? 'green' : 'transparent';
 
     useEffect(() => {
@@ -35,7 +38,18 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
         }
     }, [furthestGroupEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const { Cursor, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({ parentY: timelineY });
+    const { Cursor, cursorPos, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
+        parentY: timelineY
+    });
+
+    const openInstrumentPanel = useCallback(() => {
+        openPanel({
+            id: INSTRUMENTS_PANEL_ID,
+            instrumentGroup: instrumentGroup.instrumentName,
+            x: cursorPos.screenX,
+            y: timelineY + timelineState.canvasOffsetY + TimelineHeight
+        });
+    }, [cursorPos.screenX, instrumentGroup, openPanel, timelineState.canvasOffsetY, timelineY]);
 
     return (
         <Layer y={timelineY} ref={timelineRef}>
@@ -47,6 +61,7 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
                 onMouseMove={handleMouseMove}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
+                onClick={openInstrumentPanel}
             />
 
             <InstrumentTimelinePanelComponent
@@ -91,7 +106,7 @@ InstrumentTimeline.propTypes = {
         })
     ).isRequired,
     markersHeight: PropTypes.number.isRequired,
-    openPanel: PropTypes.func.isRequired,
+    openParamsPanel: PropTypes.func.isRequired,
     panelCompensationOffset: PropTypes.object.isRequired,
     panelFor: PropTypes.number,
     replayInstrumentRecordings: PropTypes.func.isRequired,

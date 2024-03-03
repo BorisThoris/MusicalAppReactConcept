@@ -7,8 +7,7 @@ import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
 import { useGuitarDrawing } from './useGuitarDrawing';
 
 const StyledGuitarSvg = styled.svg`
-    width: 90vw;
-    height: 90vh;
+    flex: 1;
     background: yellow;
 `;
 
@@ -23,6 +22,8 @@ const StyledGuitarNeck = styled.rect`
 const Wrapper = styled.div`
     display: flex;
     flex-direction: collumn;
+    background-color: 'green';
+    height: 100%;
 `;
 
 const Guitar = () => {

@@ -1,21 +1,28 @@
-import React, { createContext, useCallback, useContext, useMemo, useReducer, useState } from 'react';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import React, { createContext, useCallback, useMemo, useReducer, useState } from 'react';
 
+// @ts-ignore
 export const PanelContext = createContext();
 
-const initialState = {
-    index: null,
-    instrumentName: '',
-    isOpen: false,
-    overlapGroup: null
-};
+const initialState = {};
+
+export const PARAMS_PANEL_ID = 'PARAMS_PANEL';
+export const INSTRUMENTS_PANEL_ID = 'INSTRUMENTS_PANEL';
 
 const panelReducer = (state, action) => {
     switch (action.type) {
         case 'OPEN_PANEL':
-            return { ...state, ...action.payload, isOpen: true };
+            return {
+                ...state,
+                [action.payload.id]: {
+                    ...state[action.payload.id],
+                    ...action.payload,
+                    isOpen: true
+                }
+            };
         case 'CLOSE_PANEL':
-            return initialState;
+            // eslint-disable-next-line no-case-declarations
+            const { [action.payload.id]: omitted, ...remainingPanels } = state;
+            return remainingPanels;
         default:
             return state;
     }
@@ -23,31 +30,46 @@ const panelReducer = (state, action) => {
 
 export const PanelProvider = ({ children }) => {
     const [focusedEvent, setFocusedEvent] = useState(-1);
-    const { overlapGroups } = useContext(InstrumentRecordingsContext);
-    const [state, dispatch] = useReducer(panelReducer, initialState);
+    const [panels, dispatch] = useReducer(panelReducer, initialState);
 
-    const openPanel = useCallback(
-        ({ index, instrumentName, x, y }) => {
-            const overlapGroup = overlapGroups[instrumentName]?.[index];
-            // @ts-ignore
-            dispatch({
-                payload: { index, instrumentName, isOpen: true, overlapGroup, x, y },
-                type: 'OPEN_PANEL'
-            });
-        },
-        [overlapGroups]
-    );
-
-    const closePanel = useCallback(() => {
+    const openPanel = useCallback((payload) => {
         // @ts-ignore
-        dispatch({ type: 'CLOSE_PANEL' });
+        dispatch({ payload, type: 'OPEN_PANEL' });
     }, []);
 
-    const value = useMemo(() => {
-        return { closePanel, focusedEvent, openPanel, panelState: state, setFocusedEvent };
-    }, [closePanel, focusedEvent, openPanel, state]);
+    const closePanel = useCallback((id) => {
+        // @ts-ignore
+        dispatch({ payload: { id }, type: 'CLOSE_PANEL' });
+    }, []);
 
-    // @ts-ignore
+    // Specific function to open ParamsPanel
+    const openParamsPanel = useCallback(
+        (payload) => {
+            openPanel({ id: PARAMS_PANEL_ID, ...payload });
+        },
+        [openPanel]
+    );
+
+    // Specific function to close ParamsPanel
+    const closeParamsPanel = useCallback(() => {
+        closePanel(PARAMS_PANEL_ID);
+    }, [closePanel]);
+
+    const value = useMemo(
+        () => ({
+            closePanel,
+            closeParamsPanel,
+            focusedEvent,
+            openPanel,
+            openParamsPanel,
+            panels,
+            panelsArr: Object.values(panels),
+            panelsObj: panels,
+            setFocusedEvent
+        }),
+        [panels, focusedEvent, openPanel, closePanel, openParamsPanel, closeParamsPanel]
+    );
+
     return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;
 };
 

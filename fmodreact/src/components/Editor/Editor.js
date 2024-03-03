@@ -1,8 +1,9 @@
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { PanelContext } from '../../hooks/usePanelState';
+import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from '../../hooks/usePanelState';
 import Header from './components/Header/Header';
-import { Panel } from './components/Panel/Panel';
+import { ParamsPanel } from './components/ParamsPanel/ParamsPanel';
+import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
 import Timelines from './components/Timelines/Timelines';
 
 const StyledEditorWrapper = styled.div`
@@ -16,14 +17,27 @@ const StyledTimeline = styled.div`
 `;
 
 const Editor = () => {
-    const { panelState } = useContext(PanelContext);
+    const { panelsArr } = useContext(PanelContext);
+
+    const renderPanel = (panel) => {
+        // Example switch case based on panel.type
+        switch (panel.id) {
+            case PARAMS_PANEL_ID:
+                return <ParamsPanel key={panel.id} />;
+
+            case INSTRUMENTS_PANEL_ID:
+                return <PlayInstrumentsPanel />;
+            default:
+                return null;
+        }
+    };
 
     return (
         <StyledEditorWrapper>
             <Header />
             <StyledTimeline>
                 <Timelines />
-                {panelState.isOpen && <Panel y={panelState.y} />}
+                {panelsArr.map(renderPanel)}
             </StyledTimeline>
         </StyledEditorWrapper>
     );

@@ -35,7 +35,7 @@ const Timelines = React.memo(() => {
         [closePanel]
     );
 
-    const widthBasedOnLastSound = timelineState.stageWidth;
+    const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
 
     const recordingsArr = Object.entries(recordings);

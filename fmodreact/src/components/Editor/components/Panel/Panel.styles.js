@@ -103,11 +103,22 @@ export const TimeMarker = styled.div`
 
 export const PanelContainer = styled.div`
     border: 1px solid black;
-
     background-color: green;
     position: absolute !important;
-    left: ${({ x }) => x}px; // Use passed props for dynamic positioning
-    top: ${({ y }) => y}px; // Use passed props for dynamic positioning
+    left: ${({ x }) => x}px;
+    top: ${({ y }) => y}px;
     transform: ${({ timelineState }) => `translate(${-timelineState.panelCompensationOffset.x}px, 0)`};
-    position: relative; // This allows absolute positioning of children like CloseIcon
+
+    border-radius: ${({ isSpeechBubble }) => (isSpeechBubble ? '8px' : '0')};
+`;
+
+export const SpeechBubbleArrow = styled.div`
+    position: absolute;
+    top: -20px; // Adjust this value as needed
+    left: 0px; // Positioning the arrow - adjust as needed
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px;
+    border-color: transparent transparent black transparent;
 `;

@@ -1,21 +1,21 @@
-import PropTypes from 'prop-types';
 import React, { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-import { PanelContext } from '../../../../hooks/usePanelState';
+import { PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
-import EventItemComponent from './EventItem';
-import { CloseIcon, DuplicateIcon, FlexContainer, PanelContainer, PlayIcon, TrashIcon } from './Panel.styles';
-import TimeControl from './TimeControl';
-import { useEventHandlers } from './useEventsHandlers';
+import { EventItem } from '../Panel/EventItem';
+import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
+import { PanelWrapper } from '../Panel/PanelWrapper';
+import TimeControl from '../Panel/TimeControl';
+import { useEventHandlers } from '../Panel/useEventsHandlers';
 
-export const Panel = ({ y }) => {
+export const ParamsPanel = ({ y }) => {
     const { recordings } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
 
-    const { closePanel, focusedEvent, panelState, setFocusedEvent } = useContext(PanelContext);
-    const { index: targetIndex, instrumentName: targetInstrumentGroup } = panelState;
+    const { closeParamsPanel: closePanel, focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
+    const { index: targetIndex, instrumentName: targetInstrumentGroup, overlapGroup } = panelsObj[`${PARAMS_PANEL_ID}`];
 
     const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
@@ -27,10 +27,9 @@ export const Panel = ({ y }) => {
         handleClose,
         handlePlayEvent,
         onDuplicateGroup,
-        resetFocusedEvent,
         setNewTimeout,
         updateOverlapGroupTimes
-    } = useEventHandlers(panelState.overlapGroup, setFocusedEvent, closePanel);
+    } = useEventHandlers(overlapGroup, setFocusedEvent, closePanel);
 
     const useReplayEvents = useCallback(
         () =>
@@ -56,7 +55,7 @@ export const Panel = ({ y }) => {
             const onDelteNote = () => deleteRecording(event, targetInRecordings);
 
             return (
-                <EventItemComponent
+                <EventItem
                     key={event.id}
                     overlapGroup={targetInRecordings}
                     event={event}
@@ -71,23 +70,16 @@ export const Panel = ({ y }) => {
 
     if (targetInRecordings)
         return (
-            <PanelContainer
-                onMouseLeave={resetFocusedEvent}
-                x={targetInRecordings.startTime * pixelToSecondRatio}
-                y={y}
-                timelineState={timelineState}
-            >
+            <PanelWrapper x={targetInRecordings.startTime * pixelToSecondRatio} y={y} timelineState={timelineState}>
                 <span>Group:</span>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
 
                 {targetEvents?.length > 1 && (
                     <>
                         <FlexContainer>
-                            <>
-                                <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
-                                <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
-                                <DuplicateIcon onClick={onDuplicateGroup}>Dup</DuplicateIcon>
-                            </>
+                            <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
+                            <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
+                            <DuplicateIcon onClick={onDuplicateGroup}>Dup</DuplicateIcon>
                         </FlexContainer>
 
                         <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
@@ -97,38 +89,9 @@ export const Panel = ({ y }) => {
                 )}
 
                 <FlexContainer>{renderEvents()}</FlexContainer>
-            </PanelContainer>
+            </PanelWrapper>
         );
     return null;
 };
 
-Panel.propTypes = {
-    focusedEvent: PropTypes.number,
-    onPressX: PropTypes.func.isRequired,
-    setFocusedEvent: PropTypes.func.isRequired,
-    targetedGroup: PropTypes.shape({
-        endTime: PropTypes.number,
-        id: PropTypes.any.isRequired,
-        startTime: PropTypes.number.isRequired
-    }),
-    targetEvents: PropTypes.arrayOf(
-        PropTypes.shape({
-            endTime: PropTypes.number.isRequired,
-            eventInstance: PropTypes.object.isRequired,
-            id: PropTypes.any.isRequired,
-            startTime: PropTypes.number.isRequired
-        })
-    ).isRequired,
-    updateStartTime: PropTypes.func.isRequired,
-    x: PropTypes.number,
-    y: PropTypes.number
-};
-
-Panel.defaultProps = {
-    focusedEvent: null,
-    targetedGroup: null,
-    x: undefined,
-    y: undefined
-};
-
-export default Panel;
+export default ParamsPanel;
