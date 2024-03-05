@@ -4,7 +4,7 @@ import { Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursor } from '../../../../hooks/useCustomCursor';
-import { INSTRUMENTS_PANEL_ID, PanelContext } from '../../../../hooks/usePanelState';
+import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
@@ -13,8 +13,8 @@ import { TimelineEvents } from './TimelineEvents';
 export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 
-const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, markersHeight }) => {
-    const { openPanel } = useContext(PanelContext);
+const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
+    const { closePanel, closeParamsPanel, openPanel, panels } = useContext(PanelContext);
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
     const { furthestEndTimes } = timelineState;
@@ -22,11 +22,11 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
     const timelineRef = useRef();
-    const isMuted = mutedInstruments.includes(groupName);
+    const isMuted = mutedInstruments.includes(parentGroupName);
     const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
-    const furthestGroupEndTime = furthestEndTimes[groupName];
+    const furthestGroupEndTime = furthestEndTimes[parentGroupName];
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
-    const fillColor = currentPlayingInstrument === groupName ? 'green' : 'transparent';
+    const fillColor = currentPlayingInstrument === parentGroupName ? 'green' : 'transparent';
 
     useEffect(() => {
         if (timelineRef.current) {
@@ -43,13 +43,26 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
     });
 
     const openInstrumentPanel = useCallback(() => {
-        openPanel({
-            id: INSTRUMENTS_PANEL_ID,
-            instrumentGroup: instrumentGroup.instrumentName,
-            x: cursorPos.screenX,
-            y: timelineY + timelineState.canvasOffsetY + TimelineHeight
-        });
-    }, [cursorPos.screenX, instrumentGroup, openPanel, timelineState.canvasOffsetY, timelineY]);
+        if (panels[PARAMS_PANEL_ID]) closeParamsPanel();
+        else if (panels[INSTRUMENTS_PANEL_ID]) closePanel(INSTRUMENTS_PANEL_ID);
+        else {
+            openPanel({
+                id: INSTRUMENTS_PANEL_ID,
+                targetGroup: parentGroupName,
+                x: cursorPos.screenX,
+                y: timelineY + timelineState.canvasOffsetY + TimelineHeight
+            });
+        }
+    }, [
+        closeParamsPanel,
+        panels,
+        closePanel,
+        openPanel,
+        parentGroupName,
+        cursorPos.screenX,
+        timelineY,
+        timelineState.canvasOffsetY
+    ]);
 
     return (
         <Layer y={timelineY} ref={timelineRef}>
@@ -66,14 +79,14 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
 
             <InstrumentTimelinePanelComponent
                 timelineHeight={TimelineHeight}
-                groupName={groupName}
+                parentGroupName={parentGroupName}
                 replayInstrumentRecordings={replayInstrumentRecordings}
                 toggleMute={toggleMute}
                 toggleLocked={toggleLock}
                 isLocked={isLocked}
             />
 
-            <TimelineEvents eventGroups={instrumentGroup} timelineHeight={TimelineHeight} timelineY={timelineY} />
+            <TimelineEvents eventGroups={events} timelineHeight={TimelineHeight} timelineY={timelineY} />
 
             {isLocked && (
                 <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
@@ -87,11 +100,7 @@ const InstrumentTimeline = React.memo(({ groupName, index, instrumentGroup, mark
 InstrumentTimeline.propTypes = {
     currentPlayingInstrument: PropTypes.string,
     deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
-    focusedEvent: PropTypes.number,
-    furthestGroupEndTime: PropTypes.number.isRequired,
-    groupName: PropTypes.string.isRequired,
-    index: PropTypes.number.isRequired,
-    instrumentGroup: PropTypes.arrayOf(
+    events: PropTypes.arrayOf(
         PropTypes.shape({
             events: PropTypes.arrayOf(
                 PropTypes.shape({
@@ -105,10 +114,14 @@ InstrumentTimeline.propTypes = {
             id: PropTypes.number.isRequired
         })
     ).isRequired,
+    focusedEvent: PropTypes.number,
+    furthestGroupEndTime: PropTypes.number.isRequired,
+    index: PropTypes.number.isRequired,
     markersHeight: PropTypes.number.isRequired,
     openParamsPanel: PropTypes.func.isRequired,
     panelCompensationOffset: PropTypes.object.isRequired,
     panelFor: PropTypes.number,
+    parentGroupName: PropTypes.string.isRequired,
     replayInstrumentRecordings: PropTypes.func.isRequired,
     updateStartTime: PropTypes.func.isRequired
 };

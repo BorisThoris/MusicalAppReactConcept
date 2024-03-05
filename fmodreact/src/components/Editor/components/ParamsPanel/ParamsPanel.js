@@ -10,12 +10,17 @@ import { PanelWrapper } from '../Panel/PanelWrapper';
 import TimeControl from '../Panel/TimeControl';
 import { useEventHandlers } from '../Panel/useEventsHandlers';
 
-export const ParamsPanel = ({ y }) => {
+export const ParamsPanel = () => {
     const { recordings } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
 
     const { closeParamsPanel: closePanel, focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
-    const { index: targetIndex, instrumentName: targetInstrumentGroup, overlapGroup } = panelsObj[`${PARAMS_PANEL_ID}`];
+    const {
+        index: targetIndex,
+        instrumentName: targetInstrumentGroup,
+        overlapGroup,
+        y
+    } = panelsObj[`${PARAMS_PANEL_ID}`];
 
     const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
@@ -67,6 +72,8 @@ export const ParamsPanel = ({ y }) => {
                 />
             );
         });
+
+    console.log(y);
 
     if (targetInRecordings)
         return (

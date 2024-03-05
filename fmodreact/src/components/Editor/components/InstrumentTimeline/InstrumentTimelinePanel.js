@@ -3,27 +3,33 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Text } from 'react-konva/';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
-const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordings, toggleLocked, toggleMute }) => {
+const InstrumentTimelinePanel = ({
+    isLocked,
+    parentGroupName,
+    replayInstrumentRecordings,
+    toggleLocked,
+    toggleMute
+}) => {
     const { deleteAllRecordingsForInstrument } = useInstrumentRecordingsOperations();
     const { duplicateInstrument } = useInstrumentRecordingsOperations();
 
     const onPlay = useCallback(() => {
-        replayInstrumentRecordings(groupName);
-    }, [groupName, replayInstrumentRecordings]);
+        replayInstrumentRecordings(parentGroupName);
+    }, [parentGroupName, replayInstrumentRecordings]);
 
     const onDelete = useCallback(() => {
-        deleteAllRecordingsForInstrument(groupName);
-    }, [deleteAllRecordingsForInstrument, groupName]);
+        deleteAllRecordingsForInstrument(parentGroupName);
+    }, [deleteAllRecordingsForInstrument, parentGroupName]);
 
     const onMute = useCallback(() => {
-        toggleMute(groupName);
-    }, [groupName, toggleMute]);
+        toggleMute(parentGroupName);
+    }, [parentGroupName, toggleMute]);
 
     const onCopy = useCallback(() => {
-        duplicateInstrument({ instrumentName: groupName });
-    }, [duplicateInstrument, groupName]);
+        duplicateInstrument({ instrumentName: parentGroupName });
+    }, [duplicateInstrument, parentGroupName]);
 
-    // Dynamically add icons based on groupName (instrumentName), with case-insensitive checks
+    // Dynamically add icons based on parentGroupName (instrumentName), with case-insensitive checks
     const icons = useMemo(() => {
         const baseIcons = [
             { callback: onPlay, icon: '▶' },
@@ -33,7 +39,7 @@ const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordin
             { callback: onCopy, icon: '📄' }
         ];
 
-        const groupNameLower = groupName.toLowerCase();
+        const groupNameLower = parentGroupName.toLowerCase();
 
         // Dynamically adding specific actions for different instruments
         if (groupNameLower.includes('guitar')) {
@@ -50,7 +56,7 @@ const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordin
         }
 
         return baseIcons;
-    }, [groupName, isLocked, onCopy, onDelete, onMute, onPlay, toggleLocked]);
+    }, [parentGroupName, isLocked, onCopy, onDelete, onMute, onPlay, toggleLocked]);
 
     const [widths, setWidths] = useState(Array(icons.length).fill(0));
     const [heights, setHeights] = useState(Array(icons.length).fill(0));
@@ -71,7 +77,7 @@ const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordin
         }
     }
 
-    let accumulatedHeight = groupName ? 20 : 0;
+    let accumulatedHeight = parentGroupName ? 20 : 0;
     const yPositions = heights.map((h) => {
         const yPos = accumulatedHeight;
         accumulatedHeight += h + 2;
@@ -100,7 +106,7 @@ const InstrumentTimelinePanel = ({ groupName, isLocked, replayInstrumentRecordin
 
 InstrumentTimelinePanel.propTypes = {
     deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
-    groupName: PropTypes.string,
+    parentGroupName: PropTypes.string,
     replayInstrumentRecordings: PropTypes.func.isRequired,
     timelineHeight: PropTypes.number,
     toggleLocked: PropTypes.func.isRequired,

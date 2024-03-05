@@ -45,9 +45,10 @@ export const PanelProvider = ({ children }) => {
     // Specific function to open ParamsPanel
     const openParamsPanel = useCallback(
         (payload) => {
+            closePanel(INSTRUMENTS_PANEL_ID);
             openPanel({ id: PARAMS_PANEL_ID, ...payload });
         },
-        [openPanel]
+        [closePanel, openPanel]
     );
 
     // Specific function to close ParamsPanel

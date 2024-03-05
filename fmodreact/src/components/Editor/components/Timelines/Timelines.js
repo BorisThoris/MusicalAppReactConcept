@@ -46,11 +46,11 @@ const Timelines = React.memo(() => {
             <button onClick={replayAllRecordedSounds}>{playbackStatus.isPlaying ? 'Pause' : 'Start'}</button>
 
             <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
-                {recordingsArr.map(([groupName, instrumentGroup], index) => (
+                {recordingsArr.map(([parentGroupName, events], index) => (
                     <InstrumentTimeline
-                        key={groupName}
-                        groupName={groupName}
-                        instrumentGroup={instrumentGroup}
+                        key={parentGroupName}
+                        parentGroupName={parentGroupName}
+                        events={events}
                         index={index}
                         markersHeight={markersHeight}
                     />
