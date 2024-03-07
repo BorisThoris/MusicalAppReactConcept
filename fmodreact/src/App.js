@@ -52,8 +52,8 @@ function App() {
 
     return (
         <InstrumentRecordingsProvider>
-            <RecordingsPlayerProvider>
-                <TimelineProvider>
+            <TimelineProvider>
+                <RecordingsPlayerProvider>
                     <PanelProvider>
                         <Router>
                             <TopNav />
@@ -68,8 +68,8 @@ function App() {
                             </Routes>
                         </Router>
                     </PanelProvider>
-                </TimelineProvider>
-            </RecordingsPlayerProvider>
+                </RecordingsPlayerProvider>
+            </TimelineProvider>
         </InstrumentRecordingsProvider>
     );
 }

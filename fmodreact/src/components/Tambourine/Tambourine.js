@@ -7,7 +7,7 @@ import useTambourine from './useTambourine';
 
 const Tambourine = () => {
     const instrumentName = Instruments.Tambourine;
-    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { playRecordedSounds } = useRecordingsPlayer();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = () => {

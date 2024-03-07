@@ -92,9 +92,6 @@ export const useInstrumentRecordingsOperations = () => {
                     };
                 });
 
-                console.log('duplicated group');
-                console.log(duplicatedGroups);
-
                 return {
                     ...prevGroups,
                     [newInstrumentName]: duplicatedGroups
@@ -221,7 +218,7 @@ export const useInstrumentRecordingsOperations = () => {
         (event, parent) => {
             setOverlapGroups((prevRecordings) => {
                 const updatedRecordings = { ...prevRecordings };
-                const eventId = event.id;
+                const eventId = event?.id;
 
                 Object.keys(updatedRecordings).forEach((instrumentName) => {
                     const recordings = updatedRecordings[instrumentName];
@@ -286,8 +283,8 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const recordSoundEvent = useCallback(
-        (eventInstance, instrumentName, startTime) => {
-            const elapsedTime = getElapsedTime(startTime);
+        (eventInstance, instrumentName, startTime, startOffset) => {
+            const elapsedTime = getElapsedTime(startTime, startOffset);
             const eventPath = getEventPath(eventInstance);
 
             const event = createSound({
@@ -307,10 +304,10 @@ export const useInstrumentRecordingsOperations = () => {
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
 
-                if (updatedGroups[event.instrumentName]) {
-                    updatedGroups[event.instrumentName].push(newGroup);
+                if (updatedGroups[instrumentName]) {
+                    updatedGroups[instrumentName].push(newGroup);
                 } else {
-                    updatedGroups[event.instrumentName] = [newGroup];
+                    updatedGroups[instrumentName] = [newGroup];
                 }
 
                 return updatedGroups;
@@ -320,8 +317,8 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const addRecording = useCallback(
-        (eventInstance, instrumentName, startTime) => {
-            recordSoundEvent(eventInstance, instrumentName, startTime);
+        (eventInstance, instrumentName, startTime, startOffset) => {
+            recordSoundEvent(eventInstance, instrumentName, startTime, startOffset);
         },
         [recordSoundEvent]
     );

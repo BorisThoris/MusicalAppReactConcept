@@ -15,7 +15,9 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
 
     const { endTime, eventInstance, eventLength, id, instrumentName, params, startTime } = event;
 
-    const handleDelete = useCallback(() => onDelete({ event, parent: overlapGroup }), [onDelete, event, overlapGroup]);
+    const handleDelete = useCallback(() => {
+        onDelete({ event, parent: overlapGroup });
+    }, [onDelete, event, overlapGroup]);
 
     const handleDuplicate = useCallback(() => {
         duplicateEventInstance(event);

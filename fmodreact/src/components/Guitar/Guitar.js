@@ -28,7 +28,7 @@ const Wrapper = styled.div`
 
 const Guitar = () => {
     const instrumentName = Instruments.Guitar;
-    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { playRecordedSounds } = useRecordingsPlayer();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = (musicalEvent) => {

@@ -56,15 +56,12 @@ export const ParamsPanel = () => {
 
     const renderEvents = () =>
         targetEvents?.map((event) => {
-            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            const onDelteNote = () => deleteRecording(event, targetInRecordings);
-
             return (
                 <EventItem
                     key={event.id}
                     overlapGroup={targetInRecordings}
                     event={event}
-                    onDelete={onDelteNote}
+                    onDelete={deleteRecording}
                     setFocusedEvent={setFocusedEvent}
                     focusedEvent={focusedEvent}
                     onPlay={handlePlayEvent}
@@ -72,8 +69,6 @@ export const ParamsPanel = () => {
                 />
             );
         });
-
-    console.log(y);
 
     if (targetInRecordings)
         return (

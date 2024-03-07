@@ -15,7 +15,8 @@ const Y_OFFSET = 20;
 
 const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
     const { closePanel, closeParamsPanel, openPanel, panels } = useContext(PanelContext);
-    const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
+    const { isLocked, mutedInstruments, replayInstrumentRecordings, setTrackerPosition, toggleMute } =
+        useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
     const { furthestEndTimes } = timelineState;
 
@@ -46,20 +47,23 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
         if (panels[PARAMS_PANEL_ID]) closeParamsPanel();
         else if (panels[INSTRUMENTS_PANEL_ID]) closePanel(INSTRUMENTS_PANEL_ID);
         else {
+            setTrackerPosition(cursorPos.screenX);
+
             openPanel({
                 id: INSTRUMENTS_PANEL_ID,
-                targetGroup: parentGroupName,
+                instrumentLayer: parentGroupName,
                 x: cursorPos.screenX,
                 y: timelineY + timelineState.canvasOffsetY + TimelineHeight
             });
         }
     }, [
-        closeParamsPanel,
         panels,
+        closeParamsPanel,
         closePanel,
+        setTrackerPosition,
+        cursorPos.screenX,
         openPanel,
         parentGroupName,
-        cursorPos.screenX,
         timelineY,
         timelineState.canvasOffsetY
     ]);

@@ -11,9 +11,9 @@ import { PanelWrapper } from '../Panel/PanelWrapper';
 export const PlayInstrumentsPanel = () => {
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, panels } = useContext(PanelContext);
-    const { targetGroup, x, y } = panels[INSTRUMENTS_PANEL_ID];
+    const { instrumentLayer, x, y } = panels[INSTRUMENTS_PANEL_ID];
 
-    const instrumentName = targetGroup.split(' ')[0];
+    const instrumentName = instrumentLayer.split(' ')[0];
 
     const renderInstrument = useCallback(() => {
         switch (instrumentName) {
@@ -45,7 +45,7 @@ export const PlayInstrumentsPanel = () => {
             isSpeechBubble
             handleClose={handleClose}
         >
-            <>Target: {targetGroup}</>
+            <>Target: {instrumentLayer}</>
             {renderInstrument()}
         </PanelWrapper>
     );

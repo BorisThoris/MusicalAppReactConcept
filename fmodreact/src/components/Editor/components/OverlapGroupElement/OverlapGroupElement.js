@@ -49,8 +49,8 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
     const handleClickOverlapGroup = useCallback(() => {
         const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
         const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
-        openParamsPanel({ index, instrumentName, x: groupX, y: groupY });
-    }, [canvasOffsetY, index, instrumentName, openParamsPanel, timelineY]);
+        openParamsPanel({ index, instrumentName, overlapGroup: groupData, x: groupX, y: groupY });
+    }, [canvasOffsetY, groupData, index, instrumentName, openParamsPanel, timelineY]);
 
     const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);
 

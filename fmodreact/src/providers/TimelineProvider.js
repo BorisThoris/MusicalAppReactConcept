@@ -1,20 +1,22 @@
+// @ts-nocheck
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import useStageWidth from '../hooks/useStageWidth';
 import { InstrumentRecordingsContext } from './InstrumentsProvider';
 
-export const TimelineContext = createContext();
+export const defaultTimelineState = {
+    furthestEndTime: 0,
+    furthestEndTimes: 0,
+    panelCompensationOffset: { x: -60 },
+    stageWidth: 0
+};
+export const TimelineContext = createContext(defaultTimelineState);
 
 export const TimelineProvider = ({ children }) => {
     const { recordings } = useContext(InstrumentRecordingsContext);
     const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings });
 
-    const [timelineState, setTimelineState] = useState({
-        furthestEndTime: 0,
-        furthestEndTimes: 0,
-        panelCompensationOffset: { x: -60 },
-        stageWidth: 0
-    });
+    const [timelineState, setTimelineState] = useState(defaultTimelineState);
 
     // Calculate stage width based on recordings
     useEffect(() => {

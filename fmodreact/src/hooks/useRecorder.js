@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
+import { INSTRUMENTS_PANEL_ID, PanelContext } from './usePanelState';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 
@@ -8,21 +10,29 @@ const useRecorder = ({ instrumentName }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const { addRecording, resetRecordings } = useInstrumentRecordingsOperations();
+    const { panels } = useContext(PanelContext);
+    const { instrumentLayer, isOpen: onInstrumentsPanel, x } = panels[INSTRUMENTS_PANEL_ID] || { x: 0 };
 
     const toggleRecording = useCallback(() => {
         setIsRecording((prevIsRecording) => !prevIsRecording);
 
         if (!isRecording) {
             setStartTime(Date.now());
-            resetRecordings(instrumentName);
+            if (!onInstrumentsPanel) {
+                resetRecordings(instrumentName);
+            }
         }
-    }, [instrumentName, isRecording, resetRecordings]);
+    }, [isRecording, onInstrumentsPanel, resetRecordings, instrumentName]);
 
-    const recordEvent = (eventInstance, currentInstrumentName) => {
-        if (isRecording) {
-            addRecording(eventInstance, currentInstrumentName, startTime);
-        }
-    };
+    const recordEvent = useCallback(
+        (eventInstance, currentInstrumentName) => {
+            if (isRecording) {
+                const elapsedTime = (x / pixelToSecondRatio) * 1000;
+                addRecording(eventInstance, instrumentLayer || currentInstrumentName, startTime, elapsedTime);
+            }
+        },
+        [isRecording, addRecording, instrumentLayer, startTime, x]
+    );
 
     useEffect(() => {
         const checkRecordingTimeout = () => {

@@ -29,7 +29,7 @@ const pianoKeys = [
 
 const Piano = () => {
     const instrumentName = Instruments.Piano;
-    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { playRecordedSounds } = useRecordingsPlayer();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = (musicalEvent) => {

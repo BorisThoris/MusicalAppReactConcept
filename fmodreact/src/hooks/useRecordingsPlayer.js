@@ -2,9 +2,13 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import { TimelineContext } from '../providers/TimelineProvider';
 import usePlayback from './usePlayback';
 
-const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
+const useRecordingsPlayer = () => {
+    const { timelineState } = useContext(TimelineContext);
+    const { furthestEndTime, furthestEndTimes } = timelineState;
+
     const [playbackStatus, setPlaybackStatus] = useState({
         currentInstrument: null,
         isPlaying: false
@@ -92,6 +96,7 @@ const useRecordingsPlayer = ({ furthestEndTime, furthestEndTimes }) => {
 
     useEffect(() => {
         if (playbackStatus.isPlaying) {
+            console.log(furthestEndTimes);
             const currentInstrumentEndTime = furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime;
             const timeoutAmount = currentInstrumentEndTime * 1000 - (trackerPosition / pixelToSecondRatio) * 1000;
             const timeoutId = setTimeout(() => changePlaybackStatus(false), timeoutAmount);
