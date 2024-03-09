@@ -133,7 +133,9 @@ export const useInstrumentRecordingsOperations = () => {
                 targetList[test] = recordingToUpdate;
 
                 if (parent) {
-                    const parentIndex = recordingsCopy[instrumentName].indexOf(parent);
+                    const parentIndex = recordingsCopy[instrumentName].indexOf(
+                        recordingsCopy[instrumentName].find((e) => e.id === parent.id)
+                    );
 
                     if (parentIndex !== -1) {
                         recordingsCopy[instrumentName][parentIndex].events = targetList;

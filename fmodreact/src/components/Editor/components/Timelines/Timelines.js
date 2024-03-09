@@ -15,7 +15,7 @@ const panelCompensationOffset = { x: -60 };
 
 const Timelines = React.memo(() => {
     const { closePanel } = useContext(PanelContext);
-    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { history, recordings, redo, redoHistory, undo } = useContext(InstrumentRecordingsContext);
     const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
     const { timelineState, updateTimelineState } = useContext(TimelineContext);
     const { furthestEndTime, furthestEndTimes } = timelineState;
@@ -44,6 +44,8 @@ const Timelines = React.memo(() => {
     return (
         <>
             <button onClick={replayAllRecordedSounds}>{playbackStatus.isPlaying ? 'Pause' : 'Start'}</button>
+            {history.length > 0 && <button onClick={undo}>Undo</button>}
+            {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
             <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
                 {recordingsArr.map(([parentGroupName, events], index) => (

@@ -1,6 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import useParameter from '../../../../hooks/useParameter';
 import { ControlWrapper, ParamName, ParamValue, SliderInput } from './ParameterControl.styles';
 
@@ -12,6 +12,13 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
         parent: overlapGroup
     });
 
+    const [val, setVal] = useState(paramDetails.paramValue);
+
+    const test = useCallback((e) => {
+        console.log(e.target?.value);
+        setVal(e.target?.value);
+    }, []);
+
     return (
         <ControlWrapper>
             <div>
@@ -22,8 +29,9 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
                 type="range"
                 min={paramDetails.paramMin}
                 max={paramDetails.paramMax}
-                value={paramDetails.paramValue}
-                onChange={handleParamChange}
+                value={val}
+                onChange={test}
+                onMouseUp={handleParamChange}
             />
         </ControlWrapper>
     );

@@ -1,4 +1,11 @@
-import { getEventInstanceLength, getEventInstanceParamaters, getEventName } from '../fmodLogic/eventInstanceHelpers';
+import first from 'lodash/first';
+import last from 'lodash/last';
+import {
+    createEventInstance,
+    getEventInstanceLength,
+    getEventInstanceParamaters,
+    getEventName
+} from '../fmodLogic/eventInstanceHelpers';
 
 function processParameters(eventInstance, params) {
     return params.map((param) => {
@@ -43,6 +50,58 @@ const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = 
         params,
         startTime: parseFloat(startTime?.toFixed(2))
     };
+};
+
+export const recreateEvents = (passedGroups) => {
+    const parsedRecordings = passedGroups;
+    const newRecordings = {};
+
+    Object.keys(parsedRecordings).forEach((instrumentName) => {
+        newRecordings[instrumentName] = parsedRecordings[instrumentName].map((recording) => {
+            const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+            const mainEvent = createSound({
+                eventInstance,
+                eventPath: recording.eventPath || 'Drum/Snare',
+                instrumentName,
+                passedParams: recording.params,
+                startTime: recording.startTime
+            });
+
+            const group = {
+                ...mainEvent,
+                endTime: mainEvent.endTime,
+                eventLength: mainEvent.eventLength,
+                id: `${mainEvent.id}`,
+                instrumentName: mainEvent.instrumentName,
+                length: mainEvent.eventLength,
+                locked: recording.locked,
+                startTime: mainEvent.startTime
+            };
+
+            const recreatedEvents = recording.events
+                ? recording.events.map((subEvent) => {
+                      const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
+
+                      return createSound({
+                          eventInstance: subEventInstance,
+                          eventPath: subEvent.eventPath || 'Drum/Snare',
+                          instrumentName,
+                          passedParams: subEvent.params,
+                          startTime: subEvent.startTime
+                      });
+                  })
+                : [];
+
+            group.events = recreatedEvents;
+
+            group.endTime = last(group.events).endTime;
+            group.startTime = first(group.events).startTime;
+
+            return group;
+        });
+    });
+
+    return newRecordings;
 };
 
 export default createSound;
