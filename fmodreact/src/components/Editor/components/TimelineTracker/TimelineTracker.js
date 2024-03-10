@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { Layer, Line } from 'react-konva/es/ReactKonvaCore';
+import { Line } from 'react-konva/es/ReactKonvaCore';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
@@ -35,10 +35,10 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
             trackerRef.current.to({
                 duration: 0,
                 scaleY: Math.random() + 0.8,
-                x: 0
+                x: trackerPosition
             });
         }
-    }, [shouldTrack]);
+    }, [shouldTrack, trackerPosition]);
 
     const handleDragEndCallback = useCallback(
         (e) => {
@@ -56,19 +56,26 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
         [setTrackerPosition]
     );
 
+    const restrictVerticalMovement = useCallback(
+        (pos) => ({
+            x: pos.x,
+            y: trackerRef.current.getAbsolutePosition().y
+        }),
+        []
+    );
+
     return (
-        <Layer>
-            <Line
-                offset={timelineState.panelCompensationOffset}
-                ref={trackerRef}
-                x={trackerPosition}
-                draggable
-                points={calculatePoints}
-                stroke="red"
-                strokeWidth={10}
-                onDragEnd={handleDragEndCallback}
-            />
-        </Layer>
+        <Line
+            offset={timelineState.panelCompensationOffset}
+            ref={trackerRef}
+            x={trackerPosition}
+            draggable
+            dragBoundFunc={restrictVerticalMovement}
+            points={calculatePoints}
+            stroke="red"
+            strokeWidth={10}
+            onDragEnd={handleDragEndCallback}
+        />
     );
 };
 

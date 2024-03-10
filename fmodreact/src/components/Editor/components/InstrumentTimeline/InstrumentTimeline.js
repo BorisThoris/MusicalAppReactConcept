@@ -1,12 +1,15 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursor } from '../../../../hooks/useCustomCursor';
-import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
+import { useInstrumentPanel } from '../../../../hooks/useInstrumentPanel';
+import { useRipples } from '../../../../hooks/useRipples';
+// Adjust the path as necessary
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
 
@@ -14,20 +17,33 @@ export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 
 const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
-    const { closePanel, closeParamsPanel, openPanel, panels } = useContext(PanelContext);
+    // Contexts
     const { isLocked, mutedInstruments, replayInstrumentRecordings, setTrackerPosition, toggleMute } =
         useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
-    const { furthestEndTimes } = timelineState;
+    const { addRipple, clearRipples, removeRipple, ripples } = useRipples();
 
+    // Refs
+    const timelineRef = useRef();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
-    const timelineRef = useRef();
-    const isMuted = mutedInstruments.includes(parentGroupName);
+    // Derived state
     const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
-    const furthestGroupEndTime = furthestEndTimes[parentGroupName];
+    const isMuted = mutedInstruments.includes(parentGroupName);
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
     const fillColor = currentPlayingInstrument === parentGroupName ? 'green' : 'transparent';
+
+    // Custom hooks
+    const { Cursor, cursorPos, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
+        parentY: timelineY
+    });
+
+    const { cancelDelayedOpen, closeInstrumentPanel, setupDelayedOpen } = useInstrumentPanel(
+        parentGroupName,
+        timelineY,
+        cursorPos,
+        timelineState
+    );
 
     useEffect(() => {
         if (timelineRef.current) {
@@ -37,48 +53,41 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
                 updateTimelineState({ canvasOffsetY, timelineY });
             }
         }
-    }, [furthestGroupEndTime, index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
+    }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const { Cursor, cursorPos, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
-        parentY: timelineY
-    });
+    const onPointerDown = useCallback(() => {
+        closeInstrumentPanel();
+        setTrackerPosition(cursorPos.screenX);
+        addRipple(cursorPos.x, cursorPos.y);
 
-    const openInstrumentPanel = useCallback(() => {
-        if (panels[PARAMS_PANEL_ID]) closeParamsPanel();
-        else if (panels[INSTRUMENTS_PANEL_ID]) closePanel(INSTRUMENTS_PANEL_ID);
-        else {
-            setTrackerPosition(cursorPos.screenX);
+        setupDelayedOpen(() => addRipple(cursorPos.x, cursorPos.y, 'red'), 500);
+    }, [addRipple, closeInstrumentPanel, cursorPos, setTrackerPosition, setupDelayedOpen]);
 
-            openPanel({
-                id: INSTRUMENTS_PANEL_ID,
-                instrumentLayer: parentGroupName,
-                x: cursorPos.screenX,
-                y: timelineY + timelineState.canvasOffsetY + TimelineHeight
-            });
-        }
-    }, [
-        panels,
-        closeParamsPanel,
-        closePanel,
-        setTrackerPosition,
-        cursorPos.screenX,
-        openPanel,
-        parentGroupName,
-        timelineY,
-        timelineState.canvasOffsetY
-    ]);
+    const onPointerUp = useCallback(() => {
+        cancelDelayedOpen();
+    }, [cancelDelayedOpen]);
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(openInstrumentPanelTimeoutRef.current);
+        };
+    }, []);
 
     return (
-        <Layer y={timelineY} ref={timelineRef}>
+        <Layer
+            y={timelineY}
+            ref={timelineRef}
+            onMouseLeave={handleMouseLeave}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={handleMouseEnter}
+        >
             <Rect
                 offset={timelineState.panelCompensationOffset}
                 height={TimelineHeight}
                 width={timelineWidth}
                 fill={isMuted ? 'red' : fillColor}
-                onMouseMove={handleMouseMove}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                onClick={openInstrumentPanel}
+                onPointerDown={onPointerDown}
+                onPointerUp={onPointerUp}
             />
 
             <InstrumentTimelinePanelComponent
@@ -96,14 +105,14 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
                 <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
             )}
 
+            <Ripples ripples={ripples} removeRipple={removeRipple} />
+
             {Cursor}
         </Layer>
     );
 });
 
 InstrumentTimeline.propTypes = {
-    currentPlayingInstrument: PropTypes.string,
-    deleteAllRecordingsForInstrument: PropTypes.func.isRequired,
     events: PropTypes.arrayOf(
         PropTypes.shape({
             events: PropTypes.arrayOf(
@@ -118,16 +127,9 @@ InstrumentTimeline.propTypes = {
             id: PropTypes.number.isRequired
         })
     ).isRequired,
-    focusedEvent: PropTypes.number,
-    furthestGroupEndTime: PropTypes.number.isRequired,
     index: PropTypes.number.isRequired,
     markersHeight: PropTypes.number.isRequired,
-    openParamsPanel: PropTypes.func.isRequired,
-    panelCompensationOffset: PropTypes.object.isRequired,
-    panelFor: PropTypes.number,
-    parentGroupName: PropTypes.string.isRequired,
-    replayInstrumentRecordings: PropTypes.func.isRequired,
-    updateStartTime: PropTypes.func.isRequired
+    parentGroupName: PropTypes.string.isRequired
 };
 
 export default InstrumentTimeline;

@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect } from 'react';
-import { Stage } from 'react-konva';
+import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
@@ -48,6 +48,13 @@ const Timelines = React.memo(() => {
             {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
             <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
+                <Layer>
+                    <TimelineTracker
+                        furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
+                        shouldTrack={playbackStatus.isPlaying}
+                    />
+                </Layer>
+
                 {recordingsArr.map(([parentGroupName, events], index) => (
                     <InstrumentTimeline
                         key={parentGroupName}
@@ -57,11 +64,6 @@ const Timelines = React.memo(() => {
                         markersHeight={markersHeight}
                     />
                 ))}
-
-                <TimelineTracker
-                    furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
-                    shouldTrack={playbackStatus.isPlaying}
-                />
 
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>

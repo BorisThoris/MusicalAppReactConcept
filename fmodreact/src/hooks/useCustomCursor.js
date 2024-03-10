@@ -32,7 +32,7 @@ export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
     const pointerPath = 'M10 0 L0 20 L10 10 L20 20 Z';
 
     const Cursor = isVisible && (
-        <Group x={cursorPos.x + 10} y={cursorPos.y - 10}>
+        <Group x={cursorPos.x} y={cursorPos.y - 10} listening={false}>
             <Text text={'sadec'} />
             <Path data={pointerPath} fill="black" />
         </Group>
