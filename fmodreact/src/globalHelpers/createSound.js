@@ -94,8 +94,8 @@ export const recreateEvents = (passedGroups) => {
 
             group.events = recreatedEvents;
 
-            group.endTime = last(group.events).endTime;
-            group.startTime = first(group.events).startTime;
+            group.endTime = last(group.events).endTime || group.endTime;
+            group.startTime = first(group.events).startTime || group.startTime;
 
             return group;
         });

@@ -14,7 +14,6 @@ const markersHeight = 50;
 const panelCompensationOffset = { x: -60 };
 
 const Timelines = React.memo(() => {
-    const { closePanel } = useContext(PanelContext);
     const { history, recordings, redo, redoHistory, undo } = useContext(InstrumentRecordingsContext);
     const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
     const { timelineState, updateTimelineState } = useContext(TimelineContext);
@@ -25,15 +24,6 @@ const Timelines = React.memo(() => {
             updateTimelineState({ panelCompensationOffset });
         }
     }, [timelineState.panelCompensationOffset?.x, updateTimelineState]);
-
-    const closePanelOnTimelinePress = useCallback(
-        (event) => {
-            if (event.target.className !== 'Rect') {
-                closePanel();
-            }
-        },
-        [closePanel]
-    );
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
@@ -47,7 +37,7 @@ const Timelines = React.memo(() => {
             {history.length > 0 && <button onClick={undo}>Undo</button>}
             {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
-            <Stage width={calculatedStageWidth} height={EditorHeight} onClick={closePanelOnTimelinePress}>
+            <Stage width={calculatedStageWidth} height={EditorHeight}>
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}

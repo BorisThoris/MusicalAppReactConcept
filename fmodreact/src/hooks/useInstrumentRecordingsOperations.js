@@ -25,32 +25,39 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateRecordingParams = useCallback(
-        ({ eventId, parent, updatedParam }) => {
+        ({ eventId, updatedParam }) => {
             setOverlapGroups((prevRecordings) => {
-                const updatedRecordings = { ...prevRecordings };
+                // eslint-disable-next-line no-shadow
+                const updateParamsInRecording = (recordings, eventId, updatedParam) => {
+                    return recordings.map((recording) => {
+                        if (recording.id === eventId) {
+                            // Found the recording, now update the params
+                            const updatedRecording = {
+                                ...recording,
+                                params: recording.params.map((param) =>
+                                    param.name === updatedParam.name ? updatedParam : param
+                                )
+                            };
+                            return updatedRecording;
+                        }
+                        if (recording.events && recording.events.length > 0) {
+                            // If the recording has nested events, search recursively
+                            const updatedEvents = updateParamsInRecording(recording.events, eventId, updatedParam);
+                            return { ...recording, events: updatedEvents };
+                        }
+                        // Return unmodified recording if no updates are necessary
+                        return recording;
+                    });
+                };
 
-                Object.keys(updatedRecordings).forEach((instrumentName) => {
-                    const recordings = updatedRecordings[instrumentName];
-                    const isGroup = parent.events.length > 1;
-                    const targetList = isGroup ? parent.events : recordings;
+                // Update recordings for each instrument by traversing their structure
+                const updatedRecordings = Object.keys(prevRecordings).reduce((acc, instrumentName) => {
+                    const recordings = prevRecordings[instrumentName];
+                    acc[instrumentName] = updateParamsInRecording(recordings, eventId, updatedParam);
+                    return acc;
+                }, {});
 
-                    const recordingIndex = targetList.findIndex((recording) => recording.id === eventId);
-
-                    if (recordingIndex !== -1) {
-                        const updatedRecording = {
-                            ...targetList[recordingIndex],
-                            params: targetList[recordingIndex].params.map((param) =>
-                                param.name === updatedParam.name ? updatedParam : param
-                            )
-                        };
-
-                        targetList[recordingIndex] = updatedRecording;
-                    } else {
-                        alert('Recording not found.');
-                    }
-                });
-
-                return { ...updatedRecordings };
+                return updatedRecordings;
             });
         },
         [setOverlapGroups]
@@ -217,26 +224,26 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteEventInstance = useCallback(
-        (event, parent) => {
+        (event) => {
             setOverlapGroups((prevRecordings) => {
-                const updatedRecordings = { ...prevRecordings };
                 const eventId = event?.id;
+                console.log('EventId');
+                console.log(eventId);
 
-                Object.keys(updatedRecordings).forEach((instrumentName) => {
-                    const recordings = updatedRecordings[instrumentName];
-
-                    if (parent && parent.events && parent.events.length > 1) {
-                        const updatedEvents = parent.events.filter((recording) => recording.id !== eventId);
-
-                        if (updatedEvents.length !== parent.events.length) {
-                            updatedRecordings[instrumentName] = recordings.map((group) =>
-                                group === parent ? { ...group, events: updatedEvents } : group
-                            );
-                        }
-                    } else {
-                        updatedRecordings[instrumentName] = recordings.filter((recording) => recording.id !== eventId);
+                const deleteEventFromGroup = (group) => {
+                    const updatedGroup = { ...group };
+                    if (updatedGroup.events) {
+                        updatedGroup.events = updatedGroup.events
+                            .filter((childEvent) => childEvent.id !== eventId)
+                            .map(deleteEventFromGroup); // Recursively update nested events
                     }
-                });
+                    return updatedGroup;
+                };
+
+                const updatedRecordings = Object.entries(prevRecordings).reduce((acc, [instrumentName, recordings]) => {
+                    acc[instrumentName] = recordings.map(deleteEventFromGroup);
+                    return acc;
+                }, {});
 
                 return updatedRecordings;
             });
@@ -326,8 +333,8 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const deleteRecording = useCallback(
-        (event, parent) => {
-            deleteEventInstance(event, parent);
+        (event) => {
+            deleteEventInstance(event);
         },
         [deleteEventInstance]
     );

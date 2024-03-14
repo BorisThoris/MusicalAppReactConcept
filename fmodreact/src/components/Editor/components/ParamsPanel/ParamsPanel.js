@@ -3,6 +3,7 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { EventItem } from '../Panel/EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -34,7 +35,7 @@ export const ParamsPanel = () => {
         onDuplicateGroup,
         setNewTimeout,
         updateOverlapGroupTimes
-    } = useEventHandlers(overlapGroup, setFocusedEvent, closePanel);
+    } = useEventHandlers(overlapGroup);
 
     const useReplayEvents = useCallback(
         () =>
@@ -57,7 +58,7 @@ export const ParamsPanel = () => {
     const renderEvents = () =>
         targetEvents?.map((event) => {
             // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            const onDelteNote = () => deleteRecording(event, targetInRecordings);
+            const onDelteNote = () => deleteRecording(event);
 
             return (
                 <EventItem

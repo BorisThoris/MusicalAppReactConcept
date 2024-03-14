@@ -5,9 +5,11 @@ import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursor } from '../../../../hooks/useCustomCursor';
 import { useInstrumentPanel } from '../../../../hooks/useInstrumentPanel';
+import { PanelContext } from '../../../../hooks/usePanelState';
 import { useRipples } from '../../../../hooks/useRipples';
 // Adjust the path as necessary
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
@@ -17,26 +19,25 @@ export const TimelineHeight = 200;
 const Y_OFFSET = 20;
 
 const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
-    // Contexts
     const { isLocked, mutedInstruments, replayInstrumentRecordings, setTrackerPosition, toggleMute } =
         useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
-    const { addRipple, clearRipples, removeRipple, ripples } = useRipples();
+    const { closeParamsPanel } = useContext(PanelContext);
+    const { addRipple, removeRipple, ripples } = useRipples();
 
-    // Refs
     const timelineRef = useRef();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
-    // Derived state
     const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
     const isMuted = mutedInstruments.includes(parentGroupName);
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
     const fillColor = currentPlayingInstrument === parentGroupName ? 'green' : 'transparent';
 
-    // Custom hooks
-    const { Cursor, cursorPos, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
+    const { Cursor, cursorPos, handleClick, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
         parentY: timelineY
     });
+
+    const { clearSelection } = useContext(SelectionContext);
 
     const { cancelDelayedOpen, closeInstrumentPanel, setupDelayedOpen } = useInstrumentPanel(
         parentGroupName,
@@ -55,23 +56,41 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
         }
     }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const onPointerDown = useCallback(() => {
-        closeInstrumentPanel();
-        setTrackerPosition(cursorPos.screenX);
-        addRipple(cursorPos.x, cursorPos.y);
+    const onPointerDown = useCallback(
+        (evt) => {
+            handleClick();
+            closeInstrumentPanel();
+            setTrackerPosition(cursorPos.screenX);
+            addRipple(cursorPos.x, cursorPos.y);
 
-        setupDelayedOpen(() => addRipple(cursorPos.x, cursorPos.y, 'red'), 500);
-    }, [addRipple, closeInstrumentPanel, cursorPos, setTrackerPosition, setupDelayedOpen]);
+            if (evt.evt.button === 0 && !evt.evt.ctrlKey) {
+                clearSelection();
+            }
+
+            closeParamsPanel();
+
+            setupDelayedOpen(() => {
+                addRipple(cursorPos.x, cursorPos.y, 'red');
+            }, 500);
+        },
+        [
+            handleClick,
+            closeInstrumentPanel,
+            setTrackerPosition,
+            cursorPos.screenX,
+            cursorPos.x,
+            cursorPos.y,
+            addRipple,
+            closeParamsPanel,
+            setupDelayedOpen,
+            clearSelection
+        ]
+    );
 
     const onPointerUp = useCallback(() => {
+        handleClick();
         cancelDelayedOpen();
-    }, [cancelDelayedOpen]);
-
-    useEffect(() => {
-        return () => {
-            clearTimeout(openInstrumentPanelTimeoutRef.current);
-        };
-    }, []);
+    }, [cancelDelayedOpen, handleClick]);
 
     return (
         <Layer

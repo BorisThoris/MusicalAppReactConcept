@@ -11,6 +11,7 @@ import { gSystem } from './fmodLogic';
 import { PanelProvider } from './hooks/usePanelState';
 import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
+import { SelectionProvider } from './providers/SelectionsProvider';
 import { TimelineProvider } from './providers/TimelineProvider';
 
 const NavContainer = styled.nav`
@@ -52,24 +53,26 @@ function App() {
 
     return (
         <InstrumentRecordingsProvider>
-            <TimelineProvider>
-                <RecordingsPlayerProvider>
-                    <PanelProvider>
-                        <Router>
-                            <TopNav />
+            <SelectionProvider>
+                <TimelineProvider>
+                    <RecordingsPlayerProvider>
+                        <PanelProvider>
+                            <Router>
+                                <TopNav />
 
-                            <Routes>
-                                <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                <Route path="/guitar" element={<Guitar />} />
-                                <Route path="/piano" element={<Piano />} />
-                                <Route path="/tambourine" element={<Tambourine />} />
-                                <Route path="/drums" element={<Drums />} />
-                                <Route path="/editor" element={<Editor />} />
-                            </Routes>
-                        </Router>
-                    </PanelProvider>
-                </RecordingsPlayerProvider>
-            </TimelineProvider>
+                                <Routes>
+                                    <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                    <Route path="/guitar" element={<Guitar />} />
+                                    <Route path="/piano" element={<Piano />} />
+                                    <Route path="/tambourine" element={<Tambourine />} />
+                                    <Route path="/drums" element={<Drums />} />
+                                    <Route path="/editor" element={<Editor />} />
+                                </Routes>
+                            </Router>
+                        </PanelProvider>
+                    </RecordingsPlayerProvider>
+                </TimelineProvider>
+            </SelectionProvider>
         </InstrumentRecordingsProvider>
     );
 }

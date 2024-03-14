@@ -7,6 +7,7 @@ const initialState = {};
 
 export const PARAMS_PANEL_ID = 'PARAMS_PANEL';
 export const INSTRUMENTS_PANEL_ID = 'INSTRUMENTS_PANEL';
+export const SELECTIONS_PANEL_ID = 'SELECTIONS_PANEL';
 
 const panelReducer = (state, action) => {
     switch (action.type) {

@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { Group, Path, Text } from 'react-konva';
+import { Group, Path } from 'react-konva';
 
 export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
     const [cursorPos, setCursorPos] = useState({ screenX: 0, screenY: 0, x: 0, y: 0 });
     const [isVisible, setIsVisible] = useState(initialVisibility);
+    const [isClicked, setIsClicked] = useState(false); // New state to manage click state
 
     const handleMouseMove = useCallback(
         (event) => {
@@ -29,11 +30,15 @@ export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
         setIsVisible(false);
     }, []);
 
-    const pointerPath = 'M10 0 L0 20 L10 10 L20 20 Z';
+    const handleClick = useCallback(() => {
+        setIsClicked(!isClicked); // Toggle the click state
+    }, [isClicked]);
+
+    // Change the pointerPath based on the isClicked state
+    const pointerPath = isClicked ? 'M10 0 L10 20 L20 10 L0 10 Z' : 'M10 0 L0 20 L10 10 L20 20 Z';
 
     const Cursor = isVisible && (
-        <Group x={cursorPos.x} y={cursorPos.y - 10} listening={false}>
-            <Text text={'sadec'} />
+        <Group x={cursorPos.x} y={cursorPos.y - 10} listening={false} onClick={handleClick}>
             <Path data={pointerPath} fill="black" />
         </Group>
     );
@@ -41,9 +46,10 @@ export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
     return {
         Cursor,
         cursorPos,
+        handleClick,
         handleMouseEnter,
         handleMouseLeave,
-        handleMouseMove,
+        handleMouseMove, // Make sure to return this
         isVisible,
         pointerPath
     };

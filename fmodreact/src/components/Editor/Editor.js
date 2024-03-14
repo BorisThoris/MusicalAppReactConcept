@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from '../../hooks/usePanelState';
+import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID, SELECTIONS_PANEL_ID } from '../../hooks/usePanelState';
 import Header from './components/Header/Header';
 import { ParamsPanel } from './components/ParamsPanel/ParamsPanel';
 import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
+import { SelectionsPanel } from './components/SelectionsPanel/SelectionsPanel';
 import Timelines from './components/Timelines/Timelines';
 
 const StyledEditorWrapper = styled.div`
@@ -27,6 +28,9 @@ const Editor = () => {
 
             case INSTRUMENTS_PANEL_ID:
                 return <PlayInstrumentsPanel />;
+
+            case SELECTIONS_PANEL_ID:
+                return <SelectionsPanel />;
             default:
                 return null;
         }
