@@ -53,10 +53,10 @@ function App() {
 
     return (
         <InstrumentRecordingsProvider>
-            <SelectionProvider>
-                <TimelineProvider>
-                    <RecordingsPlayerProvider>
-                        <PanelProvider>
+            <TimelineProvider>
+                <PanelProvider>
+                    <SelectionProvider>
+                        <RecordingsPlayerProvider>
                             <Router>
                                 <TopNav />
 
@@ -69,10 +69,10 @@ function App() {
                                     <Route path="/editor" element={<Editor />} />
                                 </Routes>
                             </Router>
-                        </PanelProvider>
-                    </RecordingsPlayerProvider>
-                </TimelineProvider>
-            </SelectionProvider>
+                        </RecordingsPlayerProvider>
+                    </SelectionProvider>
+                </PanelProvider>
+            </TimelineProvider>
         </InstrumentRecordingsProvider>
     );
 }

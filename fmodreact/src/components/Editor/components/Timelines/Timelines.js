@@ -1,29 +1,21 @@
-import React, { useCallback, useContext, useEffect } from 'react';
+import React, { useContext, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
-import { PanelContext } from '../../../../hooks/usePanelState';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
-import InstrumentTimeline, { TimelineHeight } from '../InstrumentTimeline/InstrumentTimeline';
+import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
+import { DragSelection } from '../DragSelection';
+import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
-const markersHeight = 50;
-const panelCompensationOffset = { x: -60 };
-
 const Timelines = React.memo(() => {
+    const stageRef = useRef(null);
     const { history, recordings, redo, redoHistory, undo } = useContext(InstrumentRecordingsContext);
     const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
-    const { timelineState, updateTimelineState } = useContext(TimelineContext);
+    const { timelineState } = useContext(TimelineContext);
     const { furthestEndTime, furthestEndTimes } = timelineState;
-
-    useEffect(() => {
-        if (timelineState.panelCompensationOffset?.x !== panelCompensationOffset.x) {
-            updateTimelineState({ panelCompensationOffset });
-        }
-    }, [timelineState.panelCompensationOffset?.x, updateTimelineState]);
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
@@ -37,7 +29,7 @@ const Timelines = React.memo(() => {
             {history.length > 0 && <button onClick={undo}>Undo</button>}
             {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
-            <Stage width={calculatedStageWidth} height={EditorHeight}>
+            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
@@ -56,6 +48,8 @@ const Timelines = React.memo(() => {
                 ))}
 
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
+
+                <DragSelection stageRef={stageRef} />
             </Stage>
         </>
     );

@@ -1,11 +1,10 @@
 import React, { useCallback, useContext } from 'react';
 import { INSTRUMENTS_PANEL_ID, PanelContext } from '../../../../hooks/usePanelState';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import Drums from '../../../Drums/Drums';
 import Guitar from '../../../Guitar/Guitar';
 import Piano from '../../../Piano/Piano';
 import Tambourine from '../../../Tambourine/Tambourine';
-import { TimelineHeight } from '../InstrumentTimeline/InstrumentTimeline';
 import { PanelWrapper } from '../Panel/PanelWrapper';
 
 export const PlayInstrumentsPanel = () => {

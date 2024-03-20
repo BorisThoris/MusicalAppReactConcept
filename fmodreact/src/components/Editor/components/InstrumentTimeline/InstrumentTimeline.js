@@ -10,13 +10,10 @@ import { useRipples } from '../../../../hooks/useRipples';
 // Adjust the path as necessary
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
-
-export const TimelineHeight = 200;
-const Y_OFFSET = 20;
 
 const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
     const { isLocked, mutedInstruments, replayInstrumentRecordings, setTrackerPosition, toggleMute } =
@@ -28,7 +25,7 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
     const timelineRef = useRef();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
-    const timelineY = TimelineHeight * index + markersHeight + Y_OFFSET;
+    const timelineY = TimelineHeight * index + markersAndTrackerOffset;
     const isMuted = mutedInstruments.includes(parentGroupName);
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
     const fillColor = currentPlayingInstrument === parentGroupName ? 'green' : 'transparent';
@@ -99,6 +96,7 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
             onMouseLeave={handleMouseLeave}
             onMouseMove={handleMouseMove}
             onMouseEnter={handleMouseEnter}
+            id={`Timeline-${timelineY}`}
         >
             <Rect
                 offset={timelineState.panelCompensationOffset}

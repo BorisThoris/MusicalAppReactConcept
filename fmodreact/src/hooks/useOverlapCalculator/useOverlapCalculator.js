@@ -64,6 +64,7 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
     const calculateOverlapsForAllInstruments = useCallback(() => {
         return Object.keys(recordings).reduce((acc, instrument) => {
             acc[instrument] = processOverlapCalculations(instrument);
+
             return acc;
         }, {});
     }, [recordings, processOverlapCalculations]);

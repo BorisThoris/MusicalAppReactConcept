@@ -26,12 +26,6 @@ export const SelectionsPanel = () => {
     );
     const anySelectedEvents = selectedValues?.length > 0;
 
-    useEffect(() => {
-        if (!anySelectedEvents) {
-            closePanel(SELECTIONS_PANEL_ID);
-        }
-    });
-
     const handleClose = useCallback(() => {
         closePanel(SELECTIONS_PANEL_ID);
         clearSelection();

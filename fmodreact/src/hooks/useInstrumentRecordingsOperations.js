@@ -227,8 +227,6 @@ export const useInstrumentRecordingsOperations = () => {
         (event) => {
             setOverlapGroups((prevRecordings) => {
                 const eventId = event?.id;
-                console.log('EventId');
-                console.log(eventId);
 
                 const deleteEventFromGroup = (group) => {
                     const updatedGroup = { ...group };

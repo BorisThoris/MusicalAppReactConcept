@@ -4,7 +4,7 @@ import { Group, Path } from 'react-konva';
 export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
     const [cursorPos, setCursorPos] = useState({ screenX: 0, screenY: 0, x: 0, y: 0 });
     const [isVisible, setIsVisible] = useState(initialVisibility);
-    const [isClicked, setIsClicked] = useState(false); // New state to manage click state
+    const [isClicked, setIsClicked] = useState(false);
 
     const handleMouseMove = useCallback(
         (event) => {
@@ -31,10 +31,9 @@ export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
     }, []);
 
     const handleClick = useCallback(() => {
-        setIsClicked(!isClicked); // Toggle the click state
+        setIsClicked(!isClicked);
     }, [isClicked]);
 
-    // Change the pointerPath based on the isClicked state
     const pointerPath = isClicked ? 'M10 0 L10 20 L20 10 L0 10 Z' : 'M10 0 L0 20 L10 10 L20 20 Z';
 
     const Cursor = isVisible && (
@@ -49,7 +48,7 @@ export const useCustomCursor = ({ initialVisibility = false, parentY = 0 }) => {
         handleClick,
         handleMouseEnter,
         handleMouseLeave,
-        handleMouseMove, // Make sure to return this
+        handleMouseMove,
         isVisible,
         pointerPath
     };

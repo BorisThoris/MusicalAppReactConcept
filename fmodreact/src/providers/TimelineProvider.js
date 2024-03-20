@@ -4,11 +4,21 @@ import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import useStageWidth from '../hooks/useStageWidth';
 import { InstrumentRecordingsContext } from './InstrumentsProvider';
 
+export const TimelineHeight = 200;
+export const Y_OFFSET = 20;
+export const markersHeight = 50;
+export const panelCompensationOffset = { x: -60 };
+export const markersAndTrackerOffset = markersHeight + Y_OFFSET;
+
 export const defaultTimelineState = {
     furthestEndTime: 0,
     furthestEndTimes: 0,
-    panelCompensationOffset: { x: -60 },
-    stageWidth: 0
+    markersAndTrackerOffset,
+    markersHeight,
+    panelCompensationOffset,
+    stageWidth: 0,
+    TimelineHeight,
+    Y_OFFSET
 };
 export const TimelineContext = createContext(defaultTimelineState);
 

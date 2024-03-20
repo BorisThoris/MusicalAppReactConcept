@@ -5,6 +5,21 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { recreateEvents } from '../globalHelpers/createSound';
 import useOverlapCalculator from '../hooks/useOverlapCalculator/useOverlapCalculator';
 
+function findDifferences(obj1, obj2, parentKey = '') {
+    if (obj1 === obj2) return;
+
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
+        console.log(`Difference at ${parentKey}:`, obj1, obj2);
+        return;
+    }
+
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    for (const key of allKeys) {
+        const newKey = parentKey ? `${parentKey}.${key}` : key;
+        findDifferences(obj1[key], obj2[key], newKey);
+    }
+}
+
 export const InstrumentRecordingsContext = createContext();
 
 export const useInstrumentRecordings = () => useContext(InstrumentRecordingsContext);
@@ -25,21 +40,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
         const isOverlapGroupsChanged =
             JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
-
-        function findDifferences(obj1, obj2, parentKey = '') {
-            if (obj1 === obj2) return;
-
-            if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
-                console.log(`Difference at ${parentKey}:`, obj1, obj2);
-                return;
-            }
-
-            const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-            for (const key of allKeys) {
-                const newKey = parentKey ? `${parentKey}.${key}` : key;
-                findDifferences(obj1[key], obj2[key], newKey);
-            }
-        }
 
         if (isOverlapGroupsChanged) {
             setOverlapGroups(newOverlapGroups);
@@ -112,6 +112,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         () => ({
             history,
             overlapGroups,
+            overlapGroupsValues: [...Object.values(overlapGroups)],
             recordings: overlapGroups,
             redo,
             redoHistory,
