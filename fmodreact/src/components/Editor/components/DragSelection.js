@@ -51,7 +51,11 @@ export const DragSelection = ({ stageRef }) => {
         if (!stageRef.current) return;
         const stage = stageRef.current;
 
-        const mouseDownHandler = (e) => handleDrag(e, true);
+        const mouseDownHandler = (e) => {
+            if (e.target?.attrs?.id?.includes('Timeline')) {
+                handleDrag(e, true);
+            }
+        };
         const mouseMoveHandler = (e) => isDragging && handleDrag(e, false);
         const mouseUpHandler = () => {
             if (hasMoved()) {

@@ -2,7 +2,6 @@
 /* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
 import first from 'lodash/first';
-import indexOf from 'lodash/indexOf';
 import last from 'lodash/last';
 import { useCallback, useContext } from 'react';
 import { createEventInstance, getEventPath } from '../fmodLogic/eventInstanceHelpers';
@@ -12,7 +11,7 @@ import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { setOverlapGroups } = useContext(InstrumentRecordingsContext);
+    const { getEvent, setOverlapGroups } = useContext(InstrumentRecordingsContext);
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
@@ -62,6 +61,7 @@ export const useInstrumentRecordingsOperations = () => {
         },
         [setOverlapGroups]
     );
+    // Include getEvent in the dependency array if it's defined outside
 
     const duplicateInstrument = useCallback(
         ({ instrumentName }) => {
@@ -111,47 +111,54 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateRecordingStartTime = useCallback(
-        ({ eventLength, index, instrumentName, newStartTime, parent = undefined }) => {
+        ({ eventLength, index, instrumentName, newStartTime }) => {
             setOverlapGroups((prevRecordings) => {
                 const recordingsCopy = { ...prevRecordings };
                 const instrumentRecordings = recordingsCopy[instrumentName];
 
-                const targetList = parent ? parent.events : instrumentRecordings;
+                // Update nested event times maintaining their relative offsets
+                const updateNestedEvents = (event, offset) => {
+                    event.startTime += offset;
+                    event.endTime = event.startTime + eventLength;
 
-                const roundedStartTime = Math.max(0, parseFloat(newStartTime.toFixed(2)));
-                const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
-
-                const recordingToUpdate = targetList.find((recording) => `${recording.id}` === `${index}`);
-
-                if (!recordingToUpdate) {
-                    return prevRecordings;
-                }
-
-                if (parent?.id === index) {
-                    parent.startTime = roundedStartTime;
-                    parent.endTime = roundedEndTime;
-                }
-
-                recordingToUpdate.startTime = roundedStartTime;
-                recordingToUpdate.endTime = roundedEndTime;
-
-                const test = indexOf(targetList, recordingToUpdate);
-
-                targetList[test] = recordingToUpdate;
-
-                if (parent) {
-                    const parentIndex = recordingsCopy[instrumentName].indexOf(
-                        recordingsCopy[instrumentName].find((e) => e.id === parent.id)
-                    );
-
-                    if (parentIndex !== -1) {
-                        recordingsCopy[instrumentName][parentIndex].events = targetList;
-                    } else {
-                        alert('NO FOUND');
+                    if (event.events && event.events.length > 0) {
+                        event.events.forEach((childEvent) => {
+                            const childOffset = childEvent.startTime - event.startTime;
+                            updateNestedEvents(childEvent, childOffset);
+                        });
                     }
-                } else {
-                    recordingsCopy[instrumentName] = targetList;
-                }
+                };
+
+                // Recursive function to search and update the targeted recording and its nested events
+                // eslint-disable-next-line no-shadow
+                const searchAndUpdateRecording = (recordings, index, newStart) => {
+                    for (let i = 0; i < recordings.length; i += 1) {
+                        if (`${recordings[i].id}` === `${index}`) {
+                            // Calculate new start and end times
+                            const offset = newStart - recordings[i].startTime;
+                            recordings[i].startTime = newStart;
+                            recordings[i].endTime = recordings[i].startTime + eventLength;
+
+                            // Update nested events, if any
+                            if (recordings[i].events) {
+                                recordings[i].events.forEach((childEvent) => {
+                                    updateNestedEvents(childEvent, offset);
+                                });
+                            }
+                            return true;
+                        }
+                        if (recordings[i].events) {
+                            // Continue searching within nested events
+                            if (searchAndUpdateRecording(recordings[i].events, index, newStart)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+
+                // Start the recursive search and update process
+                searchAndUpdateRecording(instrumentRecordings, index, newStartTime);
 
                 return recordingsCopy;
             });
@@ -341,18 +348,35 @@ export const useInstrumentRecordingsOperations = () => {
         ({ groupId }) => {
             if (!groupId) {
                 alert('GROUP ID NOT PROVIDED');
+                return; // Early return to avoid further execution if groupId is not provided
             }
+
+            const toggleLockOnEvents = (events) => {
+                // Assuming each event can have its own nested events
+                return events.map((event) => {
+                    const updatedEvent = { ...event, locked: !event.locked };
+                    if (updatedEvent.events && updatedEvent.events.length > 0) {
+                        updatedEvent.events = toggleLockOnEvents(updatedEvent.events); // Recursively toggle lock for nested events
+                    }
+                    return updatedEvent;
+                });
+            };
 
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
                 Object.keys(updatedGroups).forEach((instrument) => {
                     updatedGroups[instrument] = updatedGroups[instrument].map((group) => {
                         if (group.id === groupId) {
-                            return { ...group, locked: !group.locked };
+                            const updatedGroup = { ...group, locked: !group.locked };
+                            if (updatedGroup.events && updatedGroup.events.length > 0) {
+                                updatedGroup.events = toggleLockOnEvents(updatedGroup.events); // Toggle lock for any nested events
+                            }
+                            return updatedGroup;
                         }
                         return group;
                     });
                 });
+
                 return updatedGroups;
             });
         },

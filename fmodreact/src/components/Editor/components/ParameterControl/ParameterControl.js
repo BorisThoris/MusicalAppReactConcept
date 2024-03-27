@@ -15,7 +15,6 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
     const [val, setVal] = useState(paramDetails.paramValue);
 
     const test = useCallback((e) => {
-        console.log(e.target?.value);
         setVal(e.target?.value);
     }, []);
 

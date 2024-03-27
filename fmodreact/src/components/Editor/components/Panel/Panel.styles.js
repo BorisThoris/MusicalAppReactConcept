@@ -52,6 +52,7 @@ export const CopyIcon = styled(PressableIcon)`
 
 export const FlexContainer = styled.div`
     display: flex;
+    flex-wrap: wrap;
 `;
 
 export const TrashIcon = styled(PressableIcon)`

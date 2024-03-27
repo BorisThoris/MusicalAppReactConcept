@@ -29,7 +29,12 @@ const Timelines = React.memo(() => {
             {history.length > 0 && <button onClick={undo}>Undo</button>}
             {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
-            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
+            <Stage
+                width={calculatedStageWidth}
+                height={EditorHeight}
+                ref={stageRef}
+                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+            >
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
@@ -47,9 +52,9 @@ const Timelines = React.memo(() => {
                     />
                 ))}
 
-                <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
+                <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
 
-                <DragSelection stageRef={stageRef} />
+                <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>
         </>
     );

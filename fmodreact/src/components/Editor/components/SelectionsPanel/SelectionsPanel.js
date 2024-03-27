@@ -1,5 +1,5 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
-import React, { useCallback, useContext, useEffect } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -7,12 +7,15 @@ import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { EventItem } from '../Panel/EventItem';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
 import { PanelWrapper } from '../Panel/PanelWrapper';
+import TimeControl from '../Panel/TimeControl';
 import { useEventHandlers } from '../Panel/useEventsHandlers';
 
 export const SelectionsPanel = () => {
     const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, selectedValues } = useContext(SelectionContext);
+
+    const { clearSelection, endTime, highestYLevel, selectedValues, startTime, updateSelectedItemsStartTime } =
+        useContext(SelectionContext);
     const { deleteRecording, handlePlayEvent, setNewTimeout } = useEventHandlers(selectedValues);
 
     const statTime = selectedValues[0]?.startTime;
@@ -47,12 +50,14 @@ export const SelectionsPanel = () => {
 
     if (anySelectedEvents) {
         return (
-            <PanelWrapper x={0} timelineState={timelineState}>
+            <PanelWrapper x={0} y={highestYLevel + timelineState.canvasOffsetY} timelineState={timelineState}>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
                 <FlexContainer>
                     <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
                     <TrashIcon onClick={() => selectedValues.forEach((event) => deleteRecording(event))}>🗑️</TrashIcon>
                 </FlexContainer>
+
+                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={updateSelectedItemsStartTime} />
 
                 <FlexContainer>{renderSelectedEvents()}</FlexContainer>
             </PanelWrapper>

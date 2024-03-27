@@ -55,8 +55,8 @@ function App() {
         <InstrumentRecordingsProvider>
             <TimelineProvider>
                 <PanelProvider>
-                    <SelectionProvider>
-                        <RecordingsPlayerProvider>
+                    <RecordingsPlayerProvider>
+                        <SelectionProvider>
                             <Router>
                                 <TopNav />
 
@@ -69,8 +69,8 @@ function App() {
                                     <Route path="/editor" element={<Editor />} />
                                 </Routes>
                             </Router>
-                        </RecordingsPlayerProvider>
-                    </SelectionProvider>
+                        </SelectionProvider>
+                    </RecordingsPlayerProvider>
                 </PanelProvider>
             </TimelineProvider>
         </InstrumentRecordingsProvider>

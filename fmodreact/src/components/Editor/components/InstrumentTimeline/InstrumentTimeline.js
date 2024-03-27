@@ -89,24 +89,22 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
         cancelDelayedOpen();
     }, [cancelDelayedOpen, handleClick]);
 
+    const onMouseMove = useCallback(
+        (evt) => {
+            cancelDelayedOpen();
+            handleMouseMove(evt);
+        },
+        [cancelDelayedOpen, handleMouseMove]
+    );
+
     return (
         <Layer
             y={timelineY}
             ref={timelineRef}
             onMouseLeave={handleMouseLeave}
-            onMouseMove={handleMouseMove}
+            onMouseMove={onMouseMove}
             onMouseEnter={handleMouseEnter}
-            id={`Timeline-${timelineY}`}
         >
-            <Rect
-                offset={timelineState.panelCompensationOffset}
-                height={TimelineHeight}
-                width={timelineWidth}
-                fill={isMuted ? 'red' : fillColor}
-                onPointerDown={onPointerDown}
-                onPointerUp={onPointerUp}
-            />
-
             <InstrumentTimelinePanelComponent
                 timelineHeight={TimelineHeight}
                 parentGroupName={parentGroupName}
@@ -114,6 +112,16 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
                 toggleMute={toggleMute}
                 toggleLocked={toggleLock}
                 isLocked={isLocked}
+            />
+
+            <Rect
+                offset={timelineState.panelCompensationOffset}
+                height={TimelineHeight}
+                width={timelineWidth}
+                fill={isMuted ? 'red' : fillColor}
+                onPointerDown={onPointerDown}
+                onPointerUp={onPointerUp}
+                id={`Timeline-${timelineY}`}
             />
 
             <TimelineEvents eventGroups={events} timelineHeight={TimelineHeight} timelineY={timelineY} />

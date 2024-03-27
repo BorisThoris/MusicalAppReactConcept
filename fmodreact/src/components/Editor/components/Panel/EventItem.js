@@ -13,7 +13,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();
 
-    const { endTime, eventInstance, eventLength, id, instrumentName, params, startTime } = event;
+    const { endTime, eventInstance, eventLength, id, instrumentName, locked, params, startTime } = event;
 
     const handleDelete = useCallback(() => {
         onDelete({ event, parent: overlapGroup });
@@ -52,7 +52,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
         >
             <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
-            <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
+            {!locked && <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />}
 
             {params.map((param) => (
                 <ParameterControlComponent

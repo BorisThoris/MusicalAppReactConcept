@@ -3,7 +3,6 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
-import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { EventItem } from '../Panel/EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -15,7 +14,7 @@ export const ParamsPanel = () => {
     const { recordings } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
 
-    const { closeParamsPanel: closePanel, focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
+    const { focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
     const {
         index: targetIndex,
         instrumentName: targetInstrumentGroup,

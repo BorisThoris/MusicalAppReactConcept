@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useInstrumentRecordingsOperations } from '../hooks/useInstrumentRecordingsOperations';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../hooks/usePanelState';
 import { InstrumentRecordingsContext } from './InstrumentsProvider';
-import { TimelineContext } from './TimelineProvider';
+import { TimelineContext, TimelineHeight } from './TimelineProvider';
 
 export const SelectionContext = createContext({
     clearSelection: () => {},
@@ -14,12 +15,41 @@ export const SelectionContext = createContext({
 });
 
 export const SelectionProvider = ({ children }) => {
-    const { overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { updateRecording } = useInstrumentRecordingsOperations();
+
+    const { getEvent, overlapGroups } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, openPanel, panels } = useContext(PanelContext);
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
     const [selectedItems, setSelectedItems] = useState({});
+    const [highestYLevel, setHighestYLevel] = useState(0);
+
+    const [groupStartTime, setGroupStartTime] = useState(null);
+    const [groupEndTime, setGroupEndTime] = useState(null);
+
+    const updateGroupTimeRange = useCallback(() => {
+        const itemTimes = Object.values(selectedItems).map((item) => ({
+            endTime: item.endTime,
+            startTime: item.startTime
+        }));
+
+        const earliestStartTime = Math.min(...itemTimes.map((item) => item.startTime));
+        const latestEndTime = Math.max(...itemTimes.map((item) => item.endTime));
+
+        setGroupStartTime(earliestStartTime === Infinity ? null : earliestStartTime);
+        setGroupEndTime(latestEndTime === -Infinity ? null : latestEndTime);
+    }, [selectedItems]);
+
+    useEffect(() => {
+        if (Object.keys(selectedItems).length > 0) {
+            updateGroupTimeRange();
+        } else {
+            // Reset group times if there are no selected items
+            setGroupStartTime(null);
+            setGroupEndTime(null);
+        }
+    }, [selectedItems, updateGroupTimeRange]);
 
     useEffect(() => {
         const isSelectedItemsNotEmpty = Object.keys(selectedItems).length > 0;
@@ -56,12 +86,11 @@ export const SelectionProvider = ({ children }) => {
         setSelectedItems({});
     }, []);
 
-    const timelineHeight = 200;
     const selectEvents = useCallback(
         (recordingOrEvent, startX, endX, startY, endY, yLevel) => {
             const isSelectedInTimeRange = recordingOrEvent.startTime <= endX && recordingOrEvent.endTime >= startX;
             const isSelectedInYRange =
-                yLevel <= endY - markersAndTrackerOffset && yLevel + 200 >= startY - markersAndTrackerOffset;
+                yLevel <= endY - markersAndTrackerOffset && yLevel + TimelineHeight >= startY - markersAndTrackerOffset;
 
             if (!isSelectedInTimeRange || !isSelectedInYRange) {
                 return {};
@@ -83,20 +112,29 @@ export const SelectionProvider = ({ children }) => {
 
     const setSelectionBasedOnCoordinates = useCallback(
         ({ endX, endY, startX, startY }) => {
+            // Reduce function to find selected items.
+
+            let highestYIndex = 0;
+
             const newSelectedItems = Object.entries(overlapGroups).reduce((acc, [instrumentName, group], index) => {
-                const yLevel = index * timelineHeight;
+                const yLevel = index * TimelineHeight;
 
                 group.forEach((recording) => {
                     const selectedFromRecording = selectEvents(recording, startX, endX, startY, endY, yLevel);
-                    Object.assign(acc, selectedFromRecording);
+                    if (Object.values(selectedFromRecording).length > 0) {
+                        Object.assign(acc, selectedFromRecording);
+
+                        highestYIndex = yLevel + TimelineHeight;
+                    }
                 });
 
                 return acc;
             }, {});
 
             setSelectedItems(newSelectedItems);
+            setHighestYLevel(highestYIndex + markersAndTrackerOffset + 10);
         },
-        [overlapGroups, selectEvents]
+        [markersAndTrackerOffset, overlapGroups, selectEvents]
     );
 
     const valuesArray = Object.values(Object.keys(selectedItems)).sort((a, b) => a.startTime - b.startTime);
@@ -118,16 +156,49 @@ export const SelectionProvider = ({ children }) => {
         return acc;
     }, []);
 
+    const updateSelectedItemsStartTime = useCallback(
+        (newStartTime) => {
+            Object.keys(selectedItems).forEach((itemId) => {
+                if (selectedItems[itemId]) {
+                    const actualEvent = getEvent(itemId);
+
+                    updateRecording({
+                        eventLength: actualEvent.eventLength,
+                        index: itemId,
+                        instrumentName: actualEvent.instrumentName,
+                        newStartTime: actualEvent.startTime + newStartTime
+                    });
+                }
+            });
+        },
+        [selectedItems, getEvent, updateRecording]
+    );
+
     const value = useMemo(() => {
         return {
             clearSelection,
+            endTime: groupEndTime,
+            highestYLevel,
             isItemSelected,
             selectedItems,
             selectedValues: Object.values(test),
             setSelectionBasedOnCoordinates,
-            toggleItem
+            startTime: groupStartTime,
+            toggleItem,
+            updateSelectedItemsStartTime
         };
-    }, [clearSelection, isItemSelected, selectedItems, setSelectionBasedOnCoordinates, test, toggleItem]);
+    }, [
+        clearSelection,
+        highestYLevel,
+        isItemSelected,
+        selectedItems,
+        setSelectionBasedOnCoordinates,
+        test,
+        toggleItem,
+        groupStartTime,
+        groupEndTime,
+        updateSelectedItemsStartTime
+    ]);
 
     return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;
 };

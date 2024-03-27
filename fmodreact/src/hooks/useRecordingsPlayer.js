@@ -96,7 +96,6 @@ const useRecordingsPlayer = () => {
 
     useEffect(() => {
         if (playbackStatus.isPlaying) {
-            console.log(furthestEndTimes);
             const currentInstrumentEndTime = furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime;
             const timeoutAmount = currentInstrumentEndTime * 1000 - (trackerPosition / pixelToSecondRatio) * 1000;
             const timeoutId = setTimeout(() => changePlaybackStatus(false), timeoutAmount);

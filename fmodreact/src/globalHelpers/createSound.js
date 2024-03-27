@@ -40,6 +40,7 @@ const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = 
     }
 
     return {
+        ...eventInstance,
         endTime: parseFloat(endTime.toFixed(2)),
         eventInstance,
         eventLength,

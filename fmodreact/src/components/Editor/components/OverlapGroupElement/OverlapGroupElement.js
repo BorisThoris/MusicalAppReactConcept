@@ -64,7 +64,6 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
         events.map((event, eventIndex) => (
             <SoundEventElement
                 key={event.id}
-                parent={groupData}
                 handleClickOverlapGroup={handleClickOverlapGroup}
                 index={eventIndex}
                 recording={event}

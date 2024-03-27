@@ -17,8 +17,7 @@ export const defaultTimelineState = {
     markersHeight,
     panelCompensationOffset,
     stageWidth: 0,
-    TimelineHeight,
-    Y_OFFSET
+    TimelineHeight
 };
 export const TimelineContext = createContext(defaultTimelineState);
 

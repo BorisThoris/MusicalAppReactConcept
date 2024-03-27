@@ -19,6 +19,10 @@ export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
         group.startTime = Math.min(group.startTime, overlapGroup.startTime);
         group.endTime = Math.max(group.endTime, overlapGroup.endTime);
 
+        overlapGroup.events.forEach((event) => {
+            if (event.id !== group.id) event.parent = group.id; // Update parent to the merged group ID
+        });
+
         const mergedEvents = unionWith(group.events, overlapGroup.events, (a, b) => a.id === b.id);
 
         group.events = mergedEvents;
@@ -155,6 +159,10 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     const eventGroup = createGroupFromEvent(event, foundEvent);
     const { mergedGroup, orphans } = updatedGroup(event, eventGroup);
 
+    orphans.forEach((orphan) => {
+        delete orphan.parent; // or set to null if you prefer
+    });
+
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
 
     const events = orphans.map((orphan) => {
@@ -175,14 +183,19 @@ export const recreateEvents = ({ groupsToRecreate }) =>
                   // Create an event instance for each subEvent
                   const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
-                  // Recreate the event
-                  return createSound({
+                  // Recreate the event with the parent property
+                  const parentNotSub = subEvent.parent.id !== subEvent.id;
+                  const parent = parentNotSub && subEvent.parent ? subEvent.parent : null;
+
+                  const recreatedEvent = createSound({
                       eventInstance: subEventInstance,
                       eventPath: subEvent.eventPath || 'Drum/Snare',
                       instrumentName: existingGroup.instrumentName,
                       passedParams: subEvent.params,
                       startTime: subEvent.startTime
                   });
+                  // Assign the parent property here
+                  return { ...recreatedEvent, parent };
               })
             : [];
 
@@ -196,15 +209,20 @@ export const recreateEvents = ({ groupsToRecreate }) =>
             startTime: existingGroup.startTime
         });
 
+        // No need to assign a parent to the main event since it's the root of this tree
+
         return {
             ...mainEvent,
             endTime: mainEvent.endTime,
             eventLength: mainEvent.eventLength,
             events: recreatedEvents,
-            id: `${mainEvent.id}`,
+            id: `${mainEvent.id}`, // Ensure main event id is preserved
             instrumentName: mainEvent.instrumentName,
             length: mainEvent.eventLength,
             locked: existingGroup.locked,
             startTime: mainEvent.startTime
+            // If needed, assign a parent to the main event itself,
+            // though typically it won't have one as it's top-level in this context
+            // parent: "if applicable, some parent id here",
         };
     });
