@@ -31,12 +31,18 @@ const CONSTANTS = {
 };
 
 const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recording, timelineHeight, timelineY }) => {
-    const { eventInstance, eventLength, id, instrumentName, locked, name, parent, startTime } = recording;
-
     const { timelineState } = useContext(TimelineContext);
     const { focusedEvent, openPanel, openParamsPanel, setFocusedEvent } = useContext(PanelContext);
     const { isItemSelected, toggleItem: selectElement, updateSelectedItemsStartTime } = useContext(SelectionContext);
-    const { lockOverlapGroupById, updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
+    const {
+        getEventById,
+        lockOverlapGroupById,
+        updateRecording: updateStartTime
+    } = useInstrumentRecordingsOperations();
+
+    const { eventInstance, eventLength, id, instrumentName, locked, name, parentId, startTime } = recording;
+
+    const parent = getEventById(parentId);
 
     const isSelected = isItemSelected(recording.id);
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
@@ -92,7 +98,7 @@ const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recordin
     const handleClick = useCallback(
         (evt) => {
             if (evt.evt.button === 0 && evt.evt.ctrlKey) {
-                if (locked && parent) {
+                if (parent && parent.locked) {
                     selectElement(parent);
                     openPanel({ id: SELECTIONS_PANEL_ID });
                 } else {
@@ -100,7 +106,7 @@ const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recordin
                     openPanel({ id: SELECTIONS_PANEL_ID });
                 }
             } else if (parent) {
-                handleClickOverlapGroup();
+                if (handleClickOverlapGroup) handleClickOverlapGroup();
             } else if (openParamsPanel && !parent) {
                 openParamsPanel({
                     index,
@@ -113,10 +119,9 @@ const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recordin
         [
             parent,
             openParamsPanel,
-            locked,
+            recording,
             selectElement,
             openPanel,
-            recording,
             handleClickOverlapGroup,
             index,
             instrumentName,
@@ -131,6 +136,11 @@ const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recordin
         () => lockOverlapGroupById({ groupId: id }),
         [id, lockOverlapGroupById]
     );
+
+    // console.log('parent locked');
+
+    console.log(parentId);
+    console.log(parent?.locked);
 
     return (
         <Group

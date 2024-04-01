@@ -11,7 +11,14 @@ import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { getEvent, setOverlapGroups } = useContext(InstrumentRecordingsContext);
+    const { flatOverlapGroups, setOverlapGroups } = useContext(InstrumentRecordingsContext);
+
+    const getEventById = useCallback(
+        (id) => {
+            return flatOverlapGroups[id];
+        },
+        [flatOverlapGroups]
+    );
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
@@ -232,25 +239,39 @@ export const useInstrumentRecordingsOperations = () => {
 
     const deleteEventInstance = useCallback(
         (event) => {
-            setOverlapGroups((prevRecordings) => {
-                const eventId = event?.id;
+            const eventId = event?.id;
 
-                const deleteEventFromGroup = (group) => {
-                    const updatedGroup = { ...group };
-                    if (updatedGroup.events) {
-                        updatedGroup.events = updatedGroup.events
-                            .filter((childEvent) => childEvent.id !== eventId)
-                            .map(deleteEventFromGroup); // Recursively update nested events
-                    }
-                    return updatedGroup;
-                };
+            const deleteEventFromGroup = (group) => {
+                // Directly remove the event if it matches the ID at the current level.
+                if (group.id === eventId) {
+                    return null;
+                }
 
-                const updatedRecordings = Object.entries(prevRecordings).reduce((acc, [instrumentName, recordings]) => {
-                    acc[instrumentName] = recordings.map(deleteEventFromGroup);
-                    return acc;
-                }, {});
+                // If the group contains nested events, filter and recursively process them.
+                if (group.events) {
+                    const updatedEvents = group.events
+                        .map(deleteEventFromGroup) // Recursively attempt to delete nested events
+                        .filter(Boolean); // Remove any null values resulting from deletions
 
-                return updatedRecordings;
+                    return { ...group, events: updatedEvents };
+                }
+
+                return group; // Return the group unmodified if no deletions occurred
+            };
+
+            setOverlapGroups((prevOverlapGroups) => {
+                const updatedOverlapGroups = Object.entries(prevOverlapGroups).reduce(
+                    (acc, [instrumentName, groups]) => {
+                        // Apply deleteEventFromGroup to each group, filtering out any that are null after deletion
+                        const updatedGroups = groups.map(deleteEventFromGroup).filter(Boolean);
+
+                        acc[instrumentName] = updatedGroups;
+                        return acc;
+                    },
+                    {}
+                );
+
+                return updatedOverlapGroups;
             });
         },
         [setOverlapGroups]
@@ -433,6 +454,7 @@ export const useInstrumentRecordingsOperations = () => {
         duplicateEventInstance,
         duplicateInstrument,
         duplicateOverlapGroup,
+        getEventById,
         lockOverlapGroupById,
         resetRecordings,
         updateOverlapGroupTimes,

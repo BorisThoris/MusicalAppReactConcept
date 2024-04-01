@@ -52,7 +52,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
         >
             <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
-            {!locked && <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />}
+            {<TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />}
 
             {params.map((param) => (
                 <ParameterControlComponent

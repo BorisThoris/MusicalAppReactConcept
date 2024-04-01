@@ -9,6 +9,9 @@ export const isExactMatch = (event, eventSet) =>
 export const createGroupFromEvent = (event, foundEvent) => {
     const existingEventGroup = foundEvent?.value;
 
+    console.log('FOUND GROUP');
+    console.log(existingEventGroup);
+
     const mappedEvents = [];
     if (event.events?.length > 1) {
         event.events.forEach((e) => {
@@ -25,9 +28,11 @@ export const createGroupFromEvent = (event, foundEvent) => {
     const groupId = existingEventGroup ? existingEventGroup.id : `${event.id}`;
 
     // Assign 'parent' property without returning the assignment
-    mappedEvents.forEach((e) => {
-        if (e.id !== groupId) e.parent = groupId;
-    });
+    // eslint-disable-next-line no-unused-expressions
+    mappedEvents.length > 1 &&
+        mappedEvents.forEach((e) => {
+            e.parentId = groupId;
+        });
 
     if (!existingEventGroup) {
         // Creating a new group, this time ensuring we do not return an assignment.
@@ -38,7 +43,7 @@ export const createGroupFromEvent = (event, foundEvent) => {
             id: groupId, // Use the same logic for group ID as before
             instrumentName: event.instrumentName,
             length: event.eventLength,
-            locked: event.locked,
+            locked: event.locked || false,
             startTime: event.startTime
         };
     }

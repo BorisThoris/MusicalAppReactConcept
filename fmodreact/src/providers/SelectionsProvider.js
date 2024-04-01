@@ -17,7 +17,8 @@ export const SelectionContext = createContext({
 export const SelectionProvider = ({ children }) => {
     const { updateRecording } = useInstrumentRecordingsOperations();
 
-    const { getEvent, overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { getEventById } = useInstrumentRecordingsOperations();
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, openPanel, panels } = useContext(PanelContext);
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
@@ -62,15 +63,23 @@ export const SelectionProvider = ({ children }) => {
         }
     }, [closePanel, openPanel, panels, selectedItems]);
 
-    const toggleItem = useCallback((recording) => {
+    const toggleItem = useCallback((input) => {
         setSelectedItems((prevSelectedItems) => {
             const newSelectedItems = { ...prevSelectedItems };
+            // Normalize input to an array
+            const recordings = Array.isArray(input) ? input : [input];
 
-            if (newSelectedItems[recording.id]) {
-                delete newSelectedItems[recording.id];
-            } else {
-                newSelectedItems[recording.id] = recording;
-            }
+            recordings.forEach((recording) => {
+                if (newSelectedItems[recording.id]) {
+                    // If the item is already selected, remove it
+                    delete newSelectedItems[recording.id];
+                } else {
+                    // Otherwise, add the item
+
+                    newSelectedItems[recording.id] = recording;
+                }
+            });
+
             return newSelectedItems;
         });
     }, []);
@@ -160,7 +169,7 @@ export const SelectionProvider = ({ children }) => {
         (newStartTime) => {
             Object.keys(selectedItems).forEach((itemId) => {
                 if (selectedItems[itemId]) {
-                    const actualEvent = getEvent(itemId);
+                    const actualEvent = getEventById(itemId);
 
                     updateRecording({
                         eventLength: actualEvent.eventLength,
@@ -171,7 +180,7 @@ export const SelectionProvider = ({ children }) => {
                 }
             });
         },
-        [selectedItems, getEvent, updateRecording]
+        [selectedItems, getEventById, updateRecording]
     );
 
     const value = useMemo(() => {

@@ -29,7 +29,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
 
-    // const initialOverlapGroupsValue = JSON.parse(localStorage.getItem('overlapGroups') || '{}');
     const prevOverlapGroupsRef = useRef({});
 
     const [localLoaded, setLocalLoaded] = useState(false);
@@ -44,9 +43,11 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         const isOverlapGroupsChanged =
             JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
         if (isOverlapGroupsChanged) {
+            // findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
             setOverlapGroups(newOverlapGroups);
+            prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);
         }
-    }, [calculateOverlapsForAllInstruments, localLoaded]);
+    }, [calculateOverlapsForAllInstruments, localLoaded, overlapGroups]);
 
     // Second, use a separate effect to synchronize prevOverlapGroupsRef
     useEffect(() => {
@@ -54,19 +55,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             prevOverlapGroupsRef.current = cloneDeep(overlapGroups);
         }
     }, [overlapGroups, localLoaded]);
-
-    // useEffect(() => {
-    //     const savedOverlapGroups = JSON.parse(localStorage.getItem('overlapGroups'));
-
-    //     if (savedOverlapGroups) {
-    //         try {
-    //             const parsedOverlapGroups = savedOverlapGroups;
-    //             setOverlapGroups(parsedOverlapGroups);
-    //         } catch (e) {
-    //             alert('Failed to parse overlapGroups from localStorage', e);
-    //         }
-    //     }
-    // }, []);
 
     useEffect(() => {
         // This effect is responsible for setting the initial state from localStorage
@@ -76,8 +64,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             if (savedData) {
                 let savedOverlapGroups = JSON.parse(savedData);
 
-                // Ensure recreateEvents is adjusted to not lose any parent references or other critical data
-                console.log('recreating');
                 savedOverlapGroups = recreateEvents(savedOverlapGroups);
 
                 // Calculate overlaps for all instruments if necessary right after loading
@@ -95,11 +81,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
             // Compare the stringified current state with what's saved in localStorage
             if (currentSavedStr !== currentOverlapGroupsStr) {
-                console.log('saving');
-
                 localStorage.setItem('overlapGroups', currentOverlapGroupsStr); // Proceed with saving only if they differ
-            } else {
-                console.log('Not saving');
             }
         }
     }, [overlapGroups, localLoaded]);
@@ -138,14 +120,14 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     );
 
     const flatOverlapGroups = useMemo(() => {
-        return Object.values(overlapGroups)
+        const flattenedGroups = Object.values(overlapGroups)
             .flat()
             .reduce((accumulator, currentValue) => {
                 if (currentValue.events) {
                     // If currentValue has 'events', iterate over them
                     currentValue.events.forEach((event) => {
                         // Use event's id as key for the accumulator hashmap
-                        accumulator[event.id] = event;
+                        accumulator[event.id] = { ...event, locked: currentValue.locked };
                     });
                 } else {
                     // If no 'events', use currentValue itself with its id as the key
@@ -153,14 +135,13 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 }
                 return accumulator;
             }, {});
-    }, [overlapGroups]);
 
-    const getEvent = useCallback((id) => flatOverlapGroups[id], [flatOverlapGroups]);
+        return flattenedGroups;
+    }, [overlapGroups]);
 
     const contextValue = useMemo(
         () => ({
             flatOverlapGroups,
-            getEvent,
             history,
             overlapGroups,
             recordings: overlapGroups,
@@ -169,7 +150,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             setOverlapGroups: setOverlapGroupsAndClearRedo,
             undo
         }),
-        [flatOverlapGroups, getEvent, history, overlapGroups, redo, redoHistory, setOverlapGroupsAndClearRedo, undo]
+        [flatOverlapGroups, history, overlapGroups, redo, redoHistory, setOverlapGroupsAndClearRedo, undo]
     );
 
     return <InstrumentRecordingsContext.Provider value={contextValue}>{children}</InstrumentRecordingsContext.Provider>;

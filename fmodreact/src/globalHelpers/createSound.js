@@ -79,17 +79,25 @@ export const recreateEvents = (passedGroups) => {
                 startTime: mainEvent.startTime
             };
 
+            console.log('GROUP ');
+            console.log(group);
+
             const recreatedEvents = recording.events
                 ? recording.events.map((subEvent) => {
                       const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
-                      return createSound({
+                      const parentNotSub = mainEvent.id !== subEvent.id;
+                      const parentId = parentNotSub && subEvent.parentId ? mainEvent.id : null;
+
+                      const recreatedEvent = createSound({
                           eventInstance: subEventInstance,
                           eventPath: subEvent.eventPath || 'Drum/Snare',
                           instrumentName,
                           passedParams: subEvent.params,
                           startTime: subEvent.startTime
                       });
+
+                      return { ...recreatedEvent, parentId };
                   })
                 : [];
 
