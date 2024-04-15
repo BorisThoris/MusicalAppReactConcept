@@ -9,9 +9,6 @@ export const isExactMatch = (event, eventSet) =>
 export const createGroupFromEvent = (event, foundEvent) => {
     const existingEventGroup = foundEvent?.value;
 
-    console.log('FOUND GROUP');
-    console.log(existingEventGroup);
-
     const mappedEvents = [];
     if (event.events?.length > 1) {
         event.events.forEach((e) => {

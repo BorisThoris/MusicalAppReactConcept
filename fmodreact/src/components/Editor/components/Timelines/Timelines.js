@@ -1,9 +1,10 @@
 import React, { useContext, useRef } from 'react';
-import { Layer, Stage } from 'react-konva';
+import { Layer, Rect, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
@@ -14,8 +15,9 @@ const Timelines = React.memo(() => {
     const stageRef = useRef(null);
     const { history, recordings, redo, redoHistory, undo } = useContext(InstrumentRecordingsContext);
     const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
+    const { endTime: selectionEndTime, highestYLevel, startTime: selectionStartTime } = useContext(SelectionContext);
     const { timelineState } = useContext(TimelineContext);
-    const { furthestEndTime, furthestEndTimes } = timelineState;
+    const { furthestEndTime, furthestEndTimes, panelCompensationOffset } = timelineState;
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
@@ -29,18 +31,27 @@ const Timelines = React.memo(() => {
             {history.length > 0 && <button onClick={undo}>Undo</button>}
             {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
 
-            <Stage
-                width={calculatedStageWidth}
-                height={EditorHeight}
-                ref={stageRef}
-                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            >
+            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
                         shouldTrack={playbackStatus.isPlaying}
                     />
                 </Layer>
+
+                {selectionEndTime && selectionStartTime && (
+                    <Layer>
+                        <Rect
+                            // For Debugging Purposes uncomment
+                            fill={'transparent'}
+                            opacity={0.3}
+                            width={(selectionEndTime - selectionStartTime) * pixelToSecondRatio}
+                            height={highestYLevel}
+                            x={selectionStartTime * pixelToSecondRatio - panelCompensationOffset.x}
+                            draggable
+                        />
+                    </Layer>
+                )}
 
                 {recordingsArr.map(([parentGroupName, events], index) => (
                     <InstrumentTimeline

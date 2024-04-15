@@ -79,9 +79,6 @@ export const recreateEvents = (passedGroups) => {
                 startTime: mainEvent.startTime
             };
 
-            console.log('GROUP ');
-            console.log(group);
-
             const recreatedEvents = recording.events
                 ? recording.events.map((subEvent) => {
                       const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');

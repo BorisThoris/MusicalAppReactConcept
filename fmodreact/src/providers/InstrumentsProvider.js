@@ -127,7 +127,14 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                     // If currentValue has 'events', iterate over them
                     currentValue.events.forEach((event) => {
                         // Use event's id as key for the accumulator hashmap
-                        accumulator[event.id] = { ...event, locked: currentValue.locked };
+
+                        let events = null;
+
+                        if (event.id === currentValue.id) {
+                            events = [...currentValue.events];
+                        }
+
+                        accumulator[event.id] = { ...event, events, locked: currentValue.locked };
                     });
                 } else {
                     // If no 'events', use currentValue itself with its id as the key

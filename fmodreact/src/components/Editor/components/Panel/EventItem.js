@@ -10,10 +10,11 @@ import TimeControl from './TimeControl';
 
 export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
-    const { updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
+    const { getEventById, updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
     const { duplicateEventInstance } = instrumentRecordingOperationsHook();
 
-    const { endTime, eventInstance, eventLength, id, instrumentName, locked, params, startTime } = event;
+    const { endTime, eventInstance, eventLength, id, instrumentName, locked, params, parentId, startTime } = event;
+    const parent = getEventById(parentId);
 
     const handleDelete = useCallback(() => {
         onDelete({ event, parent: overlapGroup });
@@ -52,7 +53,9 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
         >
             <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
-            {<TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />}
+            {!parent?.locked && (
+                <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
+            )}
 
             {params.map((param) => (
                 <ParameterControlComponent

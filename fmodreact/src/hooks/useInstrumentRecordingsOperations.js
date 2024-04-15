@@ -121,7 +121,12 @@ export const useInstrumentRecordingsOperations = () => {
         ({ eventLength, index, instrumentName, newStartTime }) => {
             setOverlapGroups((prevRecordings) => {
                 const recordingsCopy = { ...prevRecordings };
+
                 const instrumentRecordings = recordingsCopy[instrumentName];
+
+                console.log(instrumentName);
+
+                console.log(instrumentRecordings);
 
                 // Update nested event times maintaining their relative offsets
                 const updateNestedEvents = (event, offset) => {
@@ -164,6 +169,7 @@ export const useInstrumentRecordingsOperations = () => {
                     return false;
                 };
 
+                console.log(instrumentRecordings);
                 // Start the recursive search and update process
                 searchAndUpdateRecording(instrumentRecordings, index, newStartTime);
 
@@ -183,9 +189,9 @@ export const useInstrumentRecordingsOperations = () => {
                             const timeShift = newStartTime - group.startTime;
 
                             const updatedGroup = {
-                                ...group,
-                                endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
-                                startTime: parseFloat((group.startTime + timeShift).toFixed(2))
+                                ...group
+                                // endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
+                                // startTime: parseFloat((group.startTime + timeShift).toFixed(2))
                             };
 
                             updatedGroup.events = updatedGroup.events.map((event) => ({
@@ -428,13 +434,6 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
-    const updateRecording = useCallback(
-        (params) => {
-            updateRecordingStartTime(params);
-        },
-        [updateRecordingStartTime]
-    );
-
     const resetRecordings = useCallback(
         (instrumentName) => {
             if (instrumentName) {
@@ -458,7 +457,7 @@ export const useInstrumentRecordingsOperations = () => {
         lockOverlapGroupById,
         resetRecordings,
         updateOverlapGroupTimes,
-        updateRecording,
+        updateRecording: updateRecordingStartTime,
         updateRecordingParams
     };
 };

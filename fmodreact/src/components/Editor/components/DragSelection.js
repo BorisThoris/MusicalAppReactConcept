@@ -59,10 +59,10 @@ export const DragSelection = ({ stageRef }) => {
         const mouseMoveHandler = (e) => isDragging && handleDrag(e, false);
         const mouseUpHandler = () => {
             if (hasMoved()) {
-                updateSelection(dragPos); // Ensure selection is updated on mouse up if there was movement
+                updateSelection(dragPos);
             }
             setIsDragging(false);
-            setDragPos({ end: null, start: null }); // Properly reset to null to avoid false positive for movement
+            setDragPos({ end: null, start: null });
         };
 
         stage.on('mousedown touchstart', mouseDownHandler);

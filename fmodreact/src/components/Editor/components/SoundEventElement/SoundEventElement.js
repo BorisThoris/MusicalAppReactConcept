@@ -1,17 +1,16 @@
-import { get } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
-import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useCustomDrag } from '../../../../hooks/useCustomDrag';
 import { useDynamicStyles } from '../../../../hooks/useDynamicStyles';
 import { useEventFocus } from '../../../../hooks/useEventFocus';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
-import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
+import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
+import useElementSelectionMovement from './useElementSelectionMovement';
+import { useClickHandlers } from './useEventClickHandlers';
 
 const CONSTANTS = {
     CORNER_RADIUS: 5,
@@ -31,128 +30,75 @@ const CONSTANTS = {
 };
 
 const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recording, timelineHeight, timelineY }) => {
-    const { timelineState } = useContext(TimelineContext);
-    const { focusedEvent, openPanel, openParamsPanel, setFocusedEvent } = useContext(PanelContext);
-    const { isItemSelected, toggleItem: selectElement, updateSelectedItemsStartTime } = useContext(SelectionContext);
+    const { eventLength, id, locked, name, parentId, startTime } = recording;
+    const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
+    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
+        useContext(SelectionContext);
+
+    const isSelected = isItemSelected(id);
+    useElementSelectionMovement({ elementXPosition, isSelected, recording, setElementXPosition });
+
+    const groupRef = useRef();
+    const elementRef = useRef();
+
+    const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
+
     const {
         getEventById,
         lockOverlapGroupById,
         updateRecording: updateStartTime
     } = useInstrumentRecordingsOperations();
 
-    const { eventInstance, eventLength, id, instrumentName, locked, name, parentId, startTime } = recording;
-
-    const parent = getEventById(parentId);
-
-    const isSelected = isItemSelected(recording.id);
-    const startingPositionInTimeline = startTime * pixelToSecondRatio;
-    const lengthBasedWidth = eventLength * pixelToSecondRatio;
-    const canvasOffsetY = timelineState.canvasOffsetY || undefined;
-
-    const groupRef = useRef();
-    const elementRef = useRef();
-    const [originalZIndex, setOriginalZIndex] = useState(0);
-
     const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
 
     const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(isFocused, isSelected, true);
 
-    const handleDragEnd = useCallback(
-        (e) => {
-            const newStartTime = e.target.x() / pixelToSecondRatio;
-
-            if (isSelected) {
-                updateSelectedItemsStartTime(newStartTime);
-            } else
-                updateStartTime({
-                    eventLength: recording.eventLength,
-                    index: recording.id,
-                    instrumentName: recording.instrumentName,
-                    newStartTime,
-                    parent
-                });
-        },
-        [
-            isSelected,
-            updateSelectedItemsStartTime,
-            updateStartTime,
-            recording.eventLength,
-            recording.id,
-            recording.instrumentName,
-            parent
-        ]
-    );
-
-    const { dragBoundFunc, handleDragStart } = useCustomDrag({
+    const parent = getEventById(parentId);
+    const { handleClick, handleDoubleClick } = useClickHandlers({
+        elementRef,
+        handleClickOverlapGroup,
+        parent,
+        recording,
         timelineY
     });
 
-    useEffect(() => {
-        if (groupRef.current) setOriginalZIndex(groupRef.current.zIndex());
-    }, []);
+    const { dragBoundFunc, handleDragEnd, handleDragStart } = useCustomDrag({
+        isSelected,
+        parent,
+        recording,
+        timelineY,
+        updateStartTime
+    });
 
-    useEffect(() => {
-        if (isFocused && groupRef.current) groupRef.current.moveToTop();
-    }, [isFocused, originalZIndex]);
-
-    const handleClick = useCallback(
-        (evt) => {
-            if (evt.evt.button === 0 && evt.evt.ctrlKey) {
-                if (parent && parent.locked) {
-                    selectElement(parent);
-                    openPanel({ id: SELECTIONS_PANEL_ID });
-                } else {
-                    selectElement(recording);
-                    openPanel({ id: SELECTIONS_PANEL_ID });
-                }
-            } else if (parent) {
-                if (handleClickOverlapGroup) handleClickOverlapGroup();
-            } else if (openParamsPanel && !parent) {
-                openParamsPanel({
-                    index,
-                    instrumentName,
-                    x: startingPositionInTimeline,
-                    y: timelineY + canvasOffsetY + elementRef.current.attrs.height
-                });
-            }
-        },
-        [
-            parent,
-            openParamsPanel,
-            recording,
-            selectElement,
-            openPanel,
-            handleClickOverlapGroup,
-            index,
-            instrumentName,
-            startingPositionInTimeline,
-            timelineY,
-            canvasOffsetY
-        ]
-    );
-
-    const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
     const onLockSoundEventElement = useCallback(
         () => lockOverlapGroupById({ groupId: id }),
         [id, lockOverlapGroupById]
     );
 
-    // console.log('parent locked');
+    useEffect(() => {
+        setElementXPosition(startTime * pixelToSecondRatio);
+    }, [startTime]);
 
-    console.log(parentId);
-    console.log(parent?.locked);
+    useEffect(() => {
+        if (isFocused && groupRef.current) {
+            groupRef.current.moveToTop();
+        }
+    }, [isFocused]);
+
+    const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
     return (
         <Group
             ref={groupRef}
             key={index}
-            x={startingPositionInTimeline}
+            x={elementXPosition}
             draggable={!parent?.locked}
             dragBoundFunc={dragBoundFunc}
-            onDragEnd={handleDragEnd}
+            onDragMove={handleSelectionBoxMove}
+            onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
+            onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
             onClick={handleClick}
             onDblClick={handleDoubleClick}
-            onDragStart={handleDragStart}
         >
             <Rect
                 onMouseEnter={handleMouseEnter}

@@ -1,6 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
+import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import { SelectionContext } from '../providers/SelectionsProvider';
 
-export const useCustomDrag = ({ timelineY }) => {
+export const useCustomDrag = ({ isSelected, parent, recording, timelineY, updateStartTime }) => {
+    const { clearSelection } = useContext(SelectionContext);
+
     const dragBoundFunc = useCallback(
         (pos) => ({
             x: pos.x - 60 > 0 ? pos.x : 60,
@@ -9,9 +13,32 @@ export const useCustomDrag = ({ timelineY }) => {
         [timelineY]
     );
 
-    const handleDragStart = useCallback((el) => el.target.moveToTop(), []);
+    const handleDragStart = useCallback(
+        (el) => {
+            el.target.moveToTop();
+            if (!isSelected) {
+                clearSelection();
+            }
+        },
+        [clearSelection, isSelected]
+    );
 
-    return { dragBoundFunc, handleDragStart };
+    const handleDragEnd = useCallback(
+        (e) => {
+            const newStartTime = e.target.x() / pixelToSecondRatio;
+
+            updateStartTime({
+                eventLength: recording.eventLength,
+                index: recording.id,
+                instrumentName: recording.instrumentName,
+                newStartTime,
+                parent
+            });
+        },
+        [updateStartTime, recording.eventLength, recording.id, recording.instrumentName, parent]
+    );
+
+    return { dragBoundFunc, handleDragEnd, handleDragStart };
 };
 
 export default useCustomDrag;
