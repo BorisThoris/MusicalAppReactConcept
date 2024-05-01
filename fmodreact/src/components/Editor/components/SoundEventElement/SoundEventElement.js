@@ -29,111 +29,119 @@ const CONSTANTS = {
     TRANSPARENCY_VALUE: 0.8
 };
 
-const SoundEventElement = React.memo(({ handleClickOverlapGroup, index, recording, timelineHeight, timelineY }) => {
-    const { eventLength, id, locked, name, parentId, startTime } = recording;
-    const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
-    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
-        useContext(SelectionContext);
+const SoundEventElement = React.memo(
+    ({ handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY }) => {
+        const { eventLength, id, locked, name, parentId, startTime } = recording;
+        const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
+        const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
+            useContext(SelectionContext);
 
-    const isSelected = isItemSelected(id);
-    useElementSelectionMovement({ elementXPosition, isSelected, recording, setElementXPosition });
+        const isSelected = isItemSelected(id);
 
-    const groupRef = useRef();
-    const elementRef = useRef();
+        useElementSelectionMovement({ elementXPosition, isSelected, recording, setElementXPosition });
 
-    const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
+        const groupRef = useRef();
+        const elementRef = useRef();
 
-    const {
-        getEventById,
-        lockOverlapGroupById,
-        updateRecording: updateStartTime
-    } = useInstrumentRecordingsOperations();
+        const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
 
-    const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
+        const {
+            getEventById,
+            lockOverlapGroupById,
+            updateRecording: updateStartTime
+        } = useInstrumentRecordingsOperations();
 
-    const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(isFocused, isSelected, true);
+        const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
 
-    const parent = getEventById(parentId);
-    const { handleClick, handleDoubleClick } = useClickHandlers({
-        elementRef,
-        handleClickOverlapGroup,
-        parent,
-        recording,
-        timelineY
-    });
+        const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(isFocused, isSelected, true);
 
-    const { dragBoundFunc, handleDragEnd, handleDragStart } = useCustomDrag({
-        isSelected,
-        parent,
-        recording,
-        timelineY,
-        updateStartTime
-    });
+        const parent = getEventById(parentId);
+        const { handleClick, handleDoubleClick } = useClickHandlers({
+            elementRef,
+            handleClickOverlapGroup,
+            parent,
+            recording,
+            timelineY
+        });
 
-    const onLockSoundEventElement = useCallback(
-        () => lockOverlapGroupById({ groupId: id }),
-        [id, lockOverlapGroupById]
-    );
+        const { dragBoundFunc, handleDragEnd, handleDragStart } = useCustomDrag({
+            isSelected,
+            parent,
+            recording,
+            timelineY,
+            updateStartTime
+        });
 
-    useEffect(() => {
-        setElementXPosition(startTime * pixelToSecondRatio);
-    }, [startTime]);
+        const onLockSoundEventElement = useCallback(
+            () => lockOverlapGroupById({ groupId: id }),
+            [id, lockOverlapGroupById]
+        );
 
-    useEffect(() => {
-        if (isFocused && groupRef.current) {
-            groupRef.current.moveToTop();
-        }
-    }, [isFocused]);
+        useEffect(() => {
+            setElementXPosition(startTime * pixelToSecondRatio);
+        }, [startTime]);
 
-    const lengthBasedWidth = eventLength * pixelToSecondRatio;
+        useEffect(() => {
+            if (isFocused && groupRef.current) {
+                groupRef.current.moveToTop();
+            }
+        }, [isFocused]);
 
-    return (
-        <Group
-            ref={groupRef}
-            key={index}
-            x={elementXPosition}
-            draggable={!parent?.locked}
-            dragBoundFunc={dragBoundFunc}
-            onDragMove={handleSelectionBoxMove}
-            onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
-            onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
-            onClick={handleClick}
-            onDblClick={handleDoubleClick}
-        >
-            <Rect
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={restoreZIndex}
-                ref={elementRef}
-                x={0}
-                y={isFocused ? -4 : 0}
-                width={lengthBasedWidth}
-                height={timelineHeight * 0.8}
-                fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
-                fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
-                fillLinearGradientColorStops={dynamicColorStops}
-                fill={dynamicStroke}
-                strokeWidth={CONSTANTS.STROKE_WIDTH}
-                cornerRadius={CONSTANTS.CORNER_RADIUS}
-                shadowOffset={CONSTANTS.SHADOW.OFFSET}
-                shadowBlur={dynamicShadowBlur}
-                shadowOpacity={CONSTANTS.SHADOW.OPACITY}
-                opacity={CONSTANTS.TRANSPARENCY_VALUE}
-            />
-            <Text {...CONSTANTS.TEXT_STYLE} text={name} opacity={CONSTANTS.TRANSPARENCY_VALUE} />
+        const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-            {!parent && (
-                <Text
-                    onClick={onLockSoundEventElement}
-                    x={-10}
-                    y={CONSTANTS.LOCK_OFFSET_Y}
-                    text={locked ? '🔒' : '✔️'}
-                    fontSize={CONSTANTS.TEXT_FONT_SIZE}
-                    fill="white"
+        // console.log(id);
+        // console.log(elementXPosition);
+
+        return (
+            <Group
+                ref={groupRef}
+                key={index}
+                x={elementXPosition}
+                draggable={!parent?.locked}
+                dragBoundFunc={dragBoundFunc}
+                onDragMove={handleSelectionBoxMove}
+                onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
+                onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
+                onClick={handleClick}
+                onDblClick={handleDoubleClick}
+                listening={listening}
+            >
+                <Rect
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={restoreZIndex}
+                    ref={elementRef}
+                    x={0}
+                    y={isFocused ? -4 : 0}
+                    width={lengthBasedWidth}
+                    height={timelineHeight * 0.8}
+                    fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
+                    fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
+                    fillLinearGradientColorStops={dynamicColorStops}
+                    fill={dynamicStroke}
+                    strokeWidth={CONSTANTS.STROKE_WIDTH}
+                    cornerRadius={CONSTANTS.CORNER_RADIUS}
+                    shadowOffset={CONSTANTS.SHADOW.OFFSET}
+                    shadowBlur={dynamicShadowBlur}
+                    shadowOpacity={CONSTANTS.SHADOW.OPACITY}
+                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
                 />
-            )}
-        </Group>
-    );
-}, isEqual);
+                <Text {...CONSTANTS.TEXT_STYLE} text={name} opacity={CONSTANTS.TRANSPARENCY_VALUE} />
+
+                {!parent && (
+                    <Text
+                        onClick={onLockSoundEventElement}
+                        x={-10}
+                        y={CONSTANTS.LOCK_OFFSET_Y}
+                        text={locked ? '🔒' : '✔️'}
+                        fontSize={CONSTANTS.TEXT_FONT_SIZE}
+                        fill="white"
+                    />
+                )}
+            </Group>
+        );
+    },
+    isEqual
+);
 
 SoundEventElement.propTypes = {
     canvasOffsetY: PropTypes.number.isRequired,

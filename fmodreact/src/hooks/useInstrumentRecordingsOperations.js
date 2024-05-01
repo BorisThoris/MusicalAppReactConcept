@@ -36,23 +36,25 @@ export const useInstrumentRecordingsOperations = () => {
                 // eslint-disable-next-line no-shadow
                 const updateParamsInRecording = (recordings, eventId, updatedParam) => {
                     return recordings.map((recording) => {
+                        let updatedRecording = recording;
+
                         if (recording.id === eventId) {
                             // Found the recording, now update the params
-                            const updatedRecording = {
+                            updatedRecording = {
                                 ...recording,
                                 params: recording.params.map((param) =>
                                     param.name === updatedParam.name ? updatedParam : param
                                 )
                             };
-                            return updatedRecording;
                         }
                         if (recording.events && recording.events.length > 0) {
                             // If the recording has nested events, search recursively
+
                             const updatedEvents = updateParamsInRecording(recording.events, eventId, updatedParam);
-                            return { ...recording, events: updatedEvents };
+                            return { ...updatedRecording, events: updatedEvents };
                         }
                         // Return unmodified recording if no updates are necessary
-                        return recording;
+                        return updatedRecording;
                     });
                 };
 
@@ -94,10 +96,11 @@ export const useInstrumentRecordingsOperations = () => {
 
                 const duplicatedGroups = originalGroups.map((group) => {
                     const recreatedGroup = recreateEvents({
+                        existingInstrumentName: newInstrumentName,
                         groupsToRecreate: [group]
                     })[0];
 
-                    const newGroupId = `${recreatedGroup.id}_dup`;
+                    const newGroupId = `${recreatedGroup.id}`;
 
                     return {
                         ...recreatedGroup,
@@ -105,6 +108,10 @@ export const useInstrumentRecordingsOperations = () => {
                         instrumentName: newInstrumentName
                     };
                 });
+
+                console.log('DuplicatedGroups');
+
+                console.log(duplicatedGroups);
 
                 return {
                     ...prevGroups,
@@ -124,10 +131,6 @@ export const useInstrumentRecordingsOperations = () => {
 
                 const instrumentRecordings = recordingsCopy[instrumentName];
 
-                console.log(instrumentName);
-
-                console.log(instrumentRecordings);
-
                 // Update nested event times maintaining their relative offsets
                 const updateNestedEvents = (event, offset) => {
                     event.startTime += offset;
@@ -141,35 +144,35 @@ export const useInstrumentRecordingsOperations = () => {
                     }
                 };
 
-                // Recursive function to search and update the targeted recording and its nested events
-                // eslint-disable-next-line no-shadow
-                const searchAndUpdateRecording = (recordings, index, newStart) => {
-                    for (let i = 0; i < recordings.length; i += 1) {
-                        if (`${recordings[i].id}` === `${index}`) {
-                            // Calculate new start and end times
-                            const offset = newStart - recordings[i].startTime;
-                            recordings[i].startTime = newStart;
-                            recordings[i].endTime = recordings[i].startTime + eventLength;
+                const searchAndUpdateRecording = (recordings, id, newStart) => {
+                    const recording = recordings.find((rec) => `${rec.id}` === `${id}`);
+                    if (recording) {
+                        const offset = newStart - recording.startTime;
+                        recording.startTime = newStart;
+                        recording.endTime = recording.startTime + eventLength; // Ensure `eventLength` is defined in the scope
 
-                            // Update nested events, if any
-                            if (recordings[i].events) {
-                                recordings[i].events.forEach((childEvent) => {
-                                    updateNestedEvents(childEvent, offset);
-                                });
+                        // Update nested events, if any and applicable
+                        recording.events?.forEach((event) => {
+                            if (recording.locked || event.id === index) {
+                                // Ensure `index` is defined in the scope
+                                updateNestedEvents(event, offset); // Ensure this function is defined in the scope
                             }
+                        });
+
+                        return true;
+                    }
+
+                    // Continue searching within nested events
+                    // eslint-disable-next-line no-restricted-syntax
+                    for (const rec of recordings) {
+                        if (rec.events && searchAndUpdateRecording(rec.events, id, newStart)) {
                             return true;
                         }
-                        if (recordings[i].events) {
-                            // Continue searching within nested events
-                            if (searchAndUpdateRecording(recordings[i].events, index, newStart)) {
-                                return true;
-                            }
-                        }
                     }
+
                     return false;
                 };
 
-                console.log(instrumentRecordings);
                 // Start the recursive search and update process
                 searchAndUpdateRecording(instrumentRecordings, index, newStartTime);
 
@@ -183,15 +186,16 @@ export const useInstrumentRecordingsOperations = () => {
         ({ groupId, newStartTime }) => {
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
+
                 Object.keys(updatedGroups).forEach((instrument) => {
                     updatedGroups[instrument] = updatedGroups[instrument].map((group) => {
                         if (group.id === groupId) {
                             const timeShift = newStartTime - group.startTime;
 
                             const updatedGroup = {
-                                ...group
-                                // endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
-                                // startTime: parseFloat((group.startTime + timeShift).toFixed(2))
+                                ...group,
+                                endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
+                                startTime: parseFloat((group.startTime + timeShift).toFixed(2))
                             };
 
                             updatedGroup.events = updatedGroup.events.map((event) => ({
@@ -219,7 +223,7 @@ export const useInstrumentRecordingsOperations = () => {
                 ...event,
                 endTime: event.endTime,
                 events,
-                id: `${event.id}`,
+                id: event.id,
                 instrumentName: event.instrumentName,
                 length: event.eventLength,
                 locked: event.locked,
@@ -418,10 +422,16 @@ export const useInstrumentRecordingsOperations = () => {
 
             newGroup.id += newGroup.id;
             newGroup.locked = true;
-            newGroup.id = `${newGroup.id}`;
 
-            newGroup.endTime = last(newGroup.events).endTime;
-            newGroup.startTime = first(newGroup.events).startTime;
+            newGroup.startTime = overlapGroup.startTime;
+            newGroup.endTime = overlapGroup.endTime;
+
+            if (newGroup.events.length >= 1) {
+                newGroup.endTime = last(newGroup.events)?.endTime;
+                newGroup.startTime = first(newGroup.events)?.startTime;
+
+                newGroup.parentId = null;
+            }
 
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };

@@ -38,11 +38,12 @@ export const SelectionProvider = ({ children }) => {
         handleSelectionBoxDragEnd,
         handleSelectionBoxMove,
         selectedElementsCords,
-
         setSelectedElementsCords
     } = useBoxMove({ selectedItems });
 
     usePanelControl(selectedItems, panels, openPanel, closePanel);
+
+    const selectedValues = Object.values(flatValues);
 
     const value = useMemo(() => {
         return {
@@ -55,7 +56,7 @@ export const SelectionProvider = ({ children }) => {
             isItemSelected,
             selectedElementsCords,
             selectedItems,
-            selectedValues: Object.values(flatValues),
+            selectedValues,
             setSelectedElementsCords,
             setSelectionBasedOnCoordinates,
             startTime: groupStartTime,
@@ -72,7 +73,7 @@ export const SelectionProvider = ({ children }) => {
         isItemSelected,
         selectedElementsCords,
         selectedItems,
-        flatValues,
+        selectedValues,
         setSelectedElementsCords,
         setSelectionBasedOnCoordinates,
         groupStartTime,

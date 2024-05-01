@@ -22,13 +22,15 @@ export const createGroupFromEvent = (event, foundEvent) => {
     }
 
     // Determine group ID for parent assignment
-    const groupId = existingEventGroup ? existingEventGroup.id : `${event.id}`;
+    const groupId = existingEventGroup ? existingEventGroup.id : event.id;
 
     // Assign 'parent' property without returning the assignment
     // eslint-disable-next-line no-unused-expressions
     mappedEvents.length > 1 &&
         mappedEvents.forEach((e) => {
-            e.parentId = groupId;
+            if (e.id !== groupId) {
+                e.parentId = groupId;
+            }
         });
 
     if (!existingEventGroup) {

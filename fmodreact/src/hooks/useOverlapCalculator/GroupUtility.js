@@ -20,7 +20,9 @@ export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
         group.endTime = Math.max(group.endTime, overlapGroup.endTime);
 
         overlapGroup.events.forEach((event) => {
-            event.parentId = group.id;
+            if (event.id !== group.id) {
+                event.parentId = group.id;
+            }
         });
 
         const mergedEvents = unionWith(group.events, overlapGroup.events, (a, b) => a.id === b.id);
@@ -148,10 +150,11 @@ export const updatedGroup = (event, existingGroup) => {
         const isGroup = group.events?.length > 0;
         group.id = isGroup ? group.events[0].id : group.id;
 
-        if (isGroup)
+        if (isGroup) {
             group.events.forEach((ev) => {
                 ev.parentId = group.id;
             });
+        }
 
         group.endTime = parseFloat(endTime.toFixed(2));
         group.startTime = parseFloat(startTime.toFixed(2));
@@ -181,8 +184,17 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     return [...groups, mergedGroup, ...events];
 };
 
-export const recreateEvents = ({ groupsToRecreate }) =>
+export const recreateEvents = ({ existingInstrumentName, groupsToRecreate }) =>
     groupsToRecreate.map((existingGroup) => {
+        const eventInstance = createEventInstance(existingGroup.eventPath || 'Drum/Snare');
+        const mainEvent = createSound({
+            eventInstance,
+            eventPath: existingGroup.eventPath || 'Drum/Snare',
+            instrumentName: existingGroup.instrumentName,
+            passedParams: existingGroup.params,
+            startTime: existingGroup.startTime
+        });
+
         const recreatedEvents = existingGroup.events
             ? existingGroup.events.map((subEvent) => {
                   const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
@@ -193,31 +205,25 @@ export const recreateEvents = ({ groupsToRecreate }) =>
                   const recreatedEvent = createSound({
                       eventInstance: subEventInstance,
                       eventPath: subEvent.eventPath || 'Drum/Snare',
-                      instrumentName: existingGroup.instrumentName,
+                      instrumentName: existingInstrumentName || existingGroup.instrumentName,
                       passedParams: subEvent.params,
                       startTime: subEvent.startTime
                   });
 
-                  return { ...recreatedEvent, parentId };
+                  return { ...recreatedEvent, parentId: mainEvent.id };
               })
             : [];
 
-        const eventInstance = createEventInstance(existingGroup.eventPath || 'Drum/Snare');
-        const mainEvent = createSound({
-            eventInstance,
-            eventPath: existingGroup.eventPath || 'Drum/Snare',
-            instrumentName: existingGroup.instrumentName,
-            passedParams: existingGroup.params,
-            startTime: existingGroup.startTime
-        });
+        console.log('existingInstName');
+        console.log(existingInstrumentName);
 
         return {
             ...mainEvent,
             endTime: mainEvent.endTime,
             eventLength: mainEvent.eventLength,
             events: recreatedEvents,
-            id: `${mainEvent.id}`,
-            instrumentName: mainEvent.instrumentName,
+            id: mainEvent.id,
+            instrumentName: existingInstrumentName || mainEvent.instrumentName,
             length: mainEvent.eventLength,
             locked: existingGroup.locked,
             startTime: mainEvent.startTime

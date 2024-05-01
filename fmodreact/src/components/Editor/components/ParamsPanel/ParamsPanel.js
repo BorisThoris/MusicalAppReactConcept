@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useEffect } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
@@ -11,20 +11,18 @@ import TimeControl from '../Panel/TimeControl';
 import { useEventHandlers } from '../Panel/useEventsHandlers';
 
 export const ParamsPanel = () => {
-    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { flatOverlapGroups } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
-
     const { focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
-    const {
-        index: targetIndex,
-        instrumentName: targetInstrumentGroup,
-        overlapGroup,
-        y
-    } = panelsObj[`${PARAMS_PANEL_ID}`];
 
-    const targetInRecordings = recordings[targetInstrumentGroup][targetIndex];
+    const { overlapGroup, y } = panelsObj[`${PARAMS_PANEL_ID}`];
+    const foundGroup = flatOverlapGroups[overlapGroup.id];
+    const targetInRecordings = foundGroup?.parentId ? flatOverlapGroups[foundGroup.parentId] : foundGroup;
+
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
+
     const targetEvents = targetInRecordings?.events;
+    const targetEventsLength = targetEvents?.length;
 
     const {
         deleteOverlapGroup,
@@ -35,6 +33,15 @@ export const ParamsPanel = () => {
         setNewTimeout,
         updateOverlapGroupTimes
     } = useEventHandlers(overlapGroup);
+
+    const hasAnyEvents = targetEventsLength >= 1;
+    const hasMoreThanOneEvent = targetEventsLength;
+
+    useEffect(() => {
+        if (!hasAnyEvents) {
+            handleClose();
+        }
+    }, [handleClose, hasAnyEvents, targetEvents]);
 
     const useReplayEvents = useCallback(
         () =>
@@ -79,7 +86,7 @@ export const ParamsPanel = () => {
                 <span>Group:</span>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
 
-                {targetEvents?.length > 1 && (
+                {hasMoreThanOneEvent && (
                     <>
                         <FlexContainer>
                             <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>

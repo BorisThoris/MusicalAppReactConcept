@@ -12,14 +12,16 @@ export const useBoxMove = ({ selectedItems }) => {
         setStartElementRefPos(e.target.x());
     }, []);
 
-    console.log(selectedItems);
     const handleSelectionBoxMove = useCallback(
         (e) => {
-            const deltaX = e.target.x() - startElementRefPos;
+            const deltaX = startElementRefPos ? e.target.x() - startElementRefPos : 0;
 
             Object.entries(selectedElementsCords).forEach(([id, { elementXPosition, setElementXPosition }]) => {
                 if (elementXPosition) {
                     const updatedXPosition = elementXPosition + deltaX;
+
+                    console.log(id);
+                    console.log(updatedXPosition);
                     setElementXPosition(updatedXPosition);
                 }
             });
@@ -39,21 +41,17 @@ export const useBoxMove = ({ selectedItems }) => {
 
                 setElementXPosition(updatedXPosition);
 
-                console.log('id');
-                console.log(id);
-                console.log(selectedItems);
-                console.log(selectedItems[`${id}`]);
-
-                if (selectedItems[id]?.instrumentName)
+                if (selectedItems[id]?.instrumentName) {
                     updateStartTime({
                         eventLength: selectedItems[id]?.eventLength,
                         index: id,
                         instrumentName: selectedItems[id]?.instrumentName,
                         newStartTime
                     });
+                }
             });
 
-            setStartElementRefPos(e.target.x());
+            setStartElementRefPos(null);
         },
         [selectedElementsCords, startElementRefPos, selectedItems, updateStartTime]
     );

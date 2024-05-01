@@ -5,33 +5,53 @@ import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelSta
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
-    const { index, instrumentName } = recording;
-
+const usePanelControls = () => {
     const { openPanel, openParamsPanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, toggleItem: selectElement } = useContext(SelectionContext);
 
-    const startingPositionInTimeline = recording.startTime * pixelToSecondRatio;
+    return { clearSelection, openPanel, openParamsPanel, selectElement, timelineState };
+};
+
+export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
+    const { eventInstance, index, instrumentName, startTime } = recording;
+    const { clearSelection, openPanel, openParamsPanel, selectElement, timelineState } = usePanelControls();
+    const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
 
     const openSelectionPanel = useCallback(() => {
-        const target = parent?.locked ? parent.events : recording;
+        if (parent?.locked) {
+            const parentEvents = parent.events;
+            const target = parentEvents;
 
-        selectElement(target);
-        openPanel({ id: SELECTIONS_PANEL_ID });
-    }, [parent, recording, selectElement, openPanel]);
+            selectElement(target);
+            openPanel({ id: SELECTIONS_PANEL_ID, y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
+        } else {
+            selectElement(recording);
+            openPanel({ id: SELECTIONS_PANEL_ID, y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
+        }
+    }, [parent?.locked, parent?.events, selectElement, openPanel, timelineY, canvasOffsetY, elementRef, recording]);
 
     const openInstrumentParamsPanel = useCallback(() => {
         if (openParamsPanel) {
             openParamsPanel({
                 index,
                 instrumentName,
+                overlapGroup: recording,
                 x: startingPositionInTimeline,
                 y: timelineY + canvasOffsetY + elementRef.current.attrs.height
             });
         }
-    }, [index, instrumentName, startingPositionInTimeline, timelineY, canvasOffsetY, elementRef, openParamsPanel]);
+    }, [
+        recording,
+        openParamsPanel,
+        index,
+        instrumentName,
+        startingPositionInTimeline,
+        timelineY,
+        canvasOffsetY,
+        elementRef
+    ]);
 
     const handleClick = useCallback(
         (evt) => {
@@ -53,7 +73,7 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
         [parent, clearSelection, handleClickOverlapGroup, openSelectionPanel, openInstrumentParamsPanel]
     );
 
-    const handleDoubleClick = useCallback(() => playEventInstance(recording.eventInstance), [recording.eventInstance]);
+    const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
 
     return { handleClick, handleDoubleClick };
 };

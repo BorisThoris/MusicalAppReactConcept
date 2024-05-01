@@ -21,7 +21,6 @@ const Editor = () => {
     const { panelsArr } = useContext(PanelContext);
 
     const renderPanel = (panel) => {
-        // Example switch case based on panel.type
         switch (panel.id) {
             case PARAMS_PANEL_ID:
                 return <ParamsPanel key={panel.id} />;

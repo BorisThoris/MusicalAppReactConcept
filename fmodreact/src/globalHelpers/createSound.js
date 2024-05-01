@@ -39,13 +39,15 @@ const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = 
         params = paramsWithValues;
     }
 
+    const idBasedOnPointer = `${eventInstance.$$.ptr}`;
+
     return {
         ...eventInstance,
         endTime: parseFloat(endTime.toFixed(2)),
         eventInstance,
         eventLength,
         eventPath,
-        id: eventInstance.$$.ptr,
+        id: idBasedOnPointer,
         instrumentName,
         name,
         params,
@@ -72,7 +74,7 @@ export const recreateEvents = (passedGroups) => {
                 ...mainEvent,
                 endTime: mainEvent.endTime,
                 eventLength: mainEvent.eventLength,
-                id: `${mainEvent.id}`,
+                id: mainEvent.id,
                 instrumentName: mainEvent.instrumentName,
                 length: mainEvent.eventLength,
                 locked: recording.locked,

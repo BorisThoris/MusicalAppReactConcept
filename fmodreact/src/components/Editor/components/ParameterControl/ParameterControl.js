@@ -14,7 +14,7 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
 
     const [val, setVal] = useState(paramDetails.paramValue);
 
-    const test = useCallback((e) => {
+    const onValueUpdate = useCallback((e) => {
         setVal(e.target?.value);
     }, []);
 
@@ -29,7 +29,7 @@ const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, par
                 min={paramDetails.paramMin}
                 max={paramDetails.paramMax}
                 value={val}
-                onChange={test}
+                onChange={onValueUpdate}
                 onMouseUp={handleParamChange}
             />
         </ControlWrapper>

@@ -1,6 +1,8 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
+import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
+import { useSelectionState } from '../../../../hooks/useSelectionState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -10,14 +12,21 @@ import { useEventHandlers } from '../Panel/useEventsHandlers';
 import { SelectedEventsList } from './SelectedEventsList';
 
 export const SelectionsPanel = () => {
-    const { closePanel } = useContext(PanelContext);
+    const { closePanel, panels } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, endTime, highestYLevel, selectedValues, startTime, updateSelectedItemsStartTime } =
         useContext(SelectionContext);
     const { deleteRecording, handlePlayEvent, setNewTimeout } = useEventHandlers(selectedValues);
 
-    // Corrected variable name typo
+    const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
+
+    const { toggleItem, unSelectItem } = useSelectionState({ markersAndTrackerOffset });
+
+    // Derived data
+    const { y } = panels[SELECTIONS_PANEL_ID];
     const startTimeCorrected = selectedValues[0]?.startTime;
+    const calculatedYLevel = highestYLevel + timelineState.canvasOffsetY;
+    const panelYPosition = y > calculatedYLevel ? y + timelineState.canvasOffsetY : calculatedYLevel;
 
     const useReplayEvents = useCallback(() => {
         selectedValues.forEach((event) => {
@@ -33,8 +42,9 @@ export const SelectionsPanel = () => {
     const onDeleteRecording = useCallback(
         (event) => {
             deleteRecording(event);
+            unSelectItem(event);
         },
-        [deleteRecording]
+        [deleteRecording, unSelectItem]
     );
 
     const onPlayEvent = useCallback(
@@ -50,7 +60,7 @@ export const SelectionsPanel = () => {
 
     if (selectedValues.length > 0) {
         return (
-            <PanelWrapper x={0} y={highestYLevel + timelineState.canvasOffsetY} timelineState={timelineState}>
+            <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
                 <FlexContainer>
                     <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>

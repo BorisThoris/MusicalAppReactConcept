@@ -2,14 +2,16 @@
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 // Relative imports
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
+import useElementSelectionMovement from '../SoundEventElement/useElementSelectionMovement';
 
 // Constants
 const GROUP_COLOR = 'blue';
@@ -22,7 +24,7 @@ const LOCK_OFFSET_Y = -10;
 const TEXT_FONT_SIZE = 18;
 
 // OverlapGroupElement component definition
-const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timelineHeight, timelineY }) => {
+const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, timelineY }) => {
     const groupElmRef = useRef();
     const [isDragged, setIsDragged] = useState(false);
     const { timelineState } = useContext(TimelineContext);
@@ -35,9 +37,22 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const groupWidth = (endTime - startTime) * pixelToSecondRatio;
 
+    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
+        useContext(SelectionContext);
+
+    const isSelected = isItemSelected(id);
+    const [elementXPosition, setElementXPosition] = useState(startingPositionInTimeline);
+
+    useElementSelectionMovement({ elementXPosition, isSelected, recording: groupData, setElementXPosition });
+
+    useEffect(() => {
+        setElementXPosition(startTime * pixelToSecondRatio);
+    }, [startTime]);
+
     const handleDragEnd = useCallback(
         (e) => {
             setIsDragged(false);
+
             updateOverlapGroupTimes({
                 groupId: id,
                 newStartTime: e.target.x() / pixelToSecondRatio
@@ -58,7 +73,9 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
         lockOverlapGroupById({ groupId: id });
     }, [id, lockOverlapGroupById]);
 
-    const onDragStart = useCallback(() => setIsDragged(true), []);
+    const handleDragStart = useCallback(() => {
+        setIsDragged(true);
+    }, []);
 
     const renderEvents = () =>
         events.map((event, eventIndex) => (
@@ -69,6 +86,7 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
                 recording={event}
                 timelineHeight={timelineHeight}
                 timelineY={timelineY}
+                listening={!locked}
             />
         ));
 
@@ -76,26 +94,28 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
         <Group>
             <Group
                 key={index}
-                x={startingPositionInTimeline}
-                draggable
-                onDragEnd={handleDragEnd}
+                x={elementXPosition}
+                draggable={locked}
+                onDragMove={handleSelectionBoxMove}
                 dragBoundFunc={dragBoundFunc}
-                onDragStart={onDragStart}
+                onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
+                onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
                 width={groupWidth}
+                onClick={handleSelectionBoxClick}
             >
                 <Rect
                     ref={groupElmRef}
                     width={groupWidth}
-                    height={timelineHeight * 0.9}
-                    fill={isTargeted ? 'red' : GROUP_COLOR}
-                    opacity={GROUP_OPACITY}
+                    height={timelineHeight * 0.8}
+                    fill={"isTargeted ? 'red' : GROUP_COLOR"}
+                    opacity={1}
                     strokeWidth={GROUP_STROKE_WIDTH}
                     stroke={GROUP_COLOR}
                 />
                 <Text x={TEXT_OFFSET_X} y={TEXT_OFFSET_Y} text={GROUP_TEXT} fontSize={TEXT_FONT_SIZE} fill="white" />
                 {isDragged && (
                     <>
-                        <Group x={-startingPositionInTimeline}>{renderEvents()}</Group>
+                        <Group x={-elementXPosition}>{renderEvents()}</Group>
                         <Text
                             onClick={onLockOverlapGroup}
                             x={-10}
@@ -107,12 +127,13 @@ const OverlapGroupElement = React.memo(({ groupData, index, isTargeted, timeline
                     </>
                 )}
             </Group>
+
             {!isDragged && (
                 <>
                     <Group>{renderEvents()}</Group>
                     <Text
                         onClick={onLockOverlapGroup}
-                        x={startingPositionInTimeline - 10}
+                        x={elementXPosition - 10}
                         y={LOCK_OFFSET_Y}
                         text={locked ? '🔒' : '✔️'}
                         fontSize={TEXT_FONT_SIZE}

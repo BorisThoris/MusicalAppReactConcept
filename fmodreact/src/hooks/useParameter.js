@@ -55,11 +55,10 @@ const useParameter = ({ eventId, eventInstance, paramData, parent }) => {
 
             updateRecordingParams({
                 eventId,
-                parent,
                 updatedParam: { ...paramData, value: newValue }
             });
         },
-        [min, max, eventInstance, paramName, updateRecordingParams, eventId, parent, paramData]
+        [min, max, eventInstance, paramName, updateRecordingParams, eventId, paramData]
     );
 
     return [paramDetails, handleParamChange];

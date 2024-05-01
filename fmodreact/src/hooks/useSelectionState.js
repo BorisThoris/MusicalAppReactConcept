@@ -15,15 +15,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Generate flatValues based on selectedItems
-    const flatValues = Object.keys(selectedItems).reduce((acc, key) => {
-        const recording = flatOverlapGroups[key];
-        if (recording) {
-            acc[key] = recording;
-        }
-        return acc;
-    }, {});
-
     useEffect(() => {
         if (JSON.stringify(prevSelectedItemsRef.current) === JSON.stringify(overlapGroups)) {
             return; // If the selected items have not changed, do nothing
@@ -108,29 +99,37 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const toggleItem = useCallback(
         (input) => {
             setSelectedItems((prevSelectedItems) => {
+                const itemsToToggle = Array.isArray(input) ? input : [input];
                 const newSelectedItems = { ...prevSelectedItems };
-                const recordings = Array.isArray(input) ? input : [input];
-                recordings.forEach((recording) => {
-                    if (newSelectedItems[recording.id]) {
-                        delete newSelectedItems[recording.id];
-                    } else {
-                        // Fetching new selected item from the current overlapGroups
-                        // eslint-disable-next-line no-restricted-syntax
-                        for (const group of Object.values(overlapGroups)) {
-                            const found = group.find((item) => item.id === recording.id);
-                            if (found) {
-                                newSelectedItems[recording.id] = { ...found };
-                                break;
-                            }
-                        }
+
+                itemsToToggle.forEach(({ id }) => {
+                    if (newSelectedItems[id]) {
+                        delete newSelectedItems[id];
+                    } else if (flatOverlapGroups[id]) {
+                        newSelectedItems[id] = { ...flatOverlapGroups[id] };
                     }
                 });
 
                 return newSelectedItems;
             });
         },
-        [overlapGroups]
+        [flatOverlapGroups]
     );
+
+    const unSelectItem = useCallback((input) => {
+        setSelectedItems((prevSelectedItems) => {
+            const itemsToDelete = Array.isArray(input) ? input : [input];
+            const newSelectedItems = { ...prevSelectedItems };
+
+            itemsToDelete.forEach(({ id }) => {
+                if (newSelectedItems[id]) {
+                    delete newSelectedItems[id];
+                }
+            });
+
+            return newSelectedItems;
+        });
+    }, []);
 
     const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
 
@@ -151,6 +150,15 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         [getEventById, selectedItems, updateRecording]
     );
 
+    // Generate flatValues based on selectedItems
+    const flatValues = Object.keys(selectedItems).reduce((acc, key) => {
+        const recording = flatOverlapGroups[key];
+        if (recording) {
+            acc[key] = recording;
+        }
+        return acc;
+    }, {});
+
     return {
         clearSelection,
         flatValues,
@@ -161,6 +169,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         selectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
+        unSelectItem,
         updateSelectedItemsStartTime
     };
 };

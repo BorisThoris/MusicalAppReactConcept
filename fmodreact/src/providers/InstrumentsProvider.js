@@ -56,6 +56,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         }
     }, [overlapGroups, localLoaded]);
 
+    console.log(overlapGroups);
+
     useEffect(() => {
         // This effect is responsible for setting the initial state from localStorage
         // and should run exactly once on component mount.
@@ -146,6 +148,37 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         return flattenedGroups;
     }, [overlapGroups]);
 
+    const updateOverlapGroup = useCallback(
+        (groupId, updates) => {
+            // Find the group in flatOverlapGroups
+            const flatGroup = flatOverlapGroups[groupId];
+            if (!flatGroup) {
+                console.error('Group not found');
+                return;
+            }
+
+            // Update the flat group
+            Object.assign(flatGroup, updates);
+
+            // Reflect changes in the original overlapGroups structure
+            // This part needs specific logic based on how overlapGroups is structured
+            Object.keys(overlapGroups).forEach((key) => {
+                overlapGroups[key].forEach((group) => {
+                    if (group.id === groupId) {
+                        Object.assign(group, updates);
+                    }
+                });
+            });
+
+            // Optional: push changes to history for undo functionality
+            pushToHistory(overlapGroups);
+
+            // Save changes or re-calculate anything necessary
+            setOverlapGroups(overlapGroups);
+        },
+        [flatOverlapGroups, overlapGroups, pushToHistory]
+    );
+
     const contextValue = useMemo(
         () => ({
             flatOverlapGroups,
@@ -155,9 +188,19 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             redo,
             redoHistory,
             setOverlapGroups: setOverlapGroupsAndClearRedo,
-            undo
+            undo,
+            updateOverlapGroup
         }),
-        [flatOverlapGroups, history, overlapGroups, redo, redoHistory, setOverlapGroupsAndClearRedo, undo]
+        [
+            flatOverlapGroups,
+            history,
+            overlapGroups,
+            redo,
+            redoHistory,
+            setOverlapGroupsAndClearRedo,
+            undo,
+            updateOverlapGroup
+        ]
     );
 
     return <InstrumentRecordingsContext.Provider value={contextValue}>{children}</InstrumentRecordingsContext.Provider>;
