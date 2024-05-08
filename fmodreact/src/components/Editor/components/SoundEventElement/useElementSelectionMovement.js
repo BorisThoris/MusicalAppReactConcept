@@ -3,7 +3,8 @@ import { SelectionContext } from '../../../../providers/SelectionsProvider';
 
 const useElementSelectionMovement = ({ elementXPosition, isSelected, recording, setElementXPosition }) => {
     const { setSelectedElementsCords } = useContext(SelectionContext);
-    const targetId = recording.id + recording.length;
+
+    const targetId = recording.id + recording.endTime;
 
     const updateCords = useCallback(() => {
         setSelectedElementsCords((prevCords) => {

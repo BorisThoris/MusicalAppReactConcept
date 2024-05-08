@@ -19,9 +19,6 @@ export const useBoxMove = ({ selectedItems }) => {
             Object.entries(selectedElementsCords).forEach(([id, { elementXPosition, setElementXPosition }]) => {
                 if (elementXPosition) {
                     const updatedXPosition = elementXPosition + deltaX;
-
-                    console.log(id);
-                    console.log(updatedXPosition);
                     setElementXPosition(updatedXPosition);
                 }
             });
@@ -35,21 +32,25 @@ export const useBoxMove = ({ selectedItems }) => {
         (e) => {
             const deltaX = startElementRefPos ? e.target.x() - startElementRefPos : 0;
 
-            Object.entries(selectedElementsCords).forEach(([id, { elementXPosition, setElementXPosition }]) => {
-                const updatedXPosition = elementXPosition + deltaX;
-                const newStartTime = updatedXPosition / pixelToSecondRatio;
+            Object.entries(selectedElementsCords).forEach(
+                ([id, { elementXPosition, recording, setElementXPosition }]) => {
+                    const updatedXPosition = elementXPosition + deltaX;
+                    const newStartTime = updatedXPosition / pixelToSecondRatio;
 
-                setElementXPosition(updatedXPosition);
+                    setElementXPosition(updatedXPosition);
 
-                if (selectedItems[id]?.instrumentName) {
-                    updateStartTime({
-                        eventLength: selectedItems[id]?.eventLength,
-                        index: id,
-                        instrumentName: selectedItems[id]?.instrumentName,
-                        newStartTime
-                    });
+                    const selectedItem = selectedItems[recording.id];
+
+                    if (selectedItem?.instrumentName) {
+                        updateStartTime({
+                            eventLength: selectedItem.eventLength,
+                            index: recording.id,
+                            instrumentName: selectedItem.instrumentName,
+                            newStartTime
+                        });
+                    }
                 }
-            });
+            );
 
             setStartElementRefPos(null);
         },

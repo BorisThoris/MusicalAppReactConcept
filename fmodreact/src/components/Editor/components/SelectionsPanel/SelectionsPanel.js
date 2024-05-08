@@ -14,13 +14,20 @@ import { SelectedEventsList } from './SelectedEventsList';
 export const SelectionsPanel = () => {
     const { closePanel, panels } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, endTime, highestYLevel, selectedValues, startTime, updateSelectedItemsStartTime } =
-        useContext(SelectionContext);
+    const {
+        clearSelection,
+        duplicateSelections,
+        endTime,
+        highestYLevel,
+        selectedValues,
+        startTime,
+        updateSelectedItemsStartTime
+    } = useContext(SelectionContext);
     const { deleteRecording, handlePlayEvent, setNewTimeout } = useEventHandlers(selectedValues);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
-    const { toggleItem, unSelectItem } = useSelectionState({ markersAndTrackerOffset });
+    const { unSelectItem } = useSelectionState({ markersAndTrackerOffset });
 
     // Derived data
     const { y } = panels[SELECTIONS_PANEL_ID];
@@ -61,6 +68,8 @@ export const SelectionsPanel = () => {
     if (selectedValues.length > 0) {
         return (
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
+                <button onClick={duplicateSelections}>DupTest</button>
+
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
                 <FlexContainer>
                     <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>

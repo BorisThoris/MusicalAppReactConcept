@@ -18,10 +18,12 @@ export const SelectionContext = createContext({
 export const SelectionProvider = ({ children }) => {
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, openPanel, panels } = useContext(PanelContext);
+
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
     const {
         clearSelection,
+        duplicateSelections,
         flatValues,
         groupEndTime,
         groupStartTime,
@@ -48,6 +50,7 @@ export const SelectionProvider = ({ children }) => {
     const value = useMemo(() => {
         return {
             clearSelection,
+            duplicateSelections,
             endTime: groupEndTime,
             handleSelectionBoxClick,
             handleSelectionBoxDragEnd,
@@ -78,6 +81,7 @@ export const SelectionProvider = ({ children }) => {
         setSelectionBasedOnCoordinates,
         groupStartTime,
         toggleItem,
+        duplicateSelections,
         updateSelectedItemsStartTime
     ]);
 

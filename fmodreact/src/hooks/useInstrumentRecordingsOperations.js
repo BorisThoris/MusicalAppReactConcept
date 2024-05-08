@@ -109,10 +109,6 @@ export const useInstrumentRecordingsOperations = () => {
                     };
                 });
 
-                console.log('DuplicatedGroups');
-
-                console.log(duplicatedGroups);
-
                 return {
                     ...prevGroups,
                     [newInstrumentName]: duplicatedGroups
@@ -415,16 +411,18 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const duplicateOverlapGroup = useCallback(
-        ({ overlapGroup }) => {
+        ({ locked = true, overlapGroup, startTimeOffset = 0 }) => {
             const newGroup = recreateEvents({
                 groupsToRecreate: [overlapGroup]
             })[0];
 
             newGroup.id += newGroup.id;
-            newGroup.locked = true;
+            newGroup.locked = locked;
 
-            newGroup.startTime = overlapGroup.startTime;
-            newGroup.endTime = overlapGroup.endTime;
+            const timeOffset = 2 + startTimeOffset;
+
+            newGroup.startTime = overlapGroup.startTime + timeOffset;
+            newGroup.endTime = overlapGroup.endTime + timeOffset;
 
             if (newGroup.events.length >= 1) {
                 newGroup.endTime = last(newGroup.events)?.endTime;

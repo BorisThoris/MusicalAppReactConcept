@@ -89,9 +89,6 @@ const SoundEventElement = React.memo(
 
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-        // console.log(id);
-        // console.log(elementXPosition);
-
         return (
             <Group
                 ref={groupRef}

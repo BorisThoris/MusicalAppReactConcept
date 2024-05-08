@@ -2,14 +2,20 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import { TimelineHeight } from '../providers/TimelineProvider';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
+import useOverlapCalculator, { processOverlapCalculations } from './useOverlapCalculator/useOverlapCalculator';
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { flatOverlapGroups, overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { duplicateOverlapGroup } = useInstrumentRecordingsOperations();
     const { getEventById, updateRecording } = useInstrumentRecordingsOperations();
 
     const [selectedItems, setSelectedItems] = useState({});
+    const [filteredSelectedItems, setFilteredSelectedItems] = useState([]);
+
     const [highestYLevel, setHighestYLevel] = useState(0);
+
+    const { calculateOverlapsForAllInstruments } = useOverlapCalculator(filteredSelectedItems, filteredSelectedItems);
 
     const prevSelectedItemsRef = useRef({});
 
@@ -17,7 +23,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     useEffect(() => {
         if (JSON.stringify(prevSelectedItemsRef.current) === JSON.stringify(overlapGroups)) {
-            return; // If the selected items have not changed, do nothing
+            return;
         }
 
         const updatedSelectedItems = Object.keys(selectedItems).reduce((newSelectedItems, itemId) => {
@@ -61,7 +67,14 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
             return recordingOrEvent.events.reduce((selected, event) => {
                 const selectedNestedEvents = selectEvents(event, startX, endX, startY, endY, yLevel);
-                return { ...selected, ...selectedNestedEvents };
+
+                let testReturn = { ...selected, ...selectedNestedEvents };
+
+                if (selected[recordingOrEvent.id]) {
+                    testReturn = { ...testReturn, [recordingOrEvent.id]: { ...recordingOrEvent } };
+                }
+
+                return { ...testReturn };
             }, {});
         },
         [markersAndTrackerOffset]
@@ -81,6 +94,8 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                         highestYIndex = yLevel + TimelineHeight;
                     }
                 });
+
+                selectEvents(group, startX, endX, startY, endY, yLevel);
 
                 return acc;
             }, {});
@@ -159,8 +174,24 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         return acc;
     }, {});
 
+    const duplicateSelections = () => {
+        const calcedOverlapGroups = calculateOverlapsForAllInstruments();
+
+        Object.keys(calcedOverlapGroups).forEach((instrument) => {
+            // Loop through each item in the instrument's array (each event)
+            calcedOverlapGroups[instrument].forEach((item) => {
+                duplicateOverlapGroup({
+                    // locked: false,
+                    overlapGroup: item,
+                    startTimeOffset: groupEndTime - groupStartTime
+                });
+            });
+        });
+    };
+
     return {
         clearSelection,
+        duplicateSelections,
         flatValues,
         groupEndTime,
         groupStartTime,

@@ -56,8 +56,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         }
     }, [overlapGroups, localLoaded]);
 
-    console.log(overlapGroups);
-
     useEffect(() => {
         // This effect is responsible for setting the initial state from localStorage
         // and should run exactly once on component mount.

@@ -199,9 +199,6 @@ export const recreateEvents = ({ existingInstrumentName, groupsToRecreate }) =>
             ? existingGroup.events.map((subEvent) => {
                   const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
-                  const parentNotSub = subEvent.parent?.id !== subEvent.id;
-                  const parentId = parentNotSub && subEvent.parentId ? subEvent.parentId : null;
-
                   const recreatedEvent = createSound({
                       eventInstance: subEventInstance,
                       eventPath: subEvent.eventPath || 'Drum/Snare',
@@ -213,9 +210,6 @@ export const recreateEvents = ({ existingInstrumentName, groupsToRecreate }) =>
                   return { ...recreatedEvent, parentId: mainEvent.id };
               })
             : [];
-
-        console.log('existingInstName');
-        console.log(existingInstrumentName);
 
         return {
             ...mainEvent,
