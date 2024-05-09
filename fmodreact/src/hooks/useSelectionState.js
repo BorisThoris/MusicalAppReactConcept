@@ -84,27 +84,25 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         ({ endX, endY, startX, startY }) => {
             let highestYIndex = 0;
 
-            const newSelectedItems = Object.entries(overlapGroups).reduce((acc, [instrumentName, group], index) => {
+            const newSelectedItems = Object.entries(overlapGroups).reduce((acc, [instrumentName, events], index) => {
                 const yLevel = index * TimelineHeight;
 
-                group.forEach((recording) => {
-                    const selectedFromRecording = selectEvents(recording, startX, endX, startY, endY, yLevel);
-                    if (Object.values(selectedFromRecording).length > 0) {
-                        Object.assign(acc, selectedFromRecording);
+                // Iterate over each event in this instrument's group
+                Object.values(events).forEach((event) => {
+                    const selectedFromEvent = selectEvents(event, startX, endX, startY, endY, yLevel);
+                    if (Object.values(selectedFromEvent).length > 0) {
+                        Object.assign(acc, selectedFromEvent);
                         highestYIndex = yLevel + TimelineHeight;
                     }
                 });
-
-                selectEvents(group, startX, endX, startY, endY, yLevel);
 
                 return acc;
             }, {});
 
             setSelectedItems(newSelectedItems);
-
             setHighestYLevel(highestYIndex + markersAndTrackerOffset + 10);
         },
-        [markersAndTrackerOffset, overlapGroups, selectEvents]
+        [overlapGroups, markersAndTrackerOffset, selectEvents]
     );
 
     const clearSelection = useCallback(() => {

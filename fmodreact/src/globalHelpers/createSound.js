@@ -59,8 +59,10 @@ export const recreateEvents = (passedGroups) => {
     const parsedRecordings = passedGroups;
     const newRecordings = {};
 
+    // Iterate over each instrument name in parsedRecordings
     Object.keys(parsedRecordings).forEach((instrumentName) => {
-        newRecordings[instrumentName] = parsedRecordings[instrumentName].map((recording) => {
+        // Convert the object of recordings for the instrument into an array using Object.values()
+        newRecordings[instrumentName] = Object.values(parsedRecordings[instrumentName]).map((recording) => {
             const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
             const mainEvent = createSound({
                 eventInstance,
@@ -81,10 +83,10 @@ export const recreateEvents = (passedGroups) => {
                 startTime: mainEvent.startTime
             };
 
+            // Convert sub-events, if they exist, from an object to an array using Object.values()
             const recreatedEvents = recording.events
-                ? recording.events.map((subEvent) => {
+                ? Object.values(recording.events).map((subEvent) => {
                       const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
-
                       const parentNotSub = mainEvent.id !== subEvent.id;
                       const parentId = parentNotSub && subEvent.parentId ? mainEvent.id : null;
 
@@ -102,8 +104,11 @@ export const recreateEvents = (passedGroups) => {
 
             group.events = recreatedEvents;
 
-            group.endTime = last(group.events).endTime || group.endTime;
-            group.startTime = first(group.events).startTime || group.startTime;
+            // Calculate the end and start time of the group based on its events
+            group.endTime = recreatedEvents.length ? Math.max(...recreatedEvents.map((e) => e.endTime)) : group.endTime;
+            group.startTime = recreatedEvents.length
+                ? Math.min(...recreatedEvents.map((e) => e.startTime))
+                : group.startTime;
 
             return group;
         });

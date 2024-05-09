@@ -32,6 +32,7 @@ const CONSTANTS = {
 const SoundEventElement = React.memo(
     ({ handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY }) => {
         const { eventLength, id, locked, name, parentId, startTime } = recording;
+
         const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
         const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
             useContext(SelectionContext);

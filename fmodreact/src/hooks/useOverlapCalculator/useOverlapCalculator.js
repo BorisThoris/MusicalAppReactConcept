@@ -4,20 +4,19 @@ import { combineOverlappingGroups, handleNonOverlappingEvent, mergeOverlappingEv
 import { findOverlappingGroups, insertGroupsIntoTree } from './IntervalTreeUtility';
 
 export const processEvents = (overlapTree, recordingsForInstrument) => {
-    const groups = [];
+    let groups = {};
 
-    recordingsForInstrument.forEach((recording) => {
+    Object.values(recordingsForInstrument).forEach((recording) => {
         const interval = [recording.startTime, recording.endTime];
         const overlaps = findOverlappingGroups(recording, overlapTree);
 
         if (isEmpty(overlaps) && recording.events.length === 1) {
-            groups.push(
-                handleNonOverlappingEvent({
-                    interval,
-                    overlapTree,
-                    recording
-                })
-            );
+            const nonOverlappingEvent = handleNonOverlappingEvent({
+                interval,
+                overlapTree,
+                recording
+            });
+            groups[nonOverlappingEvent.id] = nonOverlappingEvent;
         } else {
             const updatedGroups = mergeOverlappingEvents({
                 event: recording,
@@ -25,50 +24,28 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
                 tree: overlapTree
             });
 
-            const combinedGroups = combineOverlappingGroups(updatedGroups, overlapTree);
-            groups.push(...combinedGroups);
+            groups = combineOverlappingGroups(updatedGroups, overlapTree);
         }
     });
 
-    return uniqBy(groups, (e) => e.id);
+    return groups;
 };
 
 export const processOverlapCalculations = (recordings, initializedOverlapGroups, instrument) => {
     const recordingsForInstrument = recordings[instrument];
 
-    console.log(recordings);
+    const initialOverlapGroups = initializedOverlapGroups[instrument];
+    const iterableGroups = initialOverlapGroups ? Object.values(initialOverlapGroups) : [];
+    const initialOverlapGroupsSet = new Set(iterableGroups);
 
-    const initialOverlapGroups = new Set(initializedOverlapGroups[instrument] || []);
-
-    const { tree } = insertGroupsIntoTree({ initialOverlapGroups });
+    const { tree } = insertGroupsIntoTree({ initialOverlapGroups: initialOverlapGroupsSet });
 
     return processEvents(tree, recordingsForInstrument);
 };
 
 const useOverlapCalculator = (recordings, prevOverlapGroups) => {
-    // Convert prevOverlapGroups to the expected array format if necessary
-    const normalizeOverlapGroups = (groups) => {
-        return Object.keys(groups).reduce((acc, key) => {
-            const value = groups[key];
-            // Check if the value is already in the correct format (array)
-            if (Array.isArray(value)) {
-                acc[key] = value;
-            } else if (value instanceof Set) {
-                // Convert Set to array
-                acc[key] = Array.from(value);
-            } else if (typeof value === 'object' && value !== null) {
-                // Assuming the object's values are the recordings, convert to array
-                acc[key] = Object.values(value);
-            } else {
-                // Fallback if the format is unrecognized
-                acc[key] = [];
-            }
-            return acc;
-        }, {});
-    };
-
     const initializedOverlapGroups = useMemo(() => {
-        return prevOverlapGroups ? normalizeOverlapGroups(prevOverlapGroups) : {};
+        return prevOverlapGroups || {};
     }, [prevOverlapGroups]);
 
     const calculateOverlapsForInstrument = useCallback(

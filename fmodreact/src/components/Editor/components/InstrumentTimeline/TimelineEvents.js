@@ -9,7 +9,7 @@ export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {
 
     return (
         <Group offset={timelineState.panelCompensationOffset}>
-            {eventGroups.map((groupData, index) => {
+            {Object.values(eventGroups).map((groupData, index) => {
                 if (groupData.events && groupData.events.length === 1) {
                     return (
                         <SoundEventElement

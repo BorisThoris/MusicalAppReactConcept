@@ -45,15 +45,19 @@ const useRecordingsPlayer = () => {
     }, [changePlaybackStatus]);
 
     const flattenRecordings = useCallback((recordings) => {
-        return recordings
-            .reduce((acc, recording) => {
-                acc.push(recording);
-                if (recording.events && recording.events.length) {
-                    acc.push(...flattenRecordings(recording.events));
+        const flatten = (recs) => {
+            return Object.values(recs).reduce((acc, recording) => {
+                acc.push(recording); // Add the current recording
+                // If recording has nested events and they are in object format
+                if (recording.events && Object.keys(recording.events).length) {
+                    acc.push(...flatten(recording.events)); // Flatten the nested events recursively
                 }
                 return acc;
-            }, [])
-            .filter((rec) => !rec.events);
+            }, []);
+        };
+
+        // Call the flatten helper function and filter out any recordings that still have events (non-leaf nodes)
+        return flatten(recordings).filter((rec) => !(rec.events && Object.keys(rec.events).length));
     }, []);
 
     const playInstrumentRecording = useCallback(

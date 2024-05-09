@@ -29,6 +29,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
 
+    console.log(overlapGroups);
+
     const prevOverlapGroupsRef = useRef({});
 
     const [localLoaded, setLocalLoaded] = useState(false);
@@ -120,30 +122,29 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     );
 
     const flatOverlapGroups = useMemo(() => {
-        const flattenedGroups = Object.values(overlapGroups)
-            .flat()
-            .reduce((accumulator, currentValue) => {
-                if (currentValue.events) {
-                    // If currentValue has 'events', iterate over them
-                    currentValue.events.forEach((event) => {
-                        // Use event's id as key for the accumulator hashmap
+        // This function traverses through the groups and their nested events recursively
+        const flattenEvents = (group) => {
+            const flatEvents = {};
 
-                        let events = null;
-
-                        if (event.id === currentValue.id) {
-                            events = [...currentValue.events];
-                        }
-
-                        accumulator[event.id] = { ...event, events, locked: currentValue.locked };
-                    });
-                } else {
-                    // If no 'events', use currentValue itself with its id as the key
-                    accumulator[currentValue.id] = currentValue;
+            // Iterate over each event in the group
+            Object.entries(group).forEach(([key, value]) => {
+                if (value.id) {
+                    // Store the event by its id after removing nested 'events' to avoid duplication
+                    flatEvents[value.id] = { ...value };
                 }
-                return accumulator;
-            }, {});
+            });
 
-        return flattenedGroups;
+            return flatEvents;
+        };
+
+        const allFlatEvents = {};
+
+        Object.values(overlapGroups).forEach((group) => {
+            // Flatten events for each group of instruments and merge them into the main accumulator
+            Object.assign(allFlatEvents, flattenEvents(group));
+        });
+
+        return allFlatEvents;
     }, [overlapGroups]);
 
     const updateOverlapGroup = useCallback(
@@ -155,11 +156,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 return;
             }
 
-            // Update the flat group
             Object.assign(flatGroup, updates);
 
-            // Reflect changes in the original overlapGroups structure
-            // This part needs specific logic based on how overlapGroups is structured
             Object.keys(overlapGroups).forEach((key) => {
                 overlapGroups[key].forEach((group) => {
                     if (group.id === groupId) {
@@ -168,10 +166,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 });
             });
 
-            // Optional: push changes to history for undo functionality
             pushToHistory(overlapGroups);
 
-            // Save changes or re-calculate anything necessary
             setOverlapGroups(overlapGroups);
         },
         [flatOverlapGroups, overlapGroups, pushToHistory]
