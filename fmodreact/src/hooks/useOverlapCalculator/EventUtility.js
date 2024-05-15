@@ -1,5 +1,5 @@
 export const isExactMatch = (event, eventSet) =>
-    [...eventSet].some(
+    Object.values(eventSet).some(
         (existingEvent) =>
             existingEvent.id === event.id &&
             existingEvent.startTime === event.startTime &&
@@ -9,29 +9,30 @@ export const isExactMatch = (event, eventSet) =>
 export const createGroupFromEvent = (event, foundEvent) => {
     const existingEventGroup = foundEvent?.value;
 
-    const mappedEvents = [];
-    if (event.events?.length > 1) {
-        event.events.forEach((e) => {
-            // Simply creating a copy of the event with 'events' set to undefined.
-            const eventCopy = { ...e, events: undefined };
-            mappedEvents.push(eventCopy);
+    const mappedEvents = {};
+    if (event.events && Object.keys(event.events).length > 0) {
+        Object.values(event.events).forEach((e) => {
+            // Create a copy of the event with 'events' set to undefined.
+            mappedEvents[e.id] = { ...e, events: undefined };
         });
     } else {
-        const singleEventCopy = { ...event, events: undefined };
-        mappedEvents.push(singleEventCopy); // For single events, similar to above.
+        // For single events or events without a nested structure, treat as a special case.
+        mappedEvents[event.id] = { ...event, events: undefined };
     }
 
     // Determine group ID for parent assignment
     const groupId = existingEventGroup ? existingEventGroup.id : event.id;
 
     // Assign 'parent' property without returning the assignment
-    // eslint-disable-next-line no-unused-expressions
-    mappedEvents.length > 1 &&
-        mappedEvents.forEach((e) => {
+    const evts = Object.values(mappedEvents);
+
+    if (evts.length > 1) {
+        evts.forEach((e) => {
             if (e.id !== groupId) {
-                e.parentId = groupId;
+                e.parentId = groupId; // Assign parentId only if it's not the group ID
             }
         });
+    }
 
     if (!existingEventGroup) {
         // Creating a new group, this time ensuring we do not return an assignment.

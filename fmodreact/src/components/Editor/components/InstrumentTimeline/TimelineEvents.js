@@ -10,18 +10,20 @@ export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {
     return (
         <Group offset={timelineState.panelCompensationOffset}>
             {Object.values(eventGroups).map((groupData, index) => {
-                if (groupData.events && groupData.events.length === 1) {
+                const events = Object.values(groupData.events || {});
+
+                if (events.length === 1) {
                     return (
                         <SoundEventElement
-                            key={groupData.events[0].id}
+                            key={groupData.id}
                             timelineHeight={timelineHeight}
-                            recording={groupData.events[0]}
+                            recording={groupData}
                             index={index}
                             timelineY={timelineY}
                         />
                     );
                 }
-                if (groupData.events && groupData.events.length > 1) {
+                if (events.length > 1) {
                     return (
                         <OverlapGroupElement
                             key={`group-${index}`}

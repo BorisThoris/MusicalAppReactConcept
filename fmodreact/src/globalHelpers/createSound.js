@@ -88,6 +88,7 @@ export const recreateEvents = (passedGroups) => {
                 ? Object.values(recording.events).map((subEvent) => {
                       const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
                       const parentNotSub = mainEvent.id !== subEvent.id;
+
                       const parentId = parentNotSub && subEvent.parentId ? mainEvent.id : null;
 
                       const recreatedEvent = createSound({
@@ -98,7 +99,9 @@ export const recreateEvents = (passedGroups) => {
                           startTime: subEvent.startTime
                       });
 
-                      return { ...recreatedEvent, parentId };
+                      const id = parentNotSub && subEvent.parentId ? recreatedEvent.id : mainEvent.id;
+
+                      return { ...recreatedEvent, id, parentId };
                   })
                 : [];
 

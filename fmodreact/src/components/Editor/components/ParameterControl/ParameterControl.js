@@ -4,12 +4,12 @@ import React, { useCallback, useState } from 'react';
 import useParameter from '../../../../hooks/useParameter';
 import { ControlWrapper, ParamName, ParamValue, SliderInput } from './ParameterControl.styles';
 
-const ParameterControl = React.memo(({ eventId, eventInstance, overlapGroup, param }) => {
+const ParameterControl = React.memo(({ event, eventId, param }) => {
     const [paramDetails, handleParamChange] = useParameter({
+        event,
         eventId,
-        eventInstance,
-        param,
-        parent: overlapGroup
+        eventInstance: event.eventInstance,
+        param
     });
 
     const [val, setVal] = useState(paramDetails.paramValue);

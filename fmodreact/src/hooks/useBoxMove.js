@@ -43,10 +43,8 @@ export const useBoxMove = ({ selectedItems }) => {
 
                     if (selectedItem?.instrumentName) {
                         updateStartTime({
-                            eventLength: selectedItem.eventLength,
-                            index: recording.id,
-                            instrumentName: selectedItem.instrumentName,
-                            newStartTime
+                            newStartTime,
+                            recording
                         });
                     }
                 }

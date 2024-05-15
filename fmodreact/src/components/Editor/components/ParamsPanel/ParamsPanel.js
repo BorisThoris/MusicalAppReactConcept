@@ -17,12 +17,9 @@ export const ParamsPanel = () => {
 
     const { overlapGroup, y } = panelsObj[`${PARAMS_PANEL_ID}`];
     const foundGroup = flatOverlapGroups[overlapGroup.id];
-    const targetInRecordings = foundGroup?.parentId ? flatOverlapGroups[foundGroup.parentId] : foundGroup;
+    const targetInRecordings = foundGroup?.event ? flatOverlapGroups[foundGroup.event] : foundGroup;
 
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
-
-    const targetEvents = targetInRecordings?.events;
-    const targetEventsLength = targetEvents?.length;
 
     const {
         deleteOverlapGroup,
@@ -34,8 +31,17 @@ export const ParamsPanel = () => {
         updateOverlapGroupTimes
     } = useEventHandlers(overlapGroup);
 
+    // Assuming targetInRecordings?.events might now be an object
+    const targetEvents = targetInRecordings?.events;
+    // If targetEvents is an object, use Object.keys to get the number of properties (events) it has
+    const targetEventsLength = Array.isArray(targetEvents)
+        ? targetEvents.length
+        : Object.keys(targetEvents || {}).length;
+
+    // Check if there is at least one event
     const hasAnyEvents = targetEventsLength >= 1;
-    const hasMoreThanOneEvent = targetEventsLength;
+    // Check if there is more than one event (logical correction from your original code)
+    const hasMoreThanOneEvent = targetEventsLength > 1;
 
     useEffect(() => {
         if (!hasAnyEvents) {
@@ -43,13 +49,14 @@ export const ParamsPanel = () => {
         }
     }, [handleClose, hasAnyEvents, targetEvents]);
 
-    const useReplayEvents = useCallback(
-        () =>
-            targetEvents.forEach((event) => {
-                setNewTimeout(() => playEventInstance(event.eventInstance), event.startTime - groupStartTime);
-            }),
-        [groupStartTime, setNewTimeout, targetEvents]
-    );
+    const useReplayEvents = useCallback(() => {
+        // Convert targetEvents to an array if it's an object
+        const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
+
+        eventsArray.forEach((event) => {
+            setNewTimeout(() => playEventInstance(event.eventInstance), event.startTime - groupStartTime);
+        });
+    }, [groupStartTime, setNewTimeout, targetEvents]);
 
     const modifyGroupStartTime = useCallback(
         (delta) => {
@@ -61,17 +68,21 @@ export const ParamsPanel = () => {
         [id, startTime, updateOverlapGroupTimes]
     );
 
-    const renderEvents = () =>
-        targetEvents?.map((event) => {
+    const renderEvents = () => {
+        // Ensure targetEvents is treated as an array, converting if it's an object
+        const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
+
+        return eventsArray.map((event) => {
+            // Function for deleting an event; defined inside map to access current event
             // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            const onDelteNote = () => deleteRecording(event);
+            const onDeleteNote = () => deleteRecording(event);
 
             return (
                 <EventItem
                     key={event.id}
                     overlapGroup={targetInRecordings}
                     event={event}
-                    onDelete={onDelteNote}
+                    onDelete={onDeleteNote}
                     setFocusedEvent={setFocusedEvent}
                     focusedEvent={focusedEvent}
                     onPlay={handlePlayEvent}
@@ -79,6 +90,7 @@ export const ParamsPanel = () => {
                 />
             );
         });
+    };
 
     if (targetInRecordings)
         return (

@@ -32,14 +32,11 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const modifyStartTime = useCallback(
         (delta) => {
             updateStartTime({
-                eventLength,
-                index: id,
-                instrumentName,
                 newStartTime: startTime + delta,
-                parent: overlapGroup
+                recording: overlapGroup
             });
         },
-        [eventLength, id, instrumentName, overlapGroup, startTime, updateStartTime]
+        [overlapGroup, startTime, updateStartTime]
     );
 
     return (
@@ -56,15 +53,9 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
             {!parent?.locked && (
                 <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
             )}
-
+            {/* event, eventId, eventInstance, param  */}
             {params.map((param) => (
-                <ParameterControlComponent
-                    key={param.name}
-                    param={param}
-                    overlapGroup={overlapGroup}
-                    eventId={id}
-                    eventInstance={eventInstance}
-                />
+                <ParameterControlComponent key={param.name} param={param} overlapGroup={overlapGroup} event={event} />
             ))}
         </div>
     );

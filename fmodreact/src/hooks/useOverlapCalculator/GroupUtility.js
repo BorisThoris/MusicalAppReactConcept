@@ -1,7 +1,6 @@
 /* eslint-disable no-param-reassign */
 
 import differenceWith from 'lodash/differenceWith';
-import find from 'lodash/find';
 import first from 'lodash/first';
 import forEach from 'lodash/forEach';
 import isEqual from 'lodash/isEqual';
@@ -20,13 +19,7 @@ export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
         group.startTime = Math.min(group.startTime, overlapGroup.startTime);
         group.endTime = Math.max(group.endTime, overlapGroup.endTime);
 
-        // Assume overlapGroup.events is an object where keys are event IDs
-        Object.values(overlapGroup.events).forEach((event) => {
-            if (event.id !== group.id) {
-                event.parentId = group.id; // Set the parent ID for non-self events
-            }
-        });
-
+        // The mergedEvents is already an object indexed by event IDs, so no need to convert
         // Merge events ensuring no duplicates and keeping structure consistent
         const mergedEvents = unionWith(
             Object.values(group.events),
@@ -34,7 +27,6 @@ export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
             (a, b) => a.id === b.id
         );
 
-        // Convert merged array back to an object indexed by event IDs
         group.events = mergedEvents;
     }
 };
@@ -51,20 +43,23 @@ export const handleNonOverlappingEvent = ({ interval, overlapTree, recording }) 
 
 export const combineOverlappingGroups = (groups, tree) => {
     let changed = true;
+    const clonedGroups = { ...groups };
 
     const doGroupsOverlap = (group1, group2) =>
         !(group1.endTime < group2.startTime || group2.endTime < group1.startTime);
 
     while (changed) {
         changed = false;
-        const groupKeys = Object.keys(groups); // Get all group IDs as an array
+        let groupKeys = Object.keys(clonedGroups); // Get all group IDs as an array
 
         for (let i = 0; i < groupKeys.length; i += 1) {
-            const group1 = groups[groupKeys[i]];
-            if (group1?.processed) return; // Skip processed groups
+            const group1 = clonedGroups[groupKeys[i]];
+
+            if (group1.processed) return; // Skip processed groups
 
             for (let j = i + 1; j < groupKeys.length; j += 1) {
-                const group2 = groups[groupKeys[j]];
+                const group2 = clonedGroups[groupKeys[j]];
+
                 if (group2.processed) return; // Skip processed groups
 
                 if (doGroupsOverlap(group1, group2)) {
@@ -77,7 +72,8 @@ export const combineOverlappingGroups = (groups, tree) => {
                         });
 
                         tree.remove([group2.startTime, group2.endTime], group2);
-                        delete groups[groupKeys[j]]; // Remove group2 from groups
+                        delete clonedGroups[groupKeys[j]];
+                        groupKeys = Object.keys(clonedGroups); // Remove group2 from groups
 
                         tree.remove(newGroupConstraints, group1);
                         tree.insert(newGroupConstraints, group1);
@@ -91,12 +87,12 @@ export const combineOverlappingGroups = (groups, tree) => {
         }
 
         // Reset the processed flag for all groups
-        Object.values(groups).forEach((group) => {
+        Object.values(clonedGroups).forEach((group) => {
             group.processed = false;
         });
     }
 
-    return groups;
+    return clonedGroups;
 };
 
 const findEventGroup = (tree, eventId) => {
@@ -108,9 +104,9 @@ const findEventGroup = (tree, eventId) => {
                 return node;
             }
 
-            // Check if node.value.events is an array and contains the eventId
-            if (Array.isArray(node.value.events) && node.value.events.some((e) => e.id === eventId)) {
-                // If some event in the events array matches the eventId, return this node
+            // Check if node.value.events is an object and contains the eventId
+            if (node.value.events && node.value.events[eventId]) {
+                // If the events object has a property matching the eventId, return this node
                 return node;
             }
 
@@ -128,13 +124,14 @@ const findEventGroup = (tree, eventId) => {
 };
 
 export const updatedGroup = (event, existingGroup) => {
-    const mappedEvents = [];
-    if (event.events?.length > 1) {
-        event.events.forEach((e) => {
-            mappedEvents.push({ ...e, events: undefined });
+    const mappedEvents = {};
+
+    if (event.events && Object.keys(event.events).length > 1) {
+        forEach(event.events, (e) => {
+            mappedEvents[e.id] = { ...e, events: undefined };
         });
     } else {
-        mappedEvents.push({ ...event, events: undefined });
+        mappedEvents[event.id] = { ...event, events: undefined };
     }
 
     const group = { ...existingGroup } || {
@@ -145,20 +142,19 @@ export const updatedGroup = (event, existingGroup) => {
 
     const orphans = [];
 
-    if (group.events.length > 1) {
-        const checkedEvents = [];
+    let test = Object.values(group.events);
 
-        group.events = group.events.sort((a, b) => {
-            return a.startTime - b.startTime;
-        });
+    if (test.length > 1) {
+        const checkedEvents = {};
 
-        forEach(group.events, (e, index) => {
+        test = test.sort((a, b) => a.startTime - b.startTime);
+
+        forEach(test, (e, index) => {
             const currentEvent = e;
-
             let previousEvent;
 
             if (index > 0) {
-                previousEvent = group.events[index - 1];
+                previousEvent = test[index - 1];
             } else {
                 previousEvent = group;
             }
@@ -168,7 +164,7 @@ export const updatedGroup = (event, existingGroup) => {
                 currentEvent.endTime > previousEvent.startTime &&
                 orphans.length === 0
             ) {
-                checkedEvents.push(currentEvent);
+                checkedEvents[currentEvent.id] = currentEvent;
             } else {
                 currentEvent.parentId = null;
                 orphans.push(currentEvent);
@@ -177,14 +173,15 @@ export const updatedGroup = (event, existingGroup) => {
 
         group.events = checkedEvents;
 
-        const { endTime } = group.events.length > 0 ? last(group.events) : group;
-        const { startTime } = group.events.length > 0 ? first(group.events) : group;
+        const sortedCheckedEvents = Object.values(checkedEvents).sort((a, b) => a.startTime - b.startTime);
+        const { endTime } = sortedCheckedEvents.length > 0 ? last(sortedCheckedEvents) : group;
+        const { startTime } = sortedCheckedEvents.length > 0 ? first(sortedCheckedEvents) : group;
 
-        const isGroup = group.events?.length > 0;
-        group.id = isGroup ? group.events[0].id : group.id;
+        const isGroup = sortedCheckedEvents.length > 0;
+        group.id = isGroup ? sortedCheckedEvents[0].id : group.id;
 
         if (isGroup) {
-            group.events.forEach((ev) => {
+            forEach(sortedCheckedEvents, (ev) => {
                 ev.parentId = group.id;
             });
         }
@@ -201,17 +198,12 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     const eventGroup = createGroupFromEvent(event, foundEvent);
     const { mergedGroup, orphans } = updatedGroup(event, eventGroup);
 
-    // Remove parent property from orphans
-    orphans.forEach((orphan) => {
-        delete orphan.parent;
-    });
-
     // Insert merged group into the tree and update groups object
     tree.insert([mergedGroup.startTime, mergedGroup.endTime], mergedGroup);
     groups[mergedGroup.id] = mergedGroup; // Store by id
 
     // Process each orphan into a new event group and insert it
-    orphans.forEach((orphan) => {
+    Object.values(orphans).forEach((orphan) => {
         const newEvent = createGroupFromEvent(orphan, false);
         tree.insert([newEvent.startTime, newEvent.endTime], newEvent);
         groups[newEvent.id] = newEvent; // Store by id
@@ -231,21 +223,22 @@ export const recreateEvents = ({ existingInstrumentName, groupsToRecreate }) =>
             startTime: existingGroup.startTime
         });
 
-        const recreatedEvents = existingGroup.events
-            ? existingGroup.events.map((subEvent) => {
-                  const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
+        // Convert the events object to an array if it's an object
+        const eventsArray = Object.values(existingGroup.events || {});
 
-                  const recreatedEvent = createSound({
-                      eventInstance: subEventInstance,
-                      eventPath: subEvent.eventPath || 'Drum/Snare',
-                      instrumentName: existingInstrumentName || existingGroup.instrumentName,
-                      passedParams: subEvent.params,
-                      startTime: subEvent.startTime
-                  });
+        const recreatedEvents = eventsArray.map((subEvent) => {
+            const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
 
-                  return { ...recreatedEvent, parentId: mainEvent.id };
-              })
-            : [];
+            const recreatedEvent = createSound({
+                eventInstance: subEventInstance,
+                eventPath: subEvent.eventPath || 'Drum/Snare',
+                instrumentName: existingInstrumentName || existingGroup.instrumentName,
+                passedParams: subEvent.params,
+                startTime: subEvent.startTime
+            });
+
+            return { ...recreatedEvent, parentId: mainEvent.id };
+        });
 
         return {
             ...mainEvent,

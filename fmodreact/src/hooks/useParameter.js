@@ -3,12 +3,12 @@ import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOper
 
 const withValidation =
     (useParameterHook) =>
-    ({ eventId, eventInstance, param, parent }) => {
+    ({ event, eventId, eventInstance, param }) => {
         const [paramDetails, handleParamChange] = useParameterHook({
+            event,
             eventId,
             eventInstance,
-            paramData: param,
-            parent
+            paramData: param
         });
 
         // Validate paramDetails structure
@@ -28,11 +28,10 @@ const withValidation =
         return [paramDetails, handleParamChange];
     };
 
-const useParameter = ({ eventId, eventInstance, paramData, parent }) => {
+const useParameter = ({ event, eventInstance, paramData }) => {
     const { updateRecordingParams } = useInstrumentRecordingsOperations();
 
     const { param, value } = paramData;
-
     const { maximum: max, minimum: min, name: paramName } = param;
 
     const [paramDetails, setParamDetails] = useState({
@@ -42,8 +41,8 @@ const useParameter = ({ eventId, eventInstance, paramData, parent }) => {
     });
 
     const handleParamChange = useCallback(
-        (event) => {
-            let newValue = parseFloat(event.target.value);
+        (passedEv) => {
+            let newValue = parseFloat(passedEv.target.value);
             newValue = Math.min(Math.max(newValue, min), max);
 
             eventInstance.setParameterByName(paramName, newValue, false);
@@ -54,11 +53,11 @@ const useParameter = ({ eventId, eventInstance, paramData, parent }) => {
             }));
 
             updateRecordingParams({
-                eventId,
+                event,
                 updatedParam: { ...paramData, value: newValue }
             });
         },
-        [min, max, eventInstance, paramName, updateRecordingParams, eventId, paramData]
+        [min, max, eventInstance, paramName, updateRecordingParams, event, paramData]
     );
 
     return [paramDetails, handleParamChange];

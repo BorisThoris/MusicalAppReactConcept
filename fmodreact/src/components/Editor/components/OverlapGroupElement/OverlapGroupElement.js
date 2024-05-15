@@ -77,18 +77,23 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
         setIsDragged(true);
     }, []);
 
-    const renderEvents = () =>
-        events.map((event, eventIndex) => (
+    const renderEvents = () => {
+        // Convert the events object into an array for rendering
+        const eventsArray = Object.values(events);
+
+        return eventsArray.map((event, eventIndex) => (
             <SoundEventElement
                 key={event.id}
                 handleClickOverlapGroup={handleClickOverlapGroup}
                 index={eventIndex}
                 recording={event}
+                parent={groupData}
                 timelineHeight={timelineHeight}
                 timelineY={timelineY}
                 listening={!locked}
             />
         ));
+    };
 
     return (
         <Group>

@@ -59,13 +59,13 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             }
 
             if (recordingOrEvent.locked) {
-                return recordingOrEvent.events.reduce((acc, event) => {
+                return Object.values(recordingOrEvent.events).reduce((acc, event) => {
                     acc[event.id] = { ...event };
                     return acc;
                 }, {});
             }
 
-            return recordingOrEvent.events.reduce((selected, event) => {
+            return Object.values(recordingOrEvent.events).reduce((selected, event) => {
                 const selectedNestedEvents = selectEvents(event, startX, endX, startY, endY, yLevel);
 
                 let testReturn = { ...selected, ...selectedNestedEvents };
@@ -77,7 +77,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 return { ...testReturn };
             }, {});
         },
-        [markersAndTrackerOffset]
+        [markersAndTrackerOffset] // Ensure TimelineHeight is also included if it's a variable from outer scope
     );
 
     const setSelectionBasedOnCoordinates = useCallback(
@@ -151,11 +151,10 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             Object.keys(selectedItems).forEach((itemId) => {
                 if (selectedItems[itemId]) {
                     const actualEvent = getEventById(itemId);
+
                     updateRecording({
-                        eventLength: actualEvent.eventLength,
-                        index: itemId,
-                        instrumentName: actualEvent.instrumentName,
-                        newStartTime: actualEvent.startTime + newStartTime
+                        newStartTime: actualEvent.startTime + newStartTime,
+                        recording: selectedItems[itemId]
                     });
                 }
             });

@@ -1,4 +1,4 @@
-import { isEmpty, uniqBy } from 'lodash';
+import { isEmpty } from 'lodash';
 import { useCallback, useMemo } from 'react';
 import { combineOverlappingGroups, handleNonOverlappingEvent, mergeOverlappingEvents } from './GroupUtility';
 import { findOverlappingGroups, insertGroupsIntoTree } from './IntervalTreeUtility';
@@ -10,7 +10,7 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
         const interval = [recording.startTime, recording.endTime];
         const overlaps = findOverlappingGroups(recording, overlapTree);
 
-        if (isEmpty(overlaps) && recording.events.length === 1) {
+        if (isEmpty(overlaps) && Object.keys(recording.events).length === 1) {
             const nonOverlappingEvent = handleNonOverlappingEvent({
                 interval,
                 overlapTree,
@@ -33,11 +33,9 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
 
 export const processOverlapCalculations = (recordings, initializedOverlapGroups, instrument) => {
     const recordingsForInstrument = recordings[instrument];
-
     const initialOverlapGroups = initializedOverlapGroups[instrument];
     const iterableGroups = initialOverlapGroups ? Object.values(initialOverlapGroups) : [];
     const initialOverlapGroupsSet = new Set(iterableGroups);
-
     const { tree } = insertGroupsIntoTree({ initialOverlapGroups: initialOverlapGroupsSet });
 
     return processEvents(tree, recordingsForInstrument);

@@ -28,14 +28,11 @@ export const useCustomDrag = ({ isSelected, parent, recording, timelineY, update
             const newStartTime = e.target.x() / pixelToSecondRatio;
 
             updateStartTime({
-                eventLength: recording.eventLength,
-                index: recording.id,
-                instrumentName: recording.instrumentName,
                 newStartTime,
-                parent
+                recording
             });
         },
-        [updateStartTime, recording.eventLength, recording.id, recording.instrumentName, parent]
+        [updateStartTime, recording]
     );
 
     return { dragBoundFunc, handleDragEnd, handleDragStart };

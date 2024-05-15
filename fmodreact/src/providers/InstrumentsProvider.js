@@ -83,7 +83,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
             // Compare the stringified current state with what's saved in localStorage
             if (currentSavedStr !== currentOverlapGroupsStr) {
-                localStorage.setItem('overlapGroups', currentOverlapGroupsStr); // Proceed with saving only if they differ
+                localStorage.setItem('overlapGroups', currentOverlapGroupsStr);
             }
         }
     }, [overlapGroups, localLoaded]);
