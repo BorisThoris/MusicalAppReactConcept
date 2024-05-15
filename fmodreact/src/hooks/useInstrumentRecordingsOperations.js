@@ -179,7 +179,6 @@ export const useInstrumentRecordingsOperations = () => {
                         return true;
                     }
 
-                    // Continue searching within nested events
                     return Object.values(recordings).some(
                         (rec) => rec.events && searchAndUpdateRecording(rec.events, id, newStart)
                     );

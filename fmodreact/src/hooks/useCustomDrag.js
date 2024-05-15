@@ -2,7 +2,7 @@ import { useCallback, useContext } from 'react';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { SelectionContext } from '../providers/SelectionsProvider';
 
-export const useCustomDrag = ({ isSelected, parent, recording, timelineY, updateStartTime }) => {
+export const useCustomDrag = ({ isSelected, recording, timelineY, updateStartTime }) => {
     const { clearSelection } = useContext(SelectionContext);
 
     const dragBoundFunc = useCallback(
