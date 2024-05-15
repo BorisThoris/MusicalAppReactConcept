@@ -7,13 +7,21 @@ import usePlayback from '../../../../hooks/usePlayback';
 export const useEventHandlers = (targetedGroup) => {
     const { closeParamsPanel: closePanel, setFocusedEvent } = useContext(PanelContext);
 
-    const { deleteRecording, duplicateOverlapGroup, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
+    const {
+        deleteOverlapGroup: deleteOverlapGroupFunc,
+        deleteRecording,
+        duplicateOverlapGroup,
+        updateOverlapGroupTimes
+    } = useInstrumentRecordingsOperations();
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
     const handleClose = useCallback(() => closePanel(false), [closePanel]);
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
     const resetFocusedEvent = useCallback(() => setFocusedEvent(-1), [setFocusedEvent]);
-    const deleteOverlapGroup = useCallback(() => deleteRecording(targetedGroup), [deleteRecording, targetedGroup]);
+    const deleteOverlapGroup = useCallback(
+        () => deleteOverlapGroupFunc(targetedGroup),
+        [deleteOverlapGroupFunc, targetedGroup]
+    );
     const onDuplicateGroup = useCallback(
         () => duplicateOverlapGroup({ overlapGroup: targetedGroup }),
         [duplicateOverlapGroup, targetedGroup]

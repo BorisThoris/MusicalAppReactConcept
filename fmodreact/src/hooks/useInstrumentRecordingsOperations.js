@@ -130,6 +130,7 @@ export const useInstrumentRecordingsOperations = () => {
         },
         [setOverlapGroups]
     );
+
     const updateRecordingStartTime = useCallback(
         ({ newStartTime, recording }) => {
             const index = recording.id;
@@ -234,6 +235,32 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
+    const deleteOverlapGroup = useCallback(
+        (group) => {
+            const groupId = group.id;
+            console.log(groupId);
+
+            if (!groupId) {
+                console.warn('No group ID provided for deletion');
+                return;
+            }
+
+            setOverlapGroups((prevOverlapGroups) => {
+                const updatedOverlapGroups = { ...prevOverlapGroups };
+
+                Object.entries(updatedOverlapGroups).forEach(([instrumentName, instrumentData]) => {
+                    if (instrumentData[groupId]) {
+                        // Delete the entire group
+                        delete instrumentData[groupId];
+                    }
+                });
+
+                return updatedOverlapGroups;
+            });
+        },
+        [setOverlapGroups]
+    );
+
     const deleteEventInstance = useCallback(
         (event) => {
             const { id: eventId, parentId } = event;
@@ -246,32 +273,30 @@ export const useInstrumentRecordingsOperations = () => {
             setOverlapGroups((prevOverlapGroups) => {
                 const updatedOverlapGroups = { ...prevOverlapGroups };
 
-                // Iterate over each instrument group to find and delete the event
                 Object.entries(updatedOverlapGroups).forEach(([instrumentName, instrumentData]) => {
+                    const instrumentRecordings = instrumentData;
+
                     if (parentId) {
-                        // Handle deletion of a nested event under a parent
-                        if (instrumentData[parentId] && instrumentData[parentId].events) {
-                            const updatedEvents = { ...instrumentData[parentId].events };
+                        const parentGroup = instrumentRecordings[parentId];
+                        if (parentGroup && parentGroup.events) {
+                            const updatedEvents = { ...parentGroup.events };
                             delete updatedEvents[eventId];
-                            instrumentData[parentId].events = updatedEvents;
+                            parentGroup.events = updatedEvents;
 
                             // Check if the parent should be deleted
-                            if (parentId === eventId) {
-                                if (Object.keys(updatedEvents).length === 0) {
-                                    delete instrumentData[parentId];
-                                }
+                            if (parentId === eventId && Object.keys(updatedEvents).length === 0) {
+                                delete instrumentRecordings[parentId];
                             }
                         }
                     } else {
-                        // Handle deletion of a direct event at the root level
-                        // eslint-disable-next-line no-lonely-if
-                        if (instrumentData[eventId]) {
-                            const remainingEvents = { ...instrumentData[eventId].events };
+                        const eventGroup = instrumentRecordings[eventId];
+                        if (eventGroup) {
+                            const remainingEvents = { ...eventGroup.events };
                             delete remainingEvents[eventId];
 
                             if (Object.keys(remainingEvents).length === 0) {
                                 // Delete the entire parent as there are no other events
-                                delete instrumentData[eventId];
+                                delete instrumentRecordings[eventId];
                             } else {
                                 // Update the ID of the main group/parent to the ID of the event with the lowest start time
                                 const sortedEvents = Object.values(remainingEvents).sort(
@@ -279,22 +304,22 @@ export const useInstrumentRecordingsOperations = () => {
                                 );
                                 const newParentId = sortedEvents[0].id;
 
-                                instrumentData[newParentId] = {
-                                    ...instrumentData[eventId],
+                                instrumentRecordings[newParentId] = {
+                                    ...eventGroup,
                                     events: remainingEvents,
                                     id: newParentId
                                 };
-                                delete instrumentData[eventId];
+                                delete instrumentRecordings[eventId];
 
                                 // Update the parent IDs of all events to the new ID
                                 sortedEvents.forEach((ev) => {
                                     ev.parentId = newParentId;
                                 });
                             }
-                        } else if (instrumentData.events && instrumentData.events[eventId]) {
-                            const updatedEvents = { ...instrumentData.events };
+                        } else if (instrumentRecordings.events && instrumentRecordings.events[eventId]) {
+                            const updatedEvents = { ...instrumentRecordings.events };
                             delete updatedEvents[eventId];
-                            instrumentData.events = updatedEvents;
+                            instrumentRecordings.events = updatedEvents;
                         }
                     }
                 });
@@ -321,12 +346,13 @@ export const useInstrumentRecordingsOperations = () => {
             const eventPath = getEventPath(oldSound.eventInstance);
             const eventInstance = createEventInstance(eventPath);
 
-            const { instrumentName, startTime: oldStartTime } = oldSound;
+            const { instrumentName, params, startTime: oldStartTime } = oldSound;
 
             const event = createSound({
                 eventInstance,
                 eventPath,
                 instrumentName,
+                passedParams: params,
                 startTime: oldStartTime + 0.2
             });
 
@@ -472,6 +498,7 @@ export const useInstrumentRecordingsOperations = () => {
         addRecording: recordSoundEvent,
 
         deleteAllRecordingsForInstrument,
+        deleteOverlapGroup,
         deleteRecording: deleteEventInstance,
         duplicateEventInstance,
         duplicateInstrument,
