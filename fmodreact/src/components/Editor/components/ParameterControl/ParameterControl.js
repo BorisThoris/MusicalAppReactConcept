@@ -4,10 +4,10 @@ import React, { useCallback, useState } from 'react';
 import useParameter from '../../../../hooks/useParameter';
 import { ControlWrapper, ParamName, ParamValue, SliderInput } from './ParameterControl.styles';
 
-const ParameterControl = React.memo(({ event, eventId, param }) => {
+const ParameterControl = React.memo(({ event, param }) => {
     const [paramDetails, handleParamChange] = useParameter({
         event,
-        eventId,
+        eventId: event.id,
         eventInstance: event.eventInstance,
         param
     });

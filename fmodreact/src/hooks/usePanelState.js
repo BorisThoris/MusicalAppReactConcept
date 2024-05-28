@@ -43,33 +43,60 @@ export const PanelProvider = ({ children }) => {
         dispatch({ payload: { id }, type: 'CLOSE_PANEL' });
     }, []);
 
+    const closeParamsPanel = useCallback(() => {
+        closePanel(PARAMS_PANEL_ID);
+    }, [closePanel]);
+
     // Specific function to open ParamsPanel
     const openParamsPanel = useCallback(
         (payload) => {
             closePanel(INSTRUMENTS_PANEL_ID);
+            closePanel(SELECTIONS_PANEL_ID); // Close SelectionsPanel if open
             openPanel({ id: PARAMS_PANEL_ID, ...payload });
         },
         [closePanel, openPanel]
     );
 
-    // Specific function to close ParamsPanel
-    const closeParamsPanel = useCallback(() => {
-        closePanel(PARAMS_PANEL_ID);
-    }, [closePanel]);
+    const openInstrumentsPanel = useCallback(
+        (payload) => {
+            closeParamsPanel(); // Close ParamsPanel if open
+            openPanel({ id: INSTRUMENTS_PANEL_ID, ...payload });
+        },
+        [closeParamsPanel, openPanel]
+    );
+
+    const openSelectionsPanel = useCallback(
+        (payload) => {
+            closeParamsPanel(); // Close ParamsPanel if open
+            openPanel({ id: SELECTIONS_PANEL_ID, ...payload });
+        },
+        [closeParamsPanel, openPanel]
+    );
 
     const value = useMemo(
         () => ({
             closePanel,
             closeParamsPanel,
             focusedEvent,
+            openInstrumentsPanel,
             openPanel,
             openParamsPanel,
+            openSelectionsPanel,
             panels,
             panelsArr: Object.values(panels),
             panelsObj: panels,
             setFocusedEvent
         }),
-        [panels, focusedEvent, openPanel, closePanel, openParamsPanel, closeParamsPanel]
+        [
+            panels,
+            focusedEvent,
+            openPanel,
+            closePanel,
+            openParamsPanel,
+            closeParamsPanel,
+            openInstrumentsPanel,
+            openSelectionsPanel
+        ]
     );
 
     return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;

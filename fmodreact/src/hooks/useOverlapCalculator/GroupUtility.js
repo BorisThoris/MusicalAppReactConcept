@@ -6,8 +6,7 @@ import forEach from 'lodash/forEach';
 import isEqual from 'lodash/isEqual';
 import last from 'lodash/last';
 import unionWith from 'lodash/unionWith';
-import { createEventInstance } from '../../fmodLogic/eventInstanceHelpers';
-import createSound from '../../globalHelpers/createSound';
+import { createEvent } from '../../globalHelpers/createSound';
 import { createGroupFromEvent } from './EventUtility';
 import { notInTree } from './IntervalTreeUtility';
 
@@ -15,12 +14,9 @@ export const filterOutOverlappedGroups = (groups, overlapped) => differenceWith(
 
 export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
     if (!group.locked && !overlapGroup.locked) {
-        // Update start and end times based on overlaps
         group.startTime = Math.min(group.startTime, overlapGroup.startTime);
         group.endTime = Math.max(group.endTime, overlapGroup.endTime);
 
-        // The mergedEvents is already an object indexed by event IDs, so no need to convert
-        // Merge events ensuring no duplicates and keeping structure consistent
         const mergedEvents = unionWith(
             Object.values(group.events),
             Object.values(overlapGroup.events),
@@ -50,17 +46,17 @@ export const combineOverlappingGroups = (groups, tree) => {
 
     while (changed) {
         changed = false;
-        let groupKeys = Object.keys(clonedGroups); // Get all group IDs as an array
+        let groupKeys = Object.keys(clonedGroups);
 
         for (let i = 0; i < groupKeys.length; i += 1) {
             const group1 = clonedGroups[groupKeys[i]];
 
-            if (group1.processed) return; // Skip processed groups
+            if (group1.processed) return;
 
             for (let j = i + 1; j < groupKeys.length; j += 1) {
                 const group2 = clonedGroups[groupKeys[j]];
 
-                if (group2.processed) return; // Skip processed groups
+                if (group2.processed) return;
 
                 if (doGroupsOverlap(group1, group2)) {
                     const newGroupConstraints = [group1.startTime, group1.endTime];
@@ -73,7 +69,7 @@ export const combineOverlappingGroups = (groups, tree) => {
 
                         tree.remove([group2.startTime, group2.endTime], group2);
                         delete clonedGroups[groupKeys[j]];
-                        groupKeys = Object.keys(clonedGroups); // Remove group2 from groups
+                        groupKeys = Object.keys(clonedGroups);
 
                         tree.remove(newGroupConstraints, group1);
                         tree.insert(newGroupConstraints, group1);
@@ -127,11 +123,11 @@ export const updatedGroup = (event, existingGroup) => {
     const mappedEvents = {};
 
     if (event.events && Object.keys(event.events).length > 1) {
-        forEach(event.events, (e) => {
-            mappedEvents[e.id] = { ...e, events: undefined };
+        forEach(Object.values(event.events), (e) => {
+            mappedEvents[e.id] = { ...e, events: { [e.id]: e } };
         });
     } else {
-        mappedEvents[event.id] = { ...event, events: undefined };
+        mappedEvents[event.id] = { ...event, events: { [event.id]: event } };
     }
 
     const group = { ...existingGroup } || {
@@ -142,19 +138,19 @@ export const updatedGroup = (event, existingGroup) => {
 
     const orphans = [];
 
-    let test = Object.values(group.events);
+    let groupEvents = group.events ? Object.values(group.events) : {};
 
-    if (test.length > 1) {
+    if (groupEvents.length > 1) {
         const checkedEvents = {};
 
-        test = test.sort((a, b) => a.startTime - b.startTime);
+        groupEvents = groupEvents.sort((a, b) => a.startTime - b.startTime);
 
-        forEach(test, (e, index) => {
+        forEach(groupEvents, (e, index) => {
             const currentEvent = e;
             let previousEvent;
 
             if (index > 0) {
-                previousEvent = test[index - 1];
+                previousEvent = groupEvents[index - 1];
             } else {
                 previousEvent = group;
             }
@@ -212,43 +208,67 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     return groups;
 };
 
-export const recreateEvents = ({ existingInstrumentName, groupsToRecreate }) =>
+export const recreateEvents = ({ existingInstrumentName = undefined, groupsToRecreate, timeOffset = 0 }) =>
     groupsToRecreate.map((existingGroup) => {
-        const eventInstance = createEventInstance(existingGroup.eventPath || 'Drum/Snare');
-        const mainEvent = createSound({
-            eventInstance,
-            eventPath: existingGroup.eventPath || 'Drum/Snare',
-            instrumentName: existingGroup.instrumentName,
-            passedParams: existingGroup.params,
-            startTime: existingGroup.startTime
-        });
+        const mainEvent = createEvent(
+            {
+                eventPath: existingGroup.eventPath,
+                locked: existingGroup.locked,
+                params: existingGroup.params,
+                startTime: existingGroup.startTime + timeOffset
+            },
+            existingInstrumentName || existingGroup.instrumentName
+        );
 
-        // Convert the events object to an array if it's an object
         const eventsArray = Object.values(existingGroup.events || {});
 
-        const recreatedEvents = eventsArray.map((subEvent) => {
-            const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
+        if (eventsArray.length > 1) {
+            let earliestStartTime = null;
+            let latestEndTime = null;
 
-            const recreatedEvent = createSound({
-                eventInstance: subEventInstance,
-                eventPath: subEvent.eventPath || 'Drum/Snare',
-                instrumentName: existingInstrumentName || existingGroup.instrumentName,
-                passedParams: subEvent.params,
-                startTime: subEvent.startTime
-            });
+            const recreatedEvents = eventsArray.reduce((acc, subEvent) => {
+                if (subEvent.startTime + timeOffset < earliestStartTime || !earliestStartTime) {
+                    earliestStartTime = subEvent.startTime + timeOffset;
+                }
+                if (subEvent.endTime + timeOffset > latestEndTime || !latestEndTime) {
+                    latestEndTime = subEvent.endTime + timeOffset;
+                }
 
-            return { ...recreatedEvent, parentId: mainEvent.id };
-        });
+                const recreatedEvent = createEvent(
+                    {
+                        eventPath: subEvent.eventPath,
+                        locked: false,
+                        params: subEvent.params,
+                        startTime: subEvent.startTime + timeOffset
+                    },
+                    existingInstrumentName || existingGroup.instrumentName,
+                    mainEvent.id
+                );
+
+                acc[recreatedEvent.id] = recreatedEvent;
+                return acc;
+            }, {});
+
+            mainEvent.startTime = earliestStartTime;
+            mainEvent.endTime = latestEndTime;
+
+            return {
+                ...mainEvent,
+                events: recreatedEvents
+            };
+        }
 
         return {
             ...mainEvent,
-            endTime: mainEvent.endTime,
-            eventLength: mainEvent.eventLength,
-            events: recreatedEvents,
-            id: mainEvent.id,
-            instrumentName: existingInstrumentName || mainEvent.instrumentName,
-            length: mainEvent.eventLength,
-            locked: existingGroup.locked,
-            startTime: mainEvent.startTime
+            events: {
+                [mainEvent.id]: {
+                    ...mainEvent,
+                    endTime: existingGroup.endTime + timeOffset,
+                    id: mainEvent.id,
+                    locked: false,
+                    parentId: mainEvent.id,
+                    startTime: existingGroup.startTime + timeOffset
+                }
+            }
         };
     });

@@ -28,11 +28,11 @@ const withValidation =
         return [paramDetails, handleParamChange];
     };
 
-const useParameter = ({ event, eventInstance, paramData }) => {
+const useParameter = ({ event, paramData }) => {
     const { updateRecordingParams } = useInstrumentRecordingsOperations();
 
     const { param, value } = paramData;
-    const { maximum: max, minimum: min, name: paramName } = param;
+    const { maximum: max, minimum: min } = param;
 
     const [paramDetails, setParamDetails] = useState({
         paramMax: max,
@@ -45,8 +45,6 @@ const useParameter = ({ event, eventInstance, paramData }) => {
             let newValue = parseFloat(passedEv.target.value);
             newValue = Math.min(Math.max(newValue, min), max);
 
-            eventInstance.setParameterByName(paramName, newValue, false);
-
             setParamDetails((prevDetails) => ({
                 ...prevDetails,
                 paramValue: newValue
@@ -57,7 +55,7 @@ const useParameter = ({ event, eventInstance, paramData }) => {
                 updatedParam: { ...paramData, value: newValue }
             });
         },
-        [min, max, eventInstance, paramName, updateRecordingParams, event, paramData]
+        [min, max, updateRecordingParams, event, paramData]
     );
 
     return [paramDetails, handleParamChange];

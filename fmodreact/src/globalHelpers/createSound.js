@@ -1,5 +1,3 @@
-import first from 'lodash/first';
-import last from 'lodash/last';
 import {
     createEventInstance,
     getEventInstanceLength,
@@ -19,7 +17,7 @@ function processParameters(eventInstance, params) {
     });
 }
 
-const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = [], startTime }) => {
+export const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = [], startTime }) => {
     const eventLength = getEventInstanceLength(eventInstance);
     const endTime = startTime + eventLength;
     const name = getEventName(eventInstance);
@@ -55,63 +53,42 @@ const createSound = ({ eventInstance, eventPath, instrumentName, passedParams = 
     };
 };
 
+// Helper function to create a main event or sub-event
+export const createEvent = (recording, instrumentName, parentId = null) => {
+    const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+    const mainEvent = createSound({
+        eventInstance,
+        eventPath: recording.eventPath || 'Drum/Snare',
+        instrumentName,
+        passedParams: recording.params,
+        startTime: recording.startTime
+    });
+
+    return {
+        ...mainEvent,
+        endTime: mainEvent.endTime,
+        eventLength: mainEvent.eventLength,
+        id: mainEvent.id,
+        instrumentName: mainEvent.instrumentName,
+        length: mainEvent.eventLength,
+        locked: recording.locked,
+        parentId,
+        startTime: mainEvent.startTime
+    };
+};
+
 export const recreateEvents = (passedGroups) => {
-    const parsedRecordings = passedGroups;
     const newRecordings = {};
 
-    // Iterate over each instrument name in parsedRecordings
-    Object.keys(parsedRecordings).forEach((instrumentName) => {
-        // Convert the object of recordings for the instrument into an array using Object.values()
-        newRecordings[instrumentName] = Object.values(parsedRecordings[instrumentName]).map((recording) => {
-            const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
-            const mainEvent = createSound({
-                eventInstance,
-                eventPath: recording.eventPath || 'Drum/Snare',
-                instrumentName,
-                passedParams: recording.params,
-                startTime: recording.startTime
-            });
+    Object.keys(passedGroups).forEach((instrumentName) => {
+        newRecordings[instrumentName] = Object.values(passedGroups[instrumentName]).map((recording) => {
+            const group = createEvent(recording, instrumentName);
+            const events = recording.events ? Object.values(recording.events) : [];
 
-            const group = {
-                ...mainEvent,
-                endTime: mainEvent.endTime,
-                eventLength: mainEvent.eventLength,
-                id: mainEvent.id,
-                instrumentName: mainEvent.instrumentName,
-                length: mainEvent.eventLength,
-                locked: recording.locked,
-                startTime: mainEvent.startTime
-            };
-
-            // Convert sub-events, if they exist, from an object to an array using Object.values()
-            const recreatedEvents = recording.events
-                ? Object.values(recording.events).map((subEvent) => {
-                      const subEventInstance = createEventInstance(subEvent.eventPath || 'Drum/Snare');
-                      const parentNotSub = mainEvent.id !== subEvent.id;
-
-                      const parentId = parentNotSub && subEvent.parentId ? mainEvent.id : null;
-
-                      const recreatedEvent = createSound({
-                          eventInstance: subEventInstance,
-                          eventPath: subEvent.eventPath || 'Drum/Snare',
-                          instrumentName,
-                          passedParams: subEvent.params,
-                          startTime: subEvent.startTime
-                      });
-
-                      const id = parentNotSub && subEvent.parentId ? recreatedEvent.id : mainEvent.id;
-
-                      return { ...recreatedEvent, id, parentId };
-                  })
-                : [];
-
-            group.events = recreatedEvents;
-
-            // Calculate the end and start time of the group based on its events
-            group.endTime = recreatedEvents.length ? Math.max(...recreatedEvents.map((e) => e.endTime)) : group.endTime;
-            group.startTime = recreatedEvents.length
-                ? Math.min(...recreatedEvents.map((e) => e.startTime))
-                : group.startTime;
+            group.events =
+                events.length > 1
+                    ? events.map((subEvent) => createEvent(subEvent, instrumentName, group.id))
+                    : { [group.id]: { ...group, parentId: group.id } };
 
             return group;
         });
@@ -119,5 +96,3 @@ export const recreateEvents = (passedGroups) => {
 
     return newRecordings;
 };
-
-export default createSound;

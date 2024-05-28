@@ -17,7 +17,7 @@ export const SelectionContext = createContext({
 
 export const SelectionProvider = ({ children }) => {
     const { timelineState } = useContext(TimelineContext);
-    const { closePanel, openPanel, panels } = useContext(PanelContext);
+    const { closePanel, openSelectionsPanel, panels } = useContext(PanelContext);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
@@ -43,7 +43,7 @@ export const SelectionProvider = ({ children }) => {
         setSelectedElementsCords
     } = useBoxMove({ selectedItems });
 
-    usePanelControl(selectedItems, panels, openPanel, closePanel);
+    usePanelControl(selectedItems, panels, openSelectionsPanel, closePanel);
 
     const selectedValues = Object.values(flatValues);
 

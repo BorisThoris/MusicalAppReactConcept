@@ -1,21 +1,21 @@
 import { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
+import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
 const usePanelControls = () => {
-    const { openPanel, openParamsPanel } = useContext(PanelContext);
+    const { openParamsPanel, openSelectionsPanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, toggleItem: selectElement } = useContext(SelectionContext);
 
-    return { clearSelection, openPanel, openParamsPanel, selectElement, timelineState };
+    return { clearSelection, openParamsPanel, openSelectionsPanel, selectElement, timelineState };
 };
 
 export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
     const { eventInstance, index, instrumentName, startTime } = recording;
-    const { clearSelection, openPanel, openParamsPanel, selectElement, timelineState } = usePanelControls();
+    const { clearSelection, openParamsPanel, openSelectionsPanel, selectElement, timelineState } = usePanelControls();
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
 
@@ -25,12 +25,21 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
             const target = parentEvents;
 
             selectElement(target);
-            openPanel({ id: SELECTIONS_PANEL_ID, y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
+            openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
         } else {
             selectElement(recording);
-            openPanel({ id: SELECTIONS_PANEL_ID, y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
+            openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
         }
-    }, [parent?.locked, parent?.events, selectElement, openPanel, timelineY, canvasOffsetY, elementRef, recording]);
+    }, [
+        parent?.locked,
+        parent?.events,
+        selectElement,
+        openSelectionsPanel,
+        timelineY,
+        canvasOffsetY,
+        elementRef,
+        recording
+    ]);
 
     const openInstrumentParamsPanel = useCallback(() => {
         if (openParamsPanel) {

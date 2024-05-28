@@ -3,7 +3,7 @@ import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 
 export const useBoxMove = ({ selectedItems }) => {
-    const { updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
+    const { updateRecording } = useInstrumentRecordingsOperations();
 
     const [startElementRefPos, setStartElementRefPos] = useState(null);
     const [selectedElementsCords, setSelectedElementsCords] = useState({});
@@ -32,8 +32,8 @@ export const useBoxMove = ({ selectedItems }) => {
         (e) => {
             const deltaX = startElementRefPos ? e.target.x() - startElementRefPos : 0;
 
-            Object.entries(selectedElementsCords).forEach(
-                ([id, { elementXPosition, recording, setElementXPosition }]) => {
+            const updates = Object.entries(selectedElementsCords)
+                .map(([id, { elementXPosition, recording, setElementXPosition }]) => {
                     const updatedXPosition = elementXPosition + deltaX;
                     const newStartTime = updatedXPosition / pixelToSecondRatio;
 
@@ -42,17 +42,23 @@ export const useBoxMove = ({ selectedItems }) => {
                     const selectedItem = selectedItems[recording.id];
 
                     if (selectedItem?.instrumentName) {
-                        updateStartTime({
+                        return {
                             newStartTime,
                             recording
-                        });
+                        };
                     }
-                }
-            );
+
+                    return null;
+                })
+                .filter((update) => update !== null);
+
+            if (updates.length > 0) {
+                updateRecording(updates);
+            }
 
             setStartElementRefPos(null);
         },
-        [selectedElementsCords, startElementRefPos, selectedItems, updateStartTime]
+        [startElementRefPos, selectedElementsCords, selectedItems, updateRecording]
     );
 
     return {

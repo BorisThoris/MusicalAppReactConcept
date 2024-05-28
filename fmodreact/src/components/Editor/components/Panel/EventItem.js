@@ -11,9 +11,10 @@ import TimeControl from './TimeControl';
 export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
     const { getEventById, updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
-    const { duplicateEventInstance } = instrumentRecordingOperationsHook();
+    const { duplicateOverlapGroup } = instrumentRecordingOperationsHook();
 
     const { endTime, eventInstance, id, params, parentId, startTime } = event;
+
     const parent = getEventById(parentId);
 
     const handleDelete = useCallback(() => {
@@ -21,8 +22,10 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     }, [onDelete, event, overlapGroup]);
 
     const handleDuplicate = useCallback(() => {
-        duplicateEventInstance(event);
-    }, [duplicateEventInstance, event]);
+        duplicateOverlapGroup({
+            overlapGroup: event
+        });
+    }, [duplicateOverlapGroup, event]);
 
     const handlePlay = useCallback(() => onPlay(eventInstance), [onPlay, eventInstance]);
     const focusEvent = useCallback(() => {
@@ -55,7 +58,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
             )}
 
             {params.map((param) => (
-                <ParameterControlComponent key={param.name} param={param} overlapGroup={overlapGroup} event={event} />
+                <ParameterControlComponent key={param.name} param={param} event={event} />
             ))}
         </div>
     );

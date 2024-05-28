@@ -1,14 +1,15 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
+import usePlayback from '../../../../hooks/usePlayback';
 import { useSelectionState } from '../../../../hooks/useSelectionState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
 import { PanelWrapper } from '../Panel/PanelWrapper';
 import TimeControl from '../Panel/TimeControl';
-import { useEventHandlers } from '../Panel/useEventsHandlers';
 import { SelectedEventsList } from './SelectedEventsList';
 
 export const SelectionsPanel = () => {
@@ -23,13 +24,16 @@ export const SelectionsPanel = () => {
         startTime,
         updateSelectedItemsStartTime
     } = useContext(SelectionContext);
-    const { deleteRecording, handlePlayEvent, setNewTimeout } = useEventHandlers(selectedValues);
+
+    const { deleteRecording } = useInstrumentRecordingsOperations();
+    const { setNewTimeout } = usePlayback({ playbackStatus: true });
+
+    const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
     const { unSelectItem } = useSelectionState({ markersAndTrackerOffset });
 
-    // Derived data
     const { y } = panels[SELECTIONS_PANEL_ID];
     const startTimeCorrected = selectedValues[0]?.startTime;
     const calculatedYLevel = highestYLevel + timelineState.canvasOffsetY;
@@ -62,7 +66,7 @@ export const SelectionsPanel = () => {
     );
 
     const onTrashClick = useCallback(() => {
-        selectedValues.forEach(deleteRecording);
+        deleteRecording(selectedValues);
     }, [selectedValues, deleteRecording]);
 
     if (selectedValues.length > 0) {

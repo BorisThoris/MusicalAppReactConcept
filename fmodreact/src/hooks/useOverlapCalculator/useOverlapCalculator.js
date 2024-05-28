@@ -10,7 +10,7 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
         const interval = [recording.startTime, recording.endTime];
         const overlaps = findOverlappingGroups(recording, overlapTree);
 
-        if (isEmpty(overlaps) && Object.keys(recording.events).length === 1) {
+        if (isEmpty(overlaps) && recording.events && Object.keys(recording.events)?.length === 1) {
             const nonOverlappingEvent = handleNonOverlappingEvent({
                 interval,
                 overlapTree,

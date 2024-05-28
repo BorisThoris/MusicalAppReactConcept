@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext, PARAMS_PANEL_ID } from '../../../../hooks/usePanelState';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { EventItem } from '../Panel/EventItem';
 import { CloseIcon, DuplicateIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -11,13 +11,14 @@ import TimeControl from '../Panel/TimeControl';
 import { useEventHandlers } from '../Panel/useEventsHandlers';
 
 export const ParamsPanel = () => {
-    const { flatOverlapGroups } = useContext(InstrumentRecordingsContext);
     const { timelineState } = useContext(TimelineContext);
-    const { focusedEvent, panelsObj, setFocusedEvent } = useContext(PanelContext);
+    const { panelsObj } = useContext(PanelContext);
+    const { getEventById } = useInstrumentRecordingsOperations();
 
     const { overlapGroup, y } = panelsObj[`${PARAMS_PANEL_ID}`];
-    const foundGroup = flatOverlapGroups[overlapGroup.id];
-    const targetInRecordings = foundGroup?.event ? flatOverlapGroups[foundGroup.event] : foundGroup;
+    const foundGroup = getEventById(overlapGroup.id);
+
+    const targetInRecordings = foundGroup;
 
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
 
@@ -29,18 +30,12 @@ export const ParamsPanel = () => {
         onDuplicateGroup,
         setNewTimeout,
         updateOverlapGroupTimes
-    } = useEventHandlers(overlapGroup);
+    } = useEventHandlers({ overlapGroup });
 
-    // Assuming targetInRecordings?.events might now be an object
     const targetEvents = targetInRecordings?.events;
-    // If targetEvents is an object, use Object.keys to get the number of properties (events) it has
-    const targetEventsLength = Array.isArray(targetEvents)
-        ? targetEvents.length
-        : Object.keys(targetEvents || {}).length;
+    const targetEventsLength = Object.keys(targetEvents || {}).length;
 
-    // Check if there is at least one event
     const hasAnyEvents = targetEventsLength >= 1;
-    // Check if there is more than one event (logical correction from your original code)
     const hasMoreThanOneEvent = targetEventsLength > 1;
 
     useEffect(() => {
@@ -50,9 +45,7 @@ export const ParamsPanel = () => {
     }, [handleClose, hasAnyEvents, targetEvents]);
 
     const useReplayEvents = useCallback(() => {
-        // Convert targetEvents to an array if it's an object
         const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
-
         eventsArray.forEach((event) => {
             setNewTimeout(() => playEventInstance(event.eventInstance), event.startTime - groupStartTime);
         });
@@ -83,10 +76,7 @@ export const ParamsPanel = () => {
                     overlapGroup={targetInRecordings}
                     event={event}
                     onDelete={onDeleteNote}
-                    setFocusedEvent={setFocusedEvent}
-                    focusedEvent={focusedEvent}
                     onPlay={handlePlayEvent}
-                    onClose={handleClose}
                 />
             );
         });

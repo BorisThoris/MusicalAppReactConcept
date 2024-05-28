@@ -15,7 +15,7 @@ import useElementSelectionMovement from '../SoundEventElement/useElementSelectio
 
 // Constants
 const GROUP_COLOR = 'blue';
-const GROUP_OPACITY = 0.6;
+
 const GROUP_STROKE_WIDTH = 4;
 const GROUP_TEXT = 'Overlapping Events';
 const TEXT_OFFSET_X = 10;
@@ -30,14 +30,17 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
     const { timelineState } = useContext(TimelineContext);
     const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
-    const { openParamsPanel } = useContext(PanelContext);
+    const { openParamsPanel, openSelectionsPanel } = useContext(PanelContext);
 
     const { endTime, events, id, instrumentName, locked, startTime } = groupData;
+    const eventsArray = Object.values(events);
+
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const groupWidth = (endTime - startTime) * pixelToSecondRatio;
+    const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
 
-    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
+    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected, toggleItem } =
         useContext(SelectionContext);
 
     const isSelected = isItemSelected(id);
@@ -61,11 +64,19 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
         [id, updateOverlapGroupTimes]
     );
 
-    const handleClickOverlapGroup = useCallback(() => {
-        const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
-        const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
-        openParamsPanel({ index, instrumentName, overlapGroup: groupData, x: groupX, y: groupY });
-    }, [canvasOffsetY, groupData, index, instrumentName, openParamsPanel, timelineY]);
+    const handleOverlapGroupClick = useCallback(
+        (e) => {
+            const isLeftClickWithCtrl = e?.evt?.button === 0 && e?.evt?.ctrlKey;
+            if (isLeftClickWithCtrl && groupElmRef.current) {
+                toggleItem(eventsArray);
+                openSelectionsPanel({ y: groupY });
+            } else {
+                const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
+                openParamsPanel({ index, instrumentName, overlapGroup: groupData, x: groupX, y: groupY });
+            }
+        },
+        [eventsArray, groupData, groupY, index, instrumentName, openParamsPanel, openSelectionsPanel, toggleItem]
+    );
 
     const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);
 
@@ -79,12 +90,11 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
 
     const renderEvents = () => {
         // Convert the events object into an array for rendering
-        const eventsArray = Object.values(events);
 
         return eventsArray.map((event, eventIndex) => (
             <SoundEventElement
                 key={event.id}
-                handleClickOverlapGroup={handleClickOverlapGroup}
+                handleClickOverlapGroup={handleOverlapGroupClick}
                 index={eventIndex}
                 recording={event}
                 parent={groupData}
@@ -94,6 +104,14 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
             />
         ));
     };
+
+    const onGroupWrapperClick = useCallback(
+        (e) => {
+            handleSelectionBoxClick(e);
+            handleOverlapGroupClick(e);
+        },
+        [handleOverlapGroupClick, handleSelectionBoxClick]
+    );
 
     return (
         <Group>
@@ -106,7 +124,8 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
                 onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
                 onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
                 width={groupWidth}
-                onClick={handleSelectionBoxClick}
+                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                onClick={onGroupWrapperClick}
             >
                 <Rect
                     ref={groupElmRef}
