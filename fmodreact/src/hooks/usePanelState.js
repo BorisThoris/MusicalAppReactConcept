@@ -8,6 +8,7 @@ const initialState = {};
 export const PARAMS_PANEL_ID = 'PARAMS_PANEL';
 export const INSTRUMENTS_PANEL_ID = 'INSTRUMENTS_PANEL';
 export const SELECTIONS_PANEL_ID = 'SELECTIONS_PANEL';
+export const INSTRUMENT_LAYER_PANEL_ID = 'INSTRUMENT_LAYER_PANEL';
 
 const panelReducer = (state, action) => {
     switch (action.type) {
@@ -65,6 +66,20 @@ export const PanelProvider = ({ children }) => {
         [closeParamsPanel, openPanel]
     );
 
+    const closeInstrumentLayerPanel = useCallback(
+        (payload) => {
+            closePanel(INSTRUMENT_LAYER_PANEL_ID);
+        },
+        [closePanel]
+    );
+
+    const openInstrumentLayerPanel = useCallback(
+        (payload) => {
+            openPanel({ id: INSTRUMENT_LAYER_PANEL_ID, ...payload });
+        },
+        [openPanel]
+    );
+
     const openSelectionsPanel = useCallback(
         (payload) => {
             closeParamsPanel(); // Close ParamsPanel if open
@@ -75,9 +90,11 @@ export const PanelProvider = ({ children }) => {
 
     const value = useMemo(
         () => ({
+            closeInstrumentLayerPanel,
             closePanel,
             closeParamsPanel,
             focusedEvent,
+            openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,
             openParamsPanel,
@@ -88,14 +105,16 @@ export const PanelProvider = ({ children }) => {
             setFocusedEvent
         }),
         [
-            panels,
-            focusedEvent,
-            openPanel,
+            closeInstrumentLayerPanel,
             closePanel,
-            openParamsPanel,
             closeParamsPanel,
+            focusedEvent,
+            openInstrumentLayerPanel,
             openInstrumentsPanel,
-            openSelectionsPanel
+            openPanel,
+            openParamsPanel,
+            openSelectionsPanel,
+            panels
         ]
     );
 

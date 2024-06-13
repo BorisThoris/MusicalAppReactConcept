@@ -22,6 +22,9 @@ export const ParamsPanel = () => {
 
     const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
 
+    console.log('test');
+    console.log(overlapGroup);
+
     const {
         deleteOverlapGroup,
         deleteRecording,
@@ -30,7 +33,7 @@ export const ParamsPanel = () => {
         onDuplicateGroup,
         setNewTimeout,
         updateOverlapGroupTimes
-    } = useEventHandlers({ overlapGroup });
+    } = useEventHandlers(overlapGroup);
 
     const targetEvents = targetInRecordings?.events;
     const targetEventsLength = Object.keys(targetEvents || {}).length;

@@ -5,6 +5,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { recreateEvents } from '../globalHelpers/createSound';
 import useOverlapCalculator from '../hooks/useOverlapCalculator/useOverlapCalculator';
 
+export const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '�', Piano: '🎹', Tambourine: '🎵' };
+
 function findDifferences(obj1, obj2, parentKey = '') {
     if (obj1 === obj2) return;
 
@@ -92,7 +94,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 let savedOverlapGroups = JSON.parse(savedData);
 
                 savedOverlapGroups = recreateEvents(savedOverlapGroups);
-
                 setOverlapGroups(savedOverlapGroups);
             }
             setLocalLoaded(true);
@@ -142,8 +143,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         },
         [overlapGroups, pushToHistory]
     );
-
-    console.log(overlapGroups);
 
     const flatOverlapGroups = useMemo(() => {
         const flattenEvents = (group) => {

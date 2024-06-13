@@ -9,7 +9,9 @@ import Piano from './components/Piano/Piano';
 import Tambourine from './components/Tambourine/Tambourine';
 import { gSystem } from './fmodLogic';
 import { PanelProvider } from './hooks/usePanelState';
+import { CustomCursorProvider } from './providers/CursorProvider';
 import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
+import { PaintingProvider } from './providers/PaintingProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
 import { SelectionProvider } from './providers/SelectionsProvider';
 import { TimelineProvider } from './providers/TimelineProvider';
@@ -53,26 +55,30 @@ function App() {
 
     return (
         <InstrumentRecordingsProvider>
-            <TimelineProvider>
+            <CustomCursorProvider initialVisibility={false}>
                 <PanelProvider>
-                    <RecordingsPlayerProvider>
-                        <SelectionProvider>
-                            <Router>
-                                <TopNav />
+                    <PaintingProvider>
+                        <TimelineProvider>
+                            <RecordingsPlayerProvider>
+                                <SelectionProvider>
+                                    <Router>
+                                        <TopNav />
 
-                                <Routes>
-                                    <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                    <Route path="/guitar" element={<Guitar />} />
-                                    <Route path="/piano" element={<Piano />} />
-                                    <Route path="/tambourine" element={<Tambourine />} />
-                                    <Route path="/drums" element={<Drums />} />
-                                    <Route path="/editor" element={<Editor />} />
-                                </Routes>
-                            </Router>
-                        </SelectionProvider>
-                    </RecordingsPlayerProvider>
+                                        <Routes>
+                                            <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                            <Route path="/guitar" element={<Guitar />} />
+                                            <Route path="/piano" element={<Piano />} />
+                                            <Route path="/tambourine" element={<Tambourine />} />
+                                            <Route path="/drums" element={<Drums />} />
+                                            <Route path="/editor" element={<Editor />} />
+                                        </Routes>
+                                    </Router>
+                                </SelectionProvider>
+                            </RecordingsPlayerProvider>
+                        </TimelineProvider>
+                    </PaintingProvider>
                 </PanelProvider>
-            </TimelineProvider>
+            </CustomCursorProvider>
         </InstrumentRecordingsProvider>
     );
 }

@@ -1,58 +1,65 @@
+import { isNaN } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useState } from 'react';
-import { TimeMarker } from './Panel.styles';
 
 const TimeControl = ({ endTime, onModifyStartTime, startTime }) => {
-    const [isAdjusting, setIsAdjusting] = useState(false);
-    const [adjustmentType, setAdjustmentType] = useState(null);
-
-    const handleMouseDown = useCallback((action) => {
-        setIsAdjusting(true);
-        setAdjustmentType(action);
-    }, []);
-
-    const handleMouseUp = useCallback(() => {
-        setIsAdjusting(false);
-        setAdjustmentType(null);
-    }, []);
+    const [tempStartTime, setTempStartTime] = useState(0);
 
     useEffect(() => {
-        let intervalId;
-        if (isAdjusting && adjustmentType) {
-            intervalId = setInterval(() => {
-                const delta = adjustmentType === 'increment' ? 0.01 : -0.01;
-                onModifyStartTime(delta);
-            }, 100);
-        }
-        return () => clearInterval(intervalId);
-    }, [isAdjusting, adjustmentType, onModifyStartTime]);
+        setTempStartTime(startTime && startTime !== null ? startTime.toFixed(2) : 0);
+    }, [startTime]);
 
-    const increment = useCallback(() => {
-        handleMouseDown('increment');
-    }, [handleMouseDown]);
+    useEffect(() => {}, [endTime]);
 
-    const decrement = useCallback(() => {
-        handleMouseDown('decrement');
-    }, [handleMouseDown]);
+    const handleStartTimeChange = useCallback(
+        (e) => {
+            const { value } = e.target;
+            if (/^\d*\.?\d{0,2}$/.test(value)) {
+                setTempStartTime(value);
+                const numericValue = parseFloat(value);
+                if (!isNaN(numericValue)) {
+                    onModifyStartTime(numericValue - startTime);
+                }
+            }
+        },
+        [onModifyStartTime, startTime]
+    );
+
+    const incrementStartTime = useCallback(() => {
+        const newValue = parseFloat(tempStartTime) + 0.01;
+        setTempStartTime(newValue.toFixed(2));
+        onModifyStartTime(0.01);
+    }, [onModifyStartTime, tempStartTime]);
+
+    const decrementStartTime = useCallback(() => {
+        const newValue = parseFloat(tempStartTime) - 0.01;
+        setTempStartTime(newValue.toFixed(2));
+        onModifyStartTime(-0.01);
+    }, [onModifyStartTime, tempStartTime]);
 
     return (
-        <TimeMarker>
+        <div>
             <div>
-                <button onMouseDown={decrement} onMouseUp={handleMouseUp}>
-                    -
-                </button>
-                <button onMouseDown={increment} onMouseUp={handleMouseUp}>
-                    +
-                </button>
-                <div>Start: {startTime}</div>
+                <span>Start:</span>
+                <button onClick={decrementStartTime}>-</button>
+                <input
+                    type="text"
+                    value={tempStartTime}
+                    onChange={handleStartTimeChange}
+                    style={{ textAlign: 'center', width: '50px' }}
+                />
+                <button onClick={incrementStartTime}>+</button>
             </div>
-            <div>End: {endTime}</div>
-        </TimeMarker>
+            <div>
+                <div>End: {endTime}</div>
+            </div>
+        </div>
     );
 };
 
 TimeControl.propTypes = {
     endTime: PropTypes.number.isRequired,
+    onModifyEndTime: PropTypes.func.isRequired,
     onModifyStartTime: PropTypes.func.isRequired,
     startTime: PropTypes.number.isRequired
 };

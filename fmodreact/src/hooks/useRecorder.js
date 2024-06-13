@@ -6,7 +6,7 @@ import { INSTRUMENTS_PANEL_ID, PanelContext } from './usePanelState';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 
-const useRecorder = ({ instrumentName }) => {
+const useRecorder = ({ instrumentName } = { instrumentName: '' }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const { addRecording, resetRecordings } = useInstrumentRecordingsOperations();
@@ -34,6 +34,15 @@ const useRecorder = ({ instrumentName }) => {
         [isRecording, addRecording, instrumentLayer, startTime, x]
     );
 
+    const recordEventNoVerify = useCallback(
+        // eslint-disable-next-line no-shadow
+        ({ event, instrumentName, x }) => {
+            const elapsedTime = x / pixelToSecondRatio;
+            addRecording(event, instrumentLayer || instrumentName, elapsedTime, null);
+        },
+        [addRecording, instrumentLayer]
+    );
+
     useEffect(() => {
         const checkRecordingTimeout = () => {
             if (isRecording) {
@@ -52,6 +61,7 @@ const useRecorder = ({ instrumentName }) => {
     return {
         isRecording,
         recordEvent,
+        recordEventNoVerify,
         toggleRecording
     };
 };

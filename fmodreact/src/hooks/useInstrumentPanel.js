@@ -1,7 +1,10 @@
 import { useCallback, useContext, useEffect, useRef } from 'react';
+import { useCustomCursorContext } from '../providers/CursorProvider';
 import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from './usePanelState';
 
-export const useInstrumentPanel = (parentGroupName, timelineY, cursorPos, timelineState) => {
+export const useInstrumentPanel = (parentGroupName, timelineY, timelineState) => {
+    const { cursorPos } = useCustomCursorContext();
+
     const { closePanel, closeParamsPanel, openPanel, panels } = useContext(PanelContext);
     const openInstrumentPanelTimeoutRef = useRef();
 

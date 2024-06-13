@@ -72,6 +72,7 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
                 openSelectionsPanel({ y: groupY });
             } else {
                 const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
+
                 openParamsPanel({ index, instrumentName, overlapGroup: groupData, x: groupX, y: groupY });
             }
         },
@@ -126,6 +127,7 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
                 width={groupWidth}
                 // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                 onClick={onGroupWrapperClick}
+                // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
             >
                 <Rect
                     ref={groupElmRef}

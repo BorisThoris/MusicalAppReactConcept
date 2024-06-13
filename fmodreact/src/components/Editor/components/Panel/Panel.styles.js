@@ -95,7 +95,6 @@ export const Timeline = styled.div`
 `;
 
 export const TimeMarker = styled.div`
-    ${flexCenter};
     justify-content: space-between;
     flex-direction: column;
     font-weight: bold;

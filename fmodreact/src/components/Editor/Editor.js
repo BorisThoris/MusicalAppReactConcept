@@ -1,7 +1,14 @@
 import React, { useContext } from 'react';
 import styled from 'styled-components';
-import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID, SELECTIONS_PANEL_ID } from '../../hooks/usePanelState';
+import {
+    INSTRUMENT_LAYER_PANEL_ID,
+    INSTRUMENTS_PANEL_ID,
+    PanelContext,
+    PARAMS_PANEL_ID,
+    SELECTIONS_PANEL_ID
+} from '../../hooks/usePanelState';
 import Header from './components/Header/Header';
+import { InstrumentLayerPanel } from './components/InstrumentLayerPanel/InstrumentLayerPanel';
 import { ParamsPanel } from './components/ParamsPanel/ParamsPanel';
 import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
 import { SelectionsPanel } from './components/SelectionsPanel/SelectionsPanel';
@@ -30,19 +37,25 @@ const Editor = () => {
 
             case SELECTIONS_PANEL_ID:
                 return <SelectionsPanel />;
+
+            case INSTRUMENT_LAYER_PANEL_ID:
+                return <InstrumentLayerPanel />;
             default:
                 return null;
         }
     };
 
     return (
-        <StyledEditorWrapper>
-            <Header />
-            <StyledTimeline>
-                <Timelines />
-                {panelsArr.map(renderPanel)}
-            </StyledTimeline>
-        </StyledEditorWrapper>
+        <>
+            <StyledEditorWrapper>
+                <Header />
+                <StyledTimeline>
+                    <Timelines />
+                </StyledTimeline>
+            </StyledEditorWrapper>
+
+            {panelsArr.map(renderPanel)}
+        </>
     );
 };
 

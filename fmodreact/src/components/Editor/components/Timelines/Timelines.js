@@ -1,23 +1,30 @@
 import React, { useContext, useRef } from 'react';
-import { Layer, Rect, Stage } from 'react-konva';
+import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
+import { useAddInstrumentLayer } from '../../../../hooks/useAddInstrumentLayer';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
+import { Cursor } from '../Cursor/Cursor';
 import { DragSelection } from '../DragSelection';
+import { HistoryControls } from '../HistoryControls/HistoryButtons';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
+import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
+import { PlaybackControls } from '../PlaybackControls/PlaybackControls';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
 const Timelines = React.memo(() => {
     const stageRef = useRef(null);
-    const { history, recordings, redo, redoHistory, undo } = useContext(InstrumentRecordingsContext);
-    const { playbackStatus, replayAllRecordedSounds } = useContext(RecordingsPlayerContext);
-    const { endTime: selectionEndTime, highestYLevel, startTime: selectionStartTime } = useContext(SelectionContext);
+
+    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { playbackStatus } = useContext(RecordingsPlayerContext);
+
     const { timelineState } = useContext(TimelineContext);
-    const { furthestEndTime, furthestEndTimes, panelCompensationOffset } = timelineState;
+    const { onAddLayer } = useAddInstrumentLayer();
+
+    const { furthestEndTime, furthestEndTimes } = timelineState;
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
@@ -27,41 +34,31 @@ const Timelines = React.memo(() => {
 
     return (
         <>
-            <button onClick={replayAllRecordedSounds}>{playbackStatus.isPlaying ? 'Pause' : 'Start'}</button>
-            {history.length > 0 && <button onClick={undo}>Undo</button>}
-            {redoHistory.length > 0 && <button onClick={redo}>Redo</button>}
+            <PaintingTopBar />
+            <PlaybackControls />
+            <HistoryControls />
+
+            <button onClick={onAddLayer}>Add Instrument Layer</button>
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
+                {recordingsArr.map(([parentGroupName, events], index) => (
+                    <InstrumentTimeline
+                        key={parentGroupName}
+                        instrumentName={parentGroupName}
+                        events={events}
+                        index={index}
+                        markersHeight={markersHeight}
+                    />
+                ))}
+
+                <Cursor />
+
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}
                         shouldTrack={playbackStatus.isPlaying}
                     />
                 </Layer>
-
-                {selectionEndTime && selectionStartTime && (
-                    <Layer>
-                        <Rect
-                            // For Debugging Purposes uncomment
-                            fill={'transparent'}
-                            opacity={0.3}
-                            width={(selectionEndTime - selectionStartTime) * pixelToSecondRatio}
-                            height={highestYLevel}
-                            x={selectionStartTime * pixelToSecondRatio - panelCompensationOffset.x}
-                            draggable
-                        />
-                    </Layer>
-                )}
-
-                {recordingsArr.map(([parentGroupName, events], index) => (
-                    <InstrumentTimeline
-                        key={parentGroupName}
-                        parentGroupName={parentGroupName}
-                        events={events}
-                        index={index}
-                        markersHeight={markersHeight}
-                    />
-                ))}
 
                 <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
 

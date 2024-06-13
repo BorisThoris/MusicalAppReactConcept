@@ -208,7 +208,7 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
     return groups;
 };
 
-export const recreateEvents = ({ existingInstrumentName = undefined, groupsToRecreate, timeOffset = 0 }) =>
+export const recreateEvents = ({ existingInstrumentName = false, groupsToRecreate, timeOffset = 0 }) =>
     groupsToRecreate.map((existingGroup) => {
         const mainEvent = createEvent(
             {

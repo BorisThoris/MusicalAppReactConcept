@@ -66,9 +66,6 @@ const useRecordingsPlayer = () => {
         (instrument) => {
             const instrumentRecordings = flattenRecordings(overlapGroups[instrument] || {});
 
-            console.log('instrumentRecordings');
-            console.log(instrumentRecordings);
-
             Object.values(instrumentRecordings).forEach(({ eventInstance, startTime }) => {
                 if (startTime > trackerPosition / pixelToSecondRatio) {
                     setNewTimeout(

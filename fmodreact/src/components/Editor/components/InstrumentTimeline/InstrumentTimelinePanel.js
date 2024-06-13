@@ -3,13 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Text } from 'react-konva/';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
-const InstrumentTimelinePanel = ({
-    isLocked,
-    parentGroupName,
-    replayInstrumentRecordings,
-    toggleLocked,
-    toggleMute
-}) => {
+const InstrumentTimelinePanel = ({ parentGroupName, replayInstrumentRecordings, toggleMute }) => {
     const { deleteAllRecordingsForInstrument } = useInstrumentRecordingsOperations();
     const { duplicateInstrument } = useInstrumentRecordingsOperations();
 
@@ -35,7 +29,6 @@ const InstrumentTimelinePanel = ({
             { callback: onPlay, icon: '▶' },
             { callback: onDelete, icon: '🗑️' },
             { callback: onMute, icon: '🔇' },
-            { callback: toggleLocked, icon: isLocked ? '🔒' : '🔓' },
             { callback: onCopy, icon: '📄' }
         ];
 
@@ -56,7 +49,7 @@ const InstrumentTimelinePanel = ({
         }
 
         return baseIcons;
-    }, [parentGroupName, isLocked, onCopy, onDelete, onMute, onPlay, toggleLocked]);
+    }, [parentGroupName, onCopy, onDelete, onMute, onPlay]);
 
     const [widths, setWidths] = useState(Array(icons.length).fill(0));
     const [heights, setHeights] = useState(Array(icons.length).fill(0));

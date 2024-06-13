@@ -12,7 +12,7 @@ export const PlayInstrumentsPanel = () => {
     const { closePanel, panels } = useContext(PanelContext);
     const { instrumentLayer, x, y } = panels[INSTRUMENTS_PANEL_ID];
 
-    const instrumentName = instrumentLayer.split(' ')[0];
+    const instrumentName = instrumentLayer?.split(' ')[0];
 
     const renderInstrument = useCallback(() => {
         switch (instrumentName) {
@@ -24,15 +24,18 @@ export const PlayInstrumentsPanel = () => {
                 return <Piano />;
             case 'Tambourine':
                 return <Tambourine />;
-
             default:
-                break;
+                return null;
         }
     }, [instrumentName]);
 
     const handleClose = useCallback(() => {
         closePanel(INSTRUMENTS_PANEL_ID);
     }, [closePanel]);
+
+    if (!instrumentName) {
+        return null;
+    }
 
     return (
         <PanelWrapper

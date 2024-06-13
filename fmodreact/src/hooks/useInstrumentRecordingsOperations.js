@@ -100,10 +100,6 @@ export const useInstrumentRecordingsOperations = () => {
 
         newGroup.locked = locked;
 
-        console.clear();
-        console.log('newGroup');
-        console.log(newGroup);
-
         return newGroup;
     };
 
@@ -143,6 +139,7 @@ export const useInstrumentRecordingsOperations = () => {
 
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
+
                 updatedGroups[newGroup.instrumentName][newGroup.id] = newGroup;
 
                 return updatedGroups;
@@ -205,7 +202,6 @@ export const useInstrumentRecordingsOperations = () => {
         (data) => {
             const updateStartTime = ({ newStartTime, recording }, recordingsCopy) => {
                 const { eventLength, id: index, instrumentName } = recording;
-
                 const instrumentRecordings = recordingsCopy[instrumentName];
 
                 const searchAndUpdateRecording = (recordings, id, newStart) => {
@@ -213,8 +209,10 @@ export const useInstrumentRecordingsOperations = () => {
                     const recording = recordings[recordingKey];
 
                     if (recording) {
-                        recording.startTime = newStart;
-                        recording.endTime = recording.startTime + eventLength;
+                        const roundedStartTime = parseFloat(newStart.toFixed(2));
+                        const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
+                        recording.startTime = roundedStartTime;
+                        recording.endTime = roundedEndTime;
                     }
 
                     return Object.values(recordings).some(
@@ -365,7 +363,7 @@ export const useInstrumentRecordingsOperations = () => {
                 eventInstance,
                 eventPath,
                 instrumentName,
-                startTime: elapsedTime
+                startTime: startOffset || startOffset === 0 ? elapsedTime : startTime
             });
 
             // DIRTY GROUP FIX
@@ -431,6 +429,34 @@ export const useInstrumentRecordingsOperations = () => {
         [resetRecordingsForInstrument, setOverlapGroups]
     );
 
+    const insertNewInstrument = useCallback(
+        (instrumentName) => {
+            const nameRegex = /^(.*?)(?:\s+(\d+))?$/;
+            const match = instrumentName.match(nameRegex);
+
+            const baseName = match ? match[1] : instrumentName;
+            let number = match && match[2] ? parseInt(match[2], 10) : 1;
+            let newInstrumentName = `${baseName} ${number}`;
+
+            setOverlapGroups((prevGroups) => {
+                // Check if the new instrument name already exists and increment the number if it does
+                while (Object.prototype.hasOwnProperty.call(prevGroups, newInstrumentName)) {
+                    number += 1;
+                    newInstrumentName = `${baseName} ${number}`;
+                }
+
+                // Insert the new instrument layer as an empty object
+                return {
+                    ...prevGroups,
+                    [newInstrumentName]: {}
+                };
+            });
+
+            return newInstrumentName;
+        },
+        [setOverlapGroups]
+    );
+
     return {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
@@ -440,6 +466,7 @@ export const useInstrumentRecordingsOperations = () => {
         duplicateMultipleOverlapGroups,
         duplicateOverlapGroup,
         getEventById,
+        insertNewInstrument,
         lockOverlapGroupById,
         resetRecordings,
         updateOverlapGroupTimes,

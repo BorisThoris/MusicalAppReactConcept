@@ -4,7 +4,7 @@ import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrume
 import { PanelContext } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
 
-export const useEventHandlers = (targetedGroup) => {
+export const useEventHandlers = (overlapGroup) => {
     const { closeParamsPanel: closePanel, setFocusedEvent } = useContext(PanelContext);
 
     const {
@@ -19,12 +19,13 @@ export const useEventHandlers = (targetedGroup) => {
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
     const resetFocusedEvent = useCallback(() => setFocusedEvent(-1), [setFocusedEvent]);
     const deleteOverlapGroup = useCallback(
-        () => deleteOverlapGroupFunc(targetedGroup),
-        [deleteOverlapGroupFunc, targetedGroup]
+        () => deleteOverlapGroupFunc(overlapGroup),
+        [deleteOverlapGroupFunc, overlapGroup]
     );
+
     const onDuplicateGroup = useCallback(
-        () => duplicateOverlapGroup({ overlapGroup: targetedGroup }),
-        [duplicateOverlapGroup, targetedGroup]
+        () => duplicateOverlapGroup({ overlapGroup }),
+        [duplicateOverlapGroup, overlapGroup]
     );
 
     return {

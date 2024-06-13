@@ -3,45 +3,38 @@ import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import { Layer, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
-import { useCustomCursor } from '../../../../hooks/useCustomCursor';
-import { useInstrumentPanel } from '../../../../hooks/useInstrumentPanel';
-import { PanelContext } from '../../../../hooks/usePanelState';
-import { useRipples } from '../../../../hooks/useRipples';
-// Adjust the path as necessary
+import { useCustomCursorContext } from '../../../../providers/CursorProvider';
+import { usePaintings } from '../../../../providers/PaintingProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
+import { Cursor } from '../Cursor/Cursor';
 import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
+import { useTimelinePointerEffects } from './useTimelinePointerEffects';
 
-const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGroupName }) => {
-    const { isLocked, mutedInstruments, replayInstrumentRecordings, setTrackerPosition, toggleMute } =
-        useContext(RecordingsPlayerContext);
+const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
+    const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
-    const { closeParamsPanel } = useContext(PanelContext);
-    const { addRipple, removeRipple, ripples } = useRipples();
-
-    const timelineRef = useRef();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
+    const { paintEvent, paintingTarget } = usePaintings();
+
+    const isInstrumentSelected = paintingTarget?.instrument ? instrumentName.includes(paintingTarget.instrument) : true;
+
+    const timelineRef = useRef();
     const timelineY = TimelineHeight * index + markersAndTrackerOffset;
-    const isMuted = mutedInstruments.includes(parentGroupName);
+    const isMuted = mutedInstruments.includes(instrumentName);
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
-    const fillColor = currentPlayingInstrument === parentGroupName ? 'green' : 'transparent';
+    const fillColor = currentPlayingInstrument === instrumentName ? 'green' : 'transparent';
 
-    const { Cursor, cursorPos, handleClick, handleMouseEnter, handleMouseLeave, handleMouseMove } = useCustomCursor({
-        parentY: timelineY
+    const { cursorPos, handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
+    const cursorX = cursorPos.screenX;
+
+    const { onMouseMove, onPointerDown, onPointerUp, removeRipple, ripples } = useTimelinePointerEffects({
+        index,
+        instrumentName
     });
-
-    const { clearSelection } = useContext(SelectionContext);
-
-    const { cancelDelayedOpen, closeInstrumentPanel, setupDelayedOpen } = useInstrumentPanel(
-        parentGroupName,
-        timelineY,
-        cursorPos,
-        timelineState
-    );
 
     useEffect(() => {
         if (timelineRef.current) {
@@ -53,48 +46,15 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
         }
     }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const onPointerDown = useCallback(
-        (evt) => {
-            handleClick();
-            closeInstrumentPanel();
-            setTrackerPosition(cursorPos.screenX);
-            addRipple(cursorPos.x, cursorPos.y);
-
-            if (evt.evt.button === 0 && !evt.evt.ctrlKey) {
-                clearSelection();
+    const onTimelinePointerDown = useCallback(
+        (e) => {
+            if (paintingTarget) {
+                paintEvent({ instrumentName, x: cursorX });
             }
 
-            closeParamsPanel();
-
-            setupDelayedOpen(() => {
-                addRipple(cursorPos.x, cursorPos.y, 'red');
-            }, 500);
+            onPointerDown(e);
         },
-        [
-            handleClick,
-            closeInstrumentPanel,
-            setTrackerPosition,
-            cursorPos.screenX,
-            cursorPos.x,
-            cursorPos.y,
-            addRipple,
-            closeParamsPanel,
-            setupDelayedOpen,
-            clearSelection
-        ]
-    );
-
-    const onPointerUp = useCallback(() => {
-        handleClick();
-        cancelDelayedOpen();
-    }, [cancelDelayedOpen, handleClick]);
-
-    const onMouseMove = useCallback(
-        (evt) => {
-            cancelDelayedOpen();
-            handleMouseMove(evt);
-        },
-        [cancelDelayedOpen, handleMouseMove]
+        [paintingTarget, onPointerDown, paintEvent, instrumentName, cursorX]
     );
 
     return (
@@ -104,10 +64,11 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
             onMouseLeave={handleMouseLeave}
             onMouseMove={onMouseMove}
             onMouseEnter={handleMouseEnter}
+            draggable={false}
         >
             <InstrumentTimelinePanelComponent
                 timelineHeight={TimelineHeight}
-                parentGroupName={parentGroupName}
+                parentGroupName={instrumentName}
                 replayInstrumentRecordings={replayInstrumentRecordings}
                 toggleMute={toggleMute}
                 toggleLocked={toggleLock}
@@ -118,10 +79,12 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
                 offset={timelineState.panelCompensationOffset}
                 height={TimelineHeight}
                 width={timelineWidth}
-                fill={isMuted ? 'red' : fillColor}
-                onPointerDown={onPointerDown}
+                // eslint-disable-next-line no-nested-ternary
+                fill={isInstrumentSelected ? (isMuted ? 'darkred' : 'lightgray') : isMuted ? 'red' : fillColor}
                 onPointerUp={onPointerUp}
                 id={`Timeline-${timelineY}`}
+                onMouseMove={onMouseMove}
+                onPointerDown={onTimelinePointerDown}
             />
 
             <TimelineEvents eventGroups={events} timelineHeight={TimelineHeight} timelineY={timelineY} />
@@ -131,8 +94,6 @@ const InstrumentTimeline = React.memo(({ events, index, markersHeight, parentGro
             )}
 
             <Ripples ripples={ripples} removeRipple={removeRipple} />
-
-            {Cursor}
         </Layer>
     );
 });
@@ -153,8 +114,8 @@ InstrumentTimeline.propTypes = {
         })
     ).isRequired,
     index: PropTypes.number.isRequired,
-    markersHeight: PropTypes.number.isRequired,
-    parentGroupName: PropTypes.string.isRequired
+    instrumentName: PropTypes.string.isRequired,
+    markersHeight: PropTypes.number.isRequired
 };
 
 export default InstrumentTimeline;

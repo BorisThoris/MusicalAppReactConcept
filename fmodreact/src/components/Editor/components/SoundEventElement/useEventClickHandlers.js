@@ -2,6 +2,8 @@ import { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { useCustomCursorContext } from '../../../../providers/CursorProvider';
+import { usePaintings } from '../../../../providers/PaintingProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
@@ -15,6 +17,8 @@ const usePanelControls = () => {
 
 export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
     const { eventInstance, index, instrumentName, startTime } = recording;
+    const { paintEvent, paintingTarget } = usePaintings();
+    const { cursorPos } = useCustomCursorContext();
     const { clearSelection, openParamsPanel, openSelectionsPanel, selectElement, timelineState } = usePanelControls();
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
@@ -78,8 +82,22 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
             } else if (!isParentPresent) {
                 openInstrumentParamsPanel();
             }
+
+            if (paintingTarget) {
+                paintEvent({ instrumentName: recording.instrumentName, x: cursorPos.screenX });
+            }
         },
-        [parent, clearSelection, handleClickOverlapGroup, openSelectionPanel, openInstrumentParamsPanel]
+        [
+            parent,
+            clearSelection,
+            handleClickOverlapGroup,
+            cursorPos,
+            paintingTarget,
+            openSelectionPanel,
+            openInstrumentParamsPanel,
+            paintEvent,
+            recording.instrumentName
+        ]
     );
 
     const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
