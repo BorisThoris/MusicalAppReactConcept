@@ -54,9 +54,9 @@ function App() {
     }
 
     return (
-        <InstrumentRecordingsProvider>
-            <CustomCursorProvider initialVisibility={false}>
-                <PanelProvider>
+        <PanelProvider>
+            <InstrumentRecordingsProvider>
+                <CustomCursorProvider initialVisibility={false}>
                     <PaintingProvider>
                         <TimelineProvider>
                             <RecordingsPlayerProvider>
@@ -77,9 +77,9 @@ function App() {
                             </RecordingsPlayerProvider>
                         </TimelineProvider>
                     </PaintingProvider>
-                </PanelProvider>
-            </CustomCursorProvider>
-        </InstrumentRecordingsProvider>
+                </CustomCursorProvider>
+            </InstrumentRecordingsProvider>
+        </PanelProvider>
     );
 }
 

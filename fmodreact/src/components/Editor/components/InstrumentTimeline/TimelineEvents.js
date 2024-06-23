@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Group } from 'react-konva';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
-import OverlapGroupElement from '../OverlapGroupElement/OverlapGroupElement';
+import { OverlapGroupElement } from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {

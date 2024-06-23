@@ -5,18 +5,19 @@ import {
     INSTRUMENTS_PANEL_ID,
     PanelContext,
     PARAMS_PANEL_ID,
+    SAVE_PANEL_ID,
     SELECTIONS_PANEL_ID
 } from '../../hooks/usePanelState';
 import Header from './components/Header/Header';
 import { InstrumentLayerPanel } from './components/InstrumentLayerPanel/InstrumentLayerPanel';
 import { ParamsPanel } from './components/ParamsPanel/ParamsPanel';
 import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
+import { SavePanel } from './components/SavePanel/SavePanel';
 import { SelectionsPanel } from './components/SelectionsPanel/SelectionsPanel';
 import Timelines from './components/Timelines/Timelines';
 
 const StyledEditorWrapper = styled.div`
     background-color: white;
-    opacity: 0.7;
 `;
 
 const StyledTimeline = styled.div`
@@ -40,6 +41,10 @@ const Editor = () => {
 
             case INSTRUMENT_LAYER_PANEL_ID:
                 return <InstrumentLayerPanel />;
+
+            case SAVE_PANEL_ID:
+                return <SavePanel />;
+
             default:
                 return null;
         }

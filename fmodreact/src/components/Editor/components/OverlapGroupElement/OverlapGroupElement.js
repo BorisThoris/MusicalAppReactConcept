@@ -24,7 +24,7 @@ const LOCK_OFFSET_Y = -10;
 const TEXT_FONT_SIZE = 18;
 
 // OverlapGroupElement component definition
-const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, timelineY }) => {
+export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, timelineY }) => {
     const groupElmRef = useRef();
     const [isDragged, setIsDragged] = useState(false);
     const { timelineState } = useContext(TimelineContext);
@@ -33,7 +33,7 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
     const { openParamsPanel, openSelectionsPanel } = useContext(PanelContext);
 
     const { endTime, events, id, instrumentName, locked, startTime } = groupData;
-    const eventsArray = Object.values(events);
+    const eventsArray = Object.values(events).sort((a, b) => a.startTime - b.startTime);
 
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
     const startingPositionInTimeline = startTime * pixelToSecondRatio;
@@ -90,8 +90,11 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
     }, []);
 
     const renderEvents = () => {
-        // Convert the events object into an array for rendering
+        // Calculate height increment
+        const maxEventHeight = timelineHeight * 0.8;
+        const eventHeightIncrement = maxEventHeight / eventsArray.length;
 
+        // Convert the events object into an array for rendering
         return eventsArray.map((event, eventIndex) => (
             <SoundEventElement
                 key={event.id}
@@ -99,7 +102,7 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
                 index={eventIndex}
                 recording={event}
                 parent={groupData}
-                timelineHeight={timelineHeight}
+                timelineHeight={eventHeightIncrement * (eventIndex + 1)}
                 timelineY={timelineY}
                 listening={!locked}
             />
@@ -108,10 +111,9 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
 
     const onGroupWrapperClick = useCallback(
         (e) => {
-            handleSelectionBoxClick(e);
             handleOverlapGroupClick(e);
         },
-        [handleOverlapGroupClick, handleSelectionBoxClick]
+        [handleOverlapGroupClick]
     );
 
     return (
@@ -125,20 +127,16 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
                 onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
                 onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
                 width={groupWidth}
-                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                 onClick={onGroupWrapperClick}
-                // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
             >
                 <Rect
                     ref={groupElmRef}
                     width={groupWidth}
                     height={timelineHeight * 0.8}
-                    fill={"isTargeted ? 'red' : GROUP_COLOR"}
                     opacity={1}
                     strokeWidth={GROUP_STROKE_WIDTH}
-                    stroke={GROUP_COLOR}
                 />
-                <Text x={TEXT_OFFSET_X} y={TEXT_OFFSET_Y} text={GROUP_TEXT} fontSize={TEXT_FONT_SIZE} fill="white" />
+
                 {isDragged && (
                     <>
                         <Group x={-elementXPosition}>{renderEvents()}</Group>
@@ -171,31 +169,4 @@ const OverlapGroupElement = React.memo(({ groupData, index, timelineHeight, time
     );
 }, isEqual);
 
-// PropTypes for component validation
-OverlapGroupElement.propTypes = {
-    canvasOffsetY: PropTypes.number.isRequired,
-    focusedEvent: PropTypes.number.isRequired,
-    groupData: PropTypes.shape({
-        endTime: PropTypes.number.isRequired,
-        events: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string.isRequired,
-                startTime: PropTypes.number.isRequired
-            })
-        ).isRequired,
-        id: PropTypes.string.isRequired,
-        instrumentName: PropTypes.string.isRequired,
-        locked: PropTypes.bool,
-        startTime: PropTypes.number.isRequired
-    }).isRequired,
-    index: PropTypes.number.isRequired,
-    isTargeted: PropTypes.bool.isRequired,
-    openParamsPanel: PropTypes.func.isRequired,
-    setFocusedEvent: PropTypes.func.isRequired,
-    timelineHeight: PropTypes.number.isRequired,
-    timelineY: PropTypes.number.isRequired,
-    updateStartTime: PropTypes.func.isRequired
-};
-
-// Export statement
 export default OverlapGroupElement;

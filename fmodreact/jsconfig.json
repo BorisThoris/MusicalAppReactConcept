@@ -5,10 +5,11 @@
         "moduleResolution": "node",
         "experimentalDecorators": true,
         "allowJs": true,
-        "outDir": "./dist",
         "checkJs": true,
         "jsx": "react",
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "noEmit": true
     },
     "include": [
         "src/*.js",
@@ -17,5 +18,10 @@
         "src/**/*.jsx",
         "src/App.js",
         "src/index.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "src/fmodLogic/*.js",
+        "src/fmodLogic/**/*.js"
     ]
 }

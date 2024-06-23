@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { recreateEvents } from '../globalHelpers/createSound';
 import useOverlapCalculator from '../hooks/useOverlapCalculator/useOverlapCalculator';
+import { PanelContext } from '../hooks/usePanelState';
 
 export const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '�', Piano: '🎹', Tambourine: '🎵' };
 
@@ -29,11 +30,11 @@ export const useInstrumentRecordings = () => useContext(InstrumentRecordingsCont
 export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
+    const { openSavePanel } = useContext(PanelContext);
 
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
 
-    const [localLoaded, setLocalLoaded] = useState(false);
     const prevOverlapGroupsRef = useRef({});
 
     const cleanUpMalformedEventGroups = (groups) => {
@@ -64,7 +65,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     };
 
     useEffect(() => {
-        if (!localLoaded) return;
+        if (Object.values(overlapGroups).length === 0) return;
 
         let newOverlapGroups = calculateOverlapsForAllInstruments();
 
@@ -78,38 +79,14 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             setOverlapGroups(newOverlapGroups);
             prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);
         }
-    }, [calculateOverlapsForAllInstruments, localLoaded, overlapGroups]);
+    }, [calculateOverlapsForAllInstruments, overlapGroups]);
 
-    // Second, use a separate effect to synchronize prevOverlapGroupsRef
     useEffect(() => {
-        if (localLoaded) {
+        if (Object.values(overlapGroups).length === 0) {
+            openSavePanel();
             prevOverlapGroupsRef.current = cloneDeep(overlapGroups);
         }
-    }, [overlapGroups, localLoaded]);
-
-    useEffect(() => {
-        if (!localLoaded) {
-            const savedData = localStorage.getItem('overlapGroups');
-            if (savedData) {
-                let savedOverlapGroups = JSON.parse(savedData);
-
-                savedOverlapGroups = recreateEvents(savedOverlapGroups);
-                setOverlapGroups(savedOverlapGroups);
-            }
-            setLocalLoaded(true);
-        }
-    }, [localLoaded, calculateOverlapsForAllInstruments]);
-
-    useEffect(() => {
-        if (localLoaded) {
-            const currentSavedStr = localStorage.getItem('overlapGroups');
-            const currentOverlapGroupsStr = JSON.stringify(overlapGroups);
-
-            if (currentSavedStr !== currentOverlapGroupsStr) {
-                localStorage.setItem('overlapGroups', currentOverlapGroupsStr);
-            }
-        }
-    }, [overlapGroups, localLoaded]);
+    }, [overlapGroups, openSavePanel]);
 
     const pushToHistory = useCallback((currentOverlapGroups) => {
         setHistory((prevHistory) => [...prevHistory, cloneDeep(currentOverlapGroups)]);

@@ -13,6 +13,7 @@ const EventHeader = ({ onDelete, onDuplicate, onPlay }) => {
 };
 
 EventHeader.propTypes = {
+    isSelected: PropTypes.bool.isRequired,
     onDelete: PropTypes.func.isRequired,
     onDuplicate: PropTypes.func.isRequired,
     onPlay: PropTypes.func.isRequired

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -14,17 +14,11 @@ export const ParamsPanel = () => {
     const { timelineState } = useContext(TimelineContext);
     const { panelsObj } = useContext(PanelContext);
     const { getEventById } = useInstrumentRecordingsOperations();
-
     const { overlapGroup, y } = panelsObj[`${PARAMS_PANEL_ID}`];
     const foundGroup = getEventById(overlapGroup.id);
-
-    const targetInRecordings = foundGroup;
-
-    const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings || {};
-
-    console.log('test');
-    console.log(overlapGroup);
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const targetInRecordings = foundGroup || {};
+    const { endTime, id, startTime: groupStartTime, startTime } = targetInRecordings;
     const {
         deleteOverlapGroup,
         deleteRecording,
@@ -34,18 +28,27 @@ export const ParamsPanel = () => {
         setNewTimeout,
         updateOverlapGroupTimes
     } = useEventHandlers(overlapGroup);
+    const hasParent = !!targetInRecordings.parentId;
 
-    const targetEvents = targetInRecordings?.events;
+    const targetEvents = useMemo(() => {
+        if (!hasParent) {
+            if (targetInRecordings.locked) {
+                return targetInRecordings.events;
+            }
+            return { [targetInRecordings.id]: targetInRecordings.events[targetInRecordings.id] };
+        }
+        return { [foundGroup.id]: { ...foundGroup } };
+    }, [hasParent, targetInRecordings, foundGroup]);
+
     const targetEventsLength = Object.keys(targetEvents || {}).length;
-
     const hasAnyEvents = targetEventsLength >= 1;
     const hasMoreThanOneEvent = targetEventsLength > 1;
 
     useEffect(() => {
-        if (!hasAnyEvents) {
+        if (!hasParent && !hasAnyEvents) {
             handleClose();
         }
-    }, [handleClose, hasAnyEvents, targetEvents]);
+    }, [handleClose, hasAnyEvents, hasParent]);
 
     const useReplayEvents = useCallback(() => {
         const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
@@ -65,50 +68,43 @@ export const ParamsPanel = () => {
     );
 
     const renderEvents = () => {
-        // Ensure targetEvents is treated as an array, converting if it's an object
         const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
-
-        return eventsArray.map((event) => {
-            // Function for deleting an event; defined inside map to access current event
-            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            const onDeleteNote = () => deleteRecording(event);
-
-            return (
-                <EventItem
-                    key={event.id}
-                    overlapGroup={targetInRecordings}
-                    event={event}
-                    onDelete={onDeleteNote}
-                    onPlay={handlePlayEvent}
-                />
-            );
-        });
+        return eventsArray.map((event) => (
+            <EventItem
+                key={event.id}
+                overlapGroup={targetInRecordings}
+                event={event}
+                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                onDelete={() => deleteRecording(event)}
+                onPlay={handlePlayEvent}
+            />
+        ));
     };
 
-    if (targetInRecordings)
-        return (
-            <PanelWrapper x={targetInRecordings.startTime * pixelToSecondRatio} y={y} timelineState={timelineState}>
-                <span>Group:</span>
-                <CloseIcon onClick={handleClose}>X</CloseIcon>
+    if (!targetInRecordings) return null;
 
-                {hasMoreThanOneEvent && (
-                    <>
-                        <FlexContainer>
-                            <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
-                            <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
-                            <DuplicateIcon onClick={onDuplicateGroup}>Dup</DuplicateIcon>
-                        </FlexContainer>
+    return (
+        <PanelWrapper x={targetInRecordings.startTime * pixelToSecondRatio} y={y} timelineState={timelineState}>
+            <span>Group:</span>
+            <CloseIcon onClick={handleClose}>X</CloseIcon>
 
-                        <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
+            {hasMoreThanOneEvent && (
+                <>
+                    <FlexContainer>
+                        <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
+                        <TrashIcon onClick={deleteOverlapGroup}>🗑️</TrashIcon>
+                        <DuplicateIcon onClick={onDuplicateGroup}>Dup</DuplicateIcon>
+                    </FlexContainer>
 
-                        <span>{targetEvents.length} Events:</span>
-                    </>
-                )}
+                    <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={modifyGroupStartTime} />
 
-                <FlexContainer>{renderEvents()}</FlexContainer>
-            </PanelWrapper>
-        );
-    return null;
+                    <span>{targetEvents.length} Events:</span>
+                </>
+            )}
+
+            <FlexContainer>{renderEvents()}</FlexContainer>
+        </PanelWrapper>
+    );
 };
 
 export default ParamsPanel;

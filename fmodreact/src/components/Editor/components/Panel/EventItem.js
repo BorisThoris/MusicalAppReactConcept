@@ -4,6 +4,7 @@ import instrumentRecordingOperationsHook, {
     useInstrumentRecordingsOperations
 } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import EventHeaderComponent from './EventHeader';
 import TimeControl from './TimeControl';
@@ -13,7 +14,10 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { getEventById, updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
     const { duplicateOverlapGroup } = instrumentRecordingOperationsHook();
 
-    const { endTime, eventInstance, id, params, parentId, startTime } = event;
+    const { isItemSelected, toggleItem } = useContext(SelectionContext);
+
+    const { endTime, eventInstance, id, locked, params, parentId, startTime } = event;
+    const isSelected = isItemSelected(id);
 
     const parent = getEventById(parentId);
 
@@ -28,6 +32,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     }, [duplicateOverlapGroup, event]);
 
     const handlePlay = useCallback(() => onPlay(eventInstance), [onPlay, eventInstance]);
+
     const focusEvent = useCallback(() => {
         setFocusedEvent(id);
     }, [id, setFocusedEvent]);
@@ -42,6 +47,12 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
         [event, startTime, updateStartTime]
     );
 
+    const onItemSelect = useCallback(() => {
+        toggleItem(event);
+    }, [event, toggleItem]);
+
+    const isGroupNotLocked = (parent && !parent.locked) || (!parentId && !locked);
+
     return (
         <div
             onMouseEnter={focusEvent}
@@ -51,9 +62,17 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
                 flexDirection: 'column'
             }}
         >
-            <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
+            {isGroupNotLocked && isSelected && <button onClick={onItemSelect}>{'Unselect'}</button>}
 
-            {!parent?.locked && (
+            <EventHeaderComponent
+                onPlay={handlePlay}
+                onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
+                isSelected={isSelected}
+            />
+
+            {isGroupNotLocked && (
+                // eslint-disable-next-line prettier/prettier
                 <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
             )}
 

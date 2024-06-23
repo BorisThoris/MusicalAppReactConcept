@@ -9,6 +9,7 @@ export const PARAMS_PANEL_ID = 'PARAMS_PANEL';
 export const INSTRUMENTS_PANEL_ID = 'INSTRUMENTS_PANEL';
 export const SELECTIONS_PANEL_ID = 'SELECTIONS_PANEL';
 export const INSTRUMENT_LAYER_PANEL_ID = 'INSTRUMENT_LAYER_PANEL';
+export const SAVE_PANEL_ID = 'SAVE_PANEL';
 
 const panelReducer = (state, action) => {
     switch (action.type) {
@@ -52,7 +53,7 @@ export const PanelProvider = ({ children }) => {
     const openParamsPanel = useCallback(
         (payload) => {
             closePanel(INSTRUMENTS_PANEL_ID);
-            closePanel(SELECTIONS_PANEL_ID); // Close SelectionsPanel if open
+            closePanel(SELECTIONS_PANEL_ID);
             openPanel({ id: PARAMS_PANEL_ID, ...payload });
         },
         [closePanel, openPanel]
@@ -60,7 +61,7 @@ export const PanelProvider = ({ children }) => {
 
     const openInstrumentsPanel = useCallback(
         (payload) => {
-            closeParamsPanel(); // Close ParamsPanel if open
+            closeParamsPanel();
             openPanel({ id: INSTRUMENTS_PANEL_ID, ...payload });
         },
         [closeParamsPanel, openPanel]
@@ -88,16 +89,29 @@ export const PanelProvider = ({ children }) => {
         [closeParamsPanel, openPanel]
     );
 
+    const openSavePanel = useCallback(
+        (payload) => {
+            openPanel({ id: SAVE_PANEL_ID, ...payload });
+        },
+        [openPanel]
+    );
+
+    const closeSavePanel = useCallback(() => {
+        closePanel(SAVE_PANEL_ID);
+    }, [closePanel]);
+
     const value = useMemo(
         () => ({
             closeInstrumentLayerPanel,
             closePanel,
             closeParamsPanel,
+            closeSavePanel,
             focusedEvent,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,
             openParamsPanel,
+            openSavePanel,
             openSelectionsPanel,
             panels,
             panelsArr: Object.values(panels),
@@ -108,12 +122,14 @@ export const PanelProvider = ({ children }) => {
             closeInstrumentLayerPanel,
             closePanel,
             closeParamsPanel,
+            closeSavePanel,
             focusedEvent,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,
             openParamsPanel,
             openSelectionsPanel,
+            openSavePanel,
             panels
         ]
     );

@@ -29,6 +29,8 @@ const CONSTANTS = {
     TRANSPARENCY_VALUE: 0.8
 };
 
+const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
+
 const SoundEventElement = React.memo(
     ({ handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY }) => {
         const { eventLength, id, locked, name, parentId, startTime } = recording;
@@ -43,6 +45,7 @@ const SoundEventElement = React.memo(
 
         const groupRef = useRef();
         const elementRef = useRef();
+        const [originalZIndex, setOriginalZIndex] = useState(null);
 
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
 
@@ -53,8 +56,6 @@ const SoundEventElement = React.memo(
         } = useInstrumentRecordingsOperations();
 
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
-
-        const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(isFocused, isSelected, true);
 
         const parent = getEventById(parentId);
         const { handleClick, handleDoubleClick } = useClickHandlers({
@@ -83,12 +84,33 @@ const SoundEventElement = React.memo(
         }, [startTime]);
 
         useEffect(() => {
+            if (groupRef.current && !isFocused) {
+                const currentZIndex = groupRef.current.zIndex();
+
+                if (originalZIndex === null) {
+                    setOriginalZIndex(currentZIndex);
+                } else if (originalZIndex !== currentZIndex) {
+                    groupRef.current.zIndex(originalZIndex);
+                }
+            }
+        }, [isFocused, originalZIndex]);
+
+        useEffect(() => {
             if (isFocused && groupRef.current) {
                 groupRef.current.moveToTop();
             }
         }, [isFocused]);
 
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
+        const height = timelineHeight * 0.8;
+        const baseColor = COLORS[index % COLORS.length];
+
+        const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
+            isFocused,
+            isSelected,
+            false,
+            baseColor
+        );
 
         return (
             <Group
@@ -109,13 +131,14 @@ const SoundEventElement = React.memo(
                     onMouseLeave={restoreZIndex}
                     ref={elementRef}
                     x={0}
-                    y={isFocused ? -4 : 0}
+                    y={isFocused ? -height * 0.1 : 0}
                     width={lengthBasedWidth}
-                    height={timelineHeight * 0.8}
+                    height={isFocused ? height * 1.1 : height}
                     fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
                     fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
                     fillLinearGradientColorStops={dynamicColorStops}
                     fill={dynamicStroke}
+                    stroke="black"
                     strokeWidth={CONSTANTS.STROKE_WIDTH}
                     cornerRadius={CONSTANTS.CORNER_RADIUS}
                     shadowOffset={CONSTANTS.SHADOW.OFFSET}
@@ -123,15 +146,14 @@ const SoundEventElement = React.memo(
                     shadowOpacity={CONSTANTS.SHADOW.OPACITY}
                     opacity={CONSTANTS.TRANSPARENCY_VALUE}
                 />
-                <Text {...CONSTANTS.TEXT_STYLE} text={name} opacity={CONSTANTS.TRANSPARENCY_VALUE} />
-
+                <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
                 {!parent && (
                     <Text
                         onClick={onLockSoundEventElement}
                         x={-10}
-                        y={CONSTANTS.LOCK_OFFSET_Y}
+                        y={-10}
                         text={locked ? '🔒' : '✔️'}
-                        fontSize={CONSTANTS.TEXT_FONT_SIZE}
+                        fontSize={18}
                         fill="white"
                     />
                 )}

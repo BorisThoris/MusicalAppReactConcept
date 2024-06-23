@@ -77,9 +77,9 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
 
             clearSelection();
 
-            if (isParentPresent && handleClickOverlapGroup) {
+            if (isParentPresent && handleClickOverlapGroup && parent.locked) {
                 handleClickOverlapGroup();
-            } else if (!isParentPresent) {
+            } else {
                 openInstrumentParamsPanel();
             }
 

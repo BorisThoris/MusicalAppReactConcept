@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable max-len */
 /* eslint-disable no-var */
 /* eslint-disable import/no-mutable-exports */
@@ -15,6 +16,7 @@ let gAudioResumed = false;
 export function CHECK_RESULT(result) {
     if (result !== FMOD.OK) {
         const msg = `Error!!! '${FMOD.ErrorString(result)}'`;
+        // eslint-disable-next-line no-alert
         alert(msg);
         throw msg;
     }

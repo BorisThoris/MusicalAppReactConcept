@@ -8,11 +8,10 @@ import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerP
 import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Cursor } from '../Cursor/Cursor';
 import { DragSelection } from '../DragSelection';
-import { HistoryControls } from '../HistoryControls/HistoryButtons';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
-import { PlaybackControls } from '../PlaybackControls/PlaybackControls';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
+import { TimelinesHeader } from '../TimelinesHeader/TimelinesHeader';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
 const Timelines = React.memo(() => {
@@ -34,11 +33,8 @@ const Timelines = React.memo(() => {
 
     return (
         <>
+            <TimelinesHeader />
             <PaintingTopBar />
-            <PlaybackControls />
-            <HistoryControls />
-
-            <button onClick={onAddLayer}>Add Instrument Layer</button>
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
                 {recordingsArr.map(([parentGroupName, events], index) => (
