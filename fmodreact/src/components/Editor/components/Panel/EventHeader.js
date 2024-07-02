@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { CopyIcon, Header, PlayIcon, TrashIcon } from './Panel.styles';
 
-const EventHeader = ({ onDelete, onDuplicate, onPlay }) => {
+export const EventHeader = ({ onDelete, onDuplicate, onPlay }) => {
     return (
         <Header>
             <PlayIcon onClick={onPlay}>▶</PlayIcon>

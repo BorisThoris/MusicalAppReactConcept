@@ -34,6 +34,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
+    const [isUndoRedoAction, setIsUndoRedoAction] = useState(false);
 
     const prevOverlapGroupsRef = useRef({});
 
@@ -95,30 +96,39 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const undo = useCallback(() => {
         if (history.length === 0) return;
+        setIsUndoRedoAction(true);
+
         const newState = cloneDeep(history[history.length - 1]);
+        setHistory((prevHistory) => prevHistory.slice(0, -1));
 
         setOverlapGroups(recreateEvents(newState));
-
-        setHistory(history.slice(0, -1));
         setRedoHistory((prevRedoHistory) => [...prevRedoHistory, cloneDeep(overlapGroups)]);
+
+        setIsUndoRedoAction(false);
     }, [history, overlapGroups]);
 
     const redo = useCallback(() => {
         if (redoHistory.length === 0) return;
+        setIsUndoRedoAction(true);
+
         const newState = cloneDeep(redoHistory[redoHistory.length - 1]);
+        setRedoHistory((prevRedoHistory) => prevRedoHistory.slice(0, -1));
 
         setOverlapGroups(recreateEvents(newState));
-        setRedoHistory(redoHistory.slice(0, -1));
         setHistory((prevHistory) => [...prevHistory, cloneDeep(newState)]);
+
+        setIsUndoRedoAction(false);
     }, [redoHistory]);
 
     const setOverlapGroupsAndClearRedo = useCallback(
         (newOverlapGroups) => {
-            pushToHistory(overlapGroups);
+            if (!isUndoRedoAction) {
+                pushToHistory(overlapGroups);
+            }
             setOverlapGroups(newOverlapGroups);
             setRedoHistory([]);
         },
-        [overlapGroups, pushToHistory]
+        [isUndoRedoAction, overlapGroups, pushToHistory]
     );
 
     const flatOverlapGroups = useMemo(() => {

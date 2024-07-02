@@ -21,7 +21,6 @@ const Timelines = React.memo(() => {
     const { playbackStatus } = useContext(RecordingsPlayerContext);
 
     const { timelineState } = useContext(TimelineContext);
-    const { onAddLayer } = useAddInstrumentLayer();
 
     const { furthestEndTime, furthestEndTimes } = timelineState;
 

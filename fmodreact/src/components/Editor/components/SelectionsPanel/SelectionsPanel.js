@@ -1,4 +1,5 @@
 import React, { useCallback, useContext, useMemo } from 'react';
+import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -11,6 +12,34 @@ import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.st
 import { PanelWrapper } from '../Panel/PanelWrapper';
 import TimeControl from '../Panel/TimeControl';
 import { SelectedEventsList } from './SelectedEventsList';
+
+const organizeEventsByParentId = (events) => {
+    const eventMap = {};
+
+    events.forEach((event) => {
+        if (!eventMap[event.id]) {
+            eventMap[event.id] = { ...event, children: [] };
+        } else {
+            eventMap[event.id] = { ...eventMap[event.id], ...event };
+        }
+
+        if (event.parentId) {
+            if (!eventMap[event.parentId]) {
+                eventMap[event.parentId] = { children: [] };
+            }
+            eventMap[event.parentId].children.push(eventMap[event.id]);
+        }
+    });
+
+    return Object.values(eventMap).filter((event) => !event.parentId);
+};
+
+const EventsContainer = styled(FlexContainer)`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+`;
 
 export const SelectionsPanel = () => {
     const { closePanel, panels } = useContext(PanelContext);
@@ -70,6 +99,10 @@ export const SelectionsPanel = () => {
     }, [selectedValues, deleteRecording]);
 
     if (selectedValues.length > 0) {
+        // Sort the selected values by start time
+        const sortedSelectedValues = selectedValues.slice().sort((a, b) => a.startTime - b.startTime);
+        const organizedEvents = organizeEventsByParentId(sortedSelectedValues);
+
         return (
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
                 <button onClick={duplicateSelections}>DupTest</button>
@@ -88,14 +121,14 @@ export const SelectionsPanel = () => {
                     />
                 )}
 
-                <FlexContainer>
+                <EventsContainer>
                     <SelectedEventsList
-                        selectedValues={selectedValues}
+                        selectedValues={organizedEvents}
                         onDeleteRecording={onDeleteRecording}
                         onPlayEvent={onPlayEvent}
                         onClose={handleClose}
                     />
-                </FlexContainer>
+                </EventsContainer>
             </PanelWrapper>
         );
     }

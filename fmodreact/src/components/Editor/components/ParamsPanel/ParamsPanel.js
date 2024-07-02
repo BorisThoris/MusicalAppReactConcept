@@ -69,7 +69,8 @@ export const ParamsPanel = () => {
 
     const renderEvents = () => {
         const eventsArray = Array.isArray(targetEvents) ? targetEvents : Object.values(targetEvents || {});
-        return eventsArray.map((event) => (
+        const sortedEventsArray = eventsArray.sort((a, b) => a.startTime - b.startTime);
+        return sortedEventsArray.map((event) => (
             <EventItem
                 key={event.id}
                 overlapGroup={targetInRecordings}
