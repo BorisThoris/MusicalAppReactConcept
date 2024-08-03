@@ -1,9 +1,8 @@
-/* eslint-disable no-restricted-syntax */
 import cloneDeep from 'lodash/cloneDeep';
 import PropTypes from 'prop-types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { recreateEvents } from '../globalHelpers/createSound';
-import useOverlapCalculator from '../hooks/useOverlapCalculator/useOverlapCalculator';
+import { useOverlapCalculator } from '../hooks/useOverlapCalculator/useOverlapCalculator';
 import { PanelContext } from '../hooks/usePanelState';
 
 export const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '�', Piano: '🎹', Tambourine: '🎵' };
@@ -17,6 +16,7 @@ function findDifferences(obj1, obj2, parentKey = '') {
     }
 
     const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    // eslint-disable-next-line no-restricted-syntax
     for (const key of allKeys) {
         const newKey = parentKey ? `${parentKey}.${key}` : key;
         findDifferences(obj1[key], obj2[key], newKey);
@@ -34,9 +34,9 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
-    const [isUndoRedoAction, setIsUndoRedoAction] = useState(false);
 
     const prevOverlapGroupsRef = useRef({});
+    const recalculationsDisabledRef = useRef(false);
 
     const cleanUpMalformedEventGroups = (groups) => {
         const cleanedGroups = { ...groups };
@@ -65,71 +65,89 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         return cleanedGroups;
     };
 
+    const pushToHistory = useCallback((currentOverlapGroups) => {
+        setHistory((prevHistory) => [...prevHistory, recreateEvents(cloneDeep(currentOverlapGroups))]);
+        setRedoHistory([]);
+    }, []);
+
+    const calculateAndSetOverlapGroups = useCallback(
+        (recordings) => {
+            if (Object.values(overlapGroups).length === 0 || recalculationsDisabledRef.current) return;
+
+            const newOverlapGroups = calculateOverlapsForAllInstruments(recordings);
+            const isOverlapGroupsChanged =
+                JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
+
+            if (isOverlapGroupsChanged) {
+                findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
+
+                pushToHistory(prevOverlapGroupsRef.current);
+                const cleanedUpGroups = cleanUpMalformedEventGroups(newOverlapGroups);
+
+                prevOverlapGroupsRef.current = cloneDeep(cleanedUpGroups);
+
+                setOverlapGroups(cleanedUpGroups);
+                return true;
+            }
+
+            return false;
+        },
+        [calculateOverlapsForAllInstruments, overlapGroups, pushToHistory]
+    );
+
     useEffect(() => {
-        if (Object.values(overlapGroups).length === 0) return;
-
-        let newOverlapGroups = calculateOverlapsForAllInstruments();
-
-        const isOverlapGroupsChanged =
-            JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
-        if (isOverlapGroupsChanged) {
-            findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
-
-            newOverlapGroups = cleanUpMalformedEventGroups(newOverlapGroups);
-
-            setOverlapGroups(newOverlapGroups);
-            prevOverlapGroupsRef.current = cloneDeep(newOverlapGroups);
+        if (!recalculationsDisabledRef.current) {
+            calculateAndSetOverlapGroups(overlapGroups);
+        } else {
+            recalculationsDisabledRef.current = false;
         }
-    }, [calculateOverlapsForAllInstruments, overlapGroups]);
+    }, [overlapGroups, calculateOverlapsForAllInstruments, calculateAndSetOverlapGroups, history]);
 
     useEffect(() => {
         if (Object.values(overlapGroups).length === 0) {
             openSavePanel();
+
             prevOverlapGroupsRef.current = cloneDeep(overlapGroups);
         }
     }, [overlapGroups, openSavePanel]);
 
-    const pushToHistory = useCallback((currentOverlapGroups) => {
-        setHistory((prevHistory) => [...prevHistory, cloneDeep(currentOverlapGroups)]);
-        setRedoHistory([]);
-    }, []);
-
     const undo = useCallback(() => {
-        if (history.length === 0) return;
-        setIsUndoRedoAction(true);
+        setHistory((prevHistory) => {
+            if (prevHistory.length === 0) return prevHistory;
 
-        const newState = cloneDeep(history[history.length - 1]);
-        setHistory((prevHistory) => prevHistory.slice(0, -1));
+            recalculationsDisabledRef.current = true;
 
-        setOverlapGroups(recreateEvents(newState));
-        setRedoHistory((prevRedoHistory) => [...prevRedoHistory, cloneDeep(overlapGroups)]);
+            const newHistory = prevHistory.slice(0, -1);
+            const newState = recreateEvents(cloneDeep(prevHistory[prevHistory.length - 1]));
 
-        setIsUndoRedoAction(false);
-    }, [history, overlapGroups]);
+            setRedoHistory((prevRedoHistory) => [...prevRedoHistory, cloneDeep(overlapGroups)]);
+            setOverlapGroups(newState);
+
+            prevOverlapGroupsRef.current = cloneDeep(newState);
+
+            return newHistory;
+        });
+    }, [overlapGroups]);
 
     const redo = useCallback(() => {
-        if (redoHistory.length === 0) return;
-        setIsUndoRedoAction(true);
+        setRedoHistory((prevRedoHistory) => {
+            if (prevRedoHistory.length === 0) return prevRedoHistory;
 
-        const newState = cloneDeep(redoHistory[redoHistory.length - 1]);
-        setRedoHistory((prevRedoHistory) => prevRedoHistory.slice(0, -1));
+            recalculationsDisabledRef.current = true;
 
-        setOverlapGroups(recreateEvents(newState));
-        setHistory((prevHistory) => [...prevHistory, cloneDeep(newState)]);
+            const newRedoHistory = prevRedoHistory.slice(0, -1);
+            const newState = recreateEvents(cloneDeep(prevRedoHistory[prevRedoHistory.length - 1]));
 
-        setIsUndoRedoAction(false);
-    }, [redoHistory]);
+            setHistory((prevHistory) => [...prevHistory, cloneDeep(overlapGroups)]);
+            setOverlapGroups(newState);
 
-    const setOverlapGroupsAndClearRedo = useCallback(
-        (newOverlapGroups) => {
-            if (!isUndoRedoAction) {
-                pushToHistory(overlapGroups);
-            }
-            setOverlapGroups(newOverlapGroups);
-            setRedoHistory([]);
-        },
-        [isUndoRedoAction, overlapGroups, pushToHistory]
-    );
+            prevOverlapGroupsRef.current = cloneDeep(newState);
+
+            recalculationsDisabledRef.current = false;
+
+            return newRedoHistory;
+        });
+    }, [overlapGroups]);
 
     const flatOverlapGroups = useMemo(() => {
         const flattenEvents = (group) => {
@@ -160,16 +178,31 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 
     const contextValue = useMemo(
         () => ({
+            calculateAndSetOverlapGroups,
+            calculateOverlapsForAllInstruments,
+            cleanUpMalformedEventGroups,
             flatOverlapGroups,
             history,
             overlapGroups,
+            prevOverlapGroupsRef,
+            pushToHistory,
             recordings: overlapGroups,
             redo,
             redoHistory,
-            setOverlapGroups: setOverlapGroupsAndClearRedo,
+            setOverlapGroups,
             undo
         }),
-        [flatOverlapGroups, history, overlapGroups, redo, redoHistory, setOverlapGroupsAndClearRedo, undo]
+        [
+            calculateAndSetOverlapGroups,
+            calculateOverlapsForAllInstruments,
+            flatOverlapGroups,
+            history,
+            overlapGroups,
+            pushToHistory,
+            redo,
+            redoHistory,
+            undo
+        ]
     );
 
     return <InstrumentRecordingsContext.Provider value={contextValue}>{children}</InstrumentRecordingsContext.Provider>;

@@ -5,7 +5,7 @@ import { PanelContext } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
 
 export const useEventHandlers = (overlapGroup) => {
-    const { closeParamsPanel: closePanel, setFocusedEvent } = useContext(PanelContext);
+    const { setFocusedEvent } = useContext(PanelContext);
 
     const {
         deleteOverlapGroup: deleteOverlapGroupFunc,
@@ -15,7 +15,7 @@ export const useEventHandlers = (overlapGroup) => {
     } = useInstrumentRecordingsOperations();
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
-    const handleClose = useCallback(() => closePanel(false), [closePanel]);
+    const handleClose = useCallback(() => {}, []);
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
     const resetFocusedEvent = useCallback(() => setFocusedEvent(-1), [setFocusedEvent]);
     const deleteOverlapGroup = useCallback(

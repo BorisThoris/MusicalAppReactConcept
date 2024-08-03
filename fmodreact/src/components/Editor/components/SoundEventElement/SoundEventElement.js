@@ -169,7 +169,6 @@ SoundEventElement.propTypes = {
     isFocused: PropTypes.bool,
     isOverlapping: PropTypes.bool,
     isTargeted: PropTypes.bool,
-    openParamsPanel: PropTypes.func,
     parent: PropTypes.object,
     recording: PropTypes.shape({
         eventInstance: PropTypes.object.isRequired,
@@ -189,8 +188,7 @@ SoundEventElement.propTypes = {
 SoundEventElement.defaultProps = {
     isFocused: false,
     isOverlapping: false,
-    isTargeted: false,
-    openParamsPanel: null
+    isTargeted: false
 };
 
 export default SoundEventElement;

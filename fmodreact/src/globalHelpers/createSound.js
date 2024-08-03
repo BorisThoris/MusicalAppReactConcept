@@ -64,16 +64,36 @@ export const createEvent = (recording, instrumentName, parentId = null) => {
         startTime: recording.startTime
     });
 
+    let { startTime } = mainEvent;
+    let { endTime } = mainEvent;
+
+    // Process child events to determine the overall start and end times
+    const events = recording.events ? Object.values(recording.events) : [];
+    const childEvents = events.reduce((acc, subEvent) => {
+        const subGroup = createEvent(subEvent, instrumentName, mainEvent.id);
+        acc[subGroup.id] = subGroup;
+
+        if (subGroup.startTime < startTime) {
+            startTime = subGroup.startTime;
+        }
+        if (subGroup.endTime > endTime) {
+            endTime = subGroup.endTime;
+        }
+
+        return acc;
+    }, {});
+
     return {
         ...mainEvent,
-        endTime: mainEvent.endTime,
-        eventLength: mainEvent.eventLength,
+        endTime: parseFloat(endTime.toFixed(2)),
+        eventLength: endTime - startTime,
+        events: childEvents,
         id: mainEvent.id,
         instrumentName: mainEvent.instrumentName,
-        length: mainEvent.eventLength,
+        length: endTime - startTime,
         locked: recording.locked,
         parentId,
-        startTime: mainEvent.startTime
+        startTime: parseFloat(startTime.toFixed(2))
     };
 };
 
@@ -81,16 +101,22 @@ export const recreateEvents = (passedGroups) => {
     const newRecordings = {};
 
     Object.keys(passedGroups).forEach((instrumentName) => {
-        newRecordings[instrumentName] = Object.values(passedGroups[instrumentName]).map((recording) => {
+        newRecordings[instrumentName] = {};
+
+        Object.values(passedGroups[instrumentName]).forEach((recording) => {
             const group = createEvent(recording, instrumentName);
             const events = recording.events ? Object.values(recording.events) : [];
 
             group.events =
                 events.length > 1
-                    ? events.map((subEvent) => createEvent(subEvent, instrumentName, group.id))
+                    ? events.reduce((acc, subEvent) => {
+                          const subGroup = createEvent(subEvent, instrumentName, group.id);
+                          acc[subGroup.id] = subGroup;
+                          return acc;
+                      }, {})
                     : { [group.id]: { ...group, parentId: group.id } };
 
-            return group;
+            newRecordings[instrumentName][group.id] = { ...group, events: group.events };
         });
     });
 

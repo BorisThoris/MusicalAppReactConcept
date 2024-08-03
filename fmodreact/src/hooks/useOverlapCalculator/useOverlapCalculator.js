@@ -26,6 +26,18 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
 
             groups = combineOverlappingGroups(updatedGroups, overlapTree);
         }
+
+        // Check and process future overlaps
+        const futureOverlaps = findOverlappingGroups(recording, overlapTree, { future: true });
+        if (!isEmpty(futureOverlaps)) {
+            const futureUpdatedGroups = mergeOverlappingEvents({
+                event: recording,
+                groups,
+                tree: overlapTree
+            });
+
+            groups = combineOverlappingGroups(futureUpdatedGroups, overlapTree);
+        }
     });
 
     return groups;
@@ -41,7 +53,7 @@ export const processOverlapCalculations = (recordings, initializedOverlapGroups,
     return processEvents(tree, recordingsForInstrument);
 };
 
-const useOverlapCalculator = (recordings, prevOverlapGroups) => {
+export const useOverlapCalculator = (recordings, prevOverlapGroups) => {
     const initializedOverlapGroups = useMemo(() => {
         return prevOverlapGroups || {};
     }, [prevOverlapGroups]);
@@ -53,12 +65,15 @@ const useOverlapCalculator = (recordings, prevOverlapGroups) => {
         [recordings, initializedOverlapGroups]
     );
 
-    const calculateOverlapsForAllInstruments = useCallback(() => {
-        return Object.keys(recordings).reduce((acc, instrument) => {
-            acc[instrument] = calculateOverlapsForInstrument(instrument);
-            return acc;
-        }, {});
-    }, [recordings, calculateOverlapsForInstrument]);
+    const calculateOverlapsForAllInstruments = useCallback(
+        (passedRecordings) => {
+            return Object.keys(passedRecordings || recordings).reduce((acc, instrument) => {
+                acc[instrument] = calculateOverlapsForInstrument(instrument);
+                return acc;
+            }, {});
+        },
+        [recordings, calculateOverlapsForInstrument]
+    );
 
     return { calculateOverlapsForAllInstruments };
 };

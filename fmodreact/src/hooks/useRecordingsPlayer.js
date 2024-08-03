@@ -114,7 +114,7 @@ const useRecordingsPlayer = () => {
         mutedInstruments,
         playbackStatus,
         playRecordedSounds: togglePlayback,
-        replayAllRecordedSounds: () => playAllOrSpecificInstrumentRecordings(),
+        replayAllRecordedSounds: playAllOrSpecificInstrumentRecordings,
         replayInstrumentRecordings: playAllOrSpecificInstrumentRecordings,
         setTrackerPosition,
         stopPlayback,

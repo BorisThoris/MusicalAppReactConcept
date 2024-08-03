@@ -8,19 +8,19 @@ import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
 const usePanelControls = () => {
-    const { openParamsPanel, openSelectionsPanel } = useContext(PanelContext);
+    const { openSelectionsPanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, toggleItem: selectElement } = useContext(SelectionContext);
 
-    return { clearSelection, openParamsPanel, openSelectionsPanel, selectElement, timelineState };
+    return { clearSelection, openSelectionsPanel, selectElement, timelineState };
 };
 
 export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
-    const { eventInstance, index, instrumentName, startTime } = recording;
+    const { eventInstance } = recording;
     const { paintEvent, paintingTarget } = usePaintings();
     const { cursorPos } = useCustomCursorContext();
-    const { clearSelection, openParamsPanel, openSelectionsPanel, selectElement, timelineState } = usePanelControls();
-    const startingPositionInTimeline = startTime * pixelToSecondRatio;
+    const { openSelectionsPanel, selectElement, timelineState } = usePanelControls();
+
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
 
     const openSelectionPanel = useCallback(() => {
@@ -45,42 +45,14 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
         recording
     ]);
 
-    const openInstrumentParamsPanel = useCallback(() => {
-        if (openParamsPanel) {
-            openParamsPanel({
-                index,
-                instrumentName,
-                overlapGroup: recording,
-                x: startingPositionInTimeline,
-                y: timelineY + canvasOffsetY + elementRef.current.attrs.height
-            });
-        }
-    }, [
-        recording,
-        openParamsPanel,
-        index,
-        instrumentName,
-        startingPositionInTimeline,
-        timelineY,
-        canvasOffsetY,
-        elementRef
-    ]);
-
     const handleClick = useCallback(
         (evt) => {
-            const isLeftClickWithCtrl = evt.evt.button === 0 && evt.evt.ctrlKey;
             const isParentPresent = !!parent;
 
-            if (isLeftClickWithCtrl) {
-                return openSelectionPanel();
-            }
-
-            clearSelection();
+            openSelectionPanel();
 
             if (isParentPresent && handleClickOverlapGroup && parent.locked) {
                 handleClickOverlapGroup();
-            } else {
-                openInstrumentParamsPanel();
             }
 
             if (paintingTarget) {
@@ -89,12 +61,10 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
         },
         [
             parent,
-            clearSelection,
             handleClickOverlapGroup,
             cursorPos,
             paintingTarget,
             openSelectionPanel,
-            openInstrumentParamsPanel,
             paintEvent,
             recording.instrumentName
         ]

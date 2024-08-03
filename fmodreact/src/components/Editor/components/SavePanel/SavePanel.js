@@ -82,24 +82,6 @@ const SaveButton = styled.button`
     border-radius: 3px;
 `;
 
-const DeleteButton = styled.button`
-    background-color: red;
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 3px;
-`;
-
-const LoadButton = styled.button`
-    background-color: blue;
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 3px;
-`;
-
 export const SavePanel = () => {
     const [beats, setBeats] = useState([]);
     const [beatName, setBeatName] = useState('');

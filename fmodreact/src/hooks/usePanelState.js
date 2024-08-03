@@ -5,7 +5,6 @@ export const PanelContext = createContext();
 
 const initialState = {};
 
-export const PARAMS_PANEL_ID = 'PARAMS_PANEL';
 export const INSTRUMENTS_PANEL_ID = 'INSTRUMENTS_PANEL';
 export const SELECTIONS_PANEL_ID = 'SELECTIONS_PANEL';
 export const INSTRUMENT_LAYER_PANEL_ID = 'INSTRUMENT_LAYER_PANEL';
@@ -45,26 +44,11 @@ export const PanelProvider = ({ children }) => {
         dispatch({ payload: { id }, type: 'CLOSE_PANEL' });
     }, []);
 
-    const closeParamsPanel = useCallback(() => {
-        closePanel(PARAMS_PANEL_ID);
-    }, [closePanel]);
-
-    // Specific function to open ParamsPanel
-    const openParamsPanel = useCallback(
-        (payload) => {
-            closePanel(INSTRUMENTS_PANEL_ID);
-            closePanel(SELECTIONS_PANEL_ID);
-            openPanel({ id: PARAMS_PANEL_ID, ...payload });
-        },
-        [closePanel, openPanel]
-    );
-
     const openInstrumentsPanel = useCallback(
         (payload) => {
-            closeParamsPanel();
             openPanel({ id: INSTRUMENTS_PANEL_ID, ...payload });
         },
-        [closeParamsPanel, openPanel]
+        [openPanel]
     );
 
     const closeInstrumentLayerPanel = useCallback(
@@ -83,10 +67,9 @@ export const PanelProvider = ({ children }) => {
 
     const openSelectionsPanel = useCallback(
         (payload) => {
-            closeParamsPanel(); // Close ParamsPanel if open
             openPanel({ id: SELECTIONS_PANEL_ID, ...payload });
         },
-        [closeParamsPanel, openPanel]
+        [openPanel]
     );
 
     const openSavePanel = useCallback(
@@ -104,13 +87,13 @@ export const PanelProvider = ({ children }) => {
         () => ({
             closeInstrumentLayerPanel,
             closePanel,
-            closeParamsPanel,
+
             closeSavePanel,
             focusedEvent,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,
-            openParamsPanel,
+
             openSavePanel,
             openSelectionsPanel,
             panels,
@@ -121,13 +104,13 @@ export const PanelProvider = ({ children }) => {
         [
             closeInstrumentLayerPanel,
             closePanel,
-            closeParamsPanel,
+
             closeSavePanel,
             focusedEvent,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,
-            openParamsPanel,
+
             openSelectionsPanel,
             openSavePanel,
             panels

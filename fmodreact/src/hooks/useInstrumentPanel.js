@@ -1,35 +1,21 @@
 import { useCallback, useContext, useEffect, useRef } from 'react';
 import { useCustomCursorContext } from '../providers/CursorProvider';
-import { INSTRUMENTS_PANEL_ID, PanelContext, PARAMS_PANEL_ID } from './usePanelState';
+import { INSTRUMENTS_PANEL_ID, PanelContext } from './usePanelState';
 
 export const useInstrumentPanel = (parentGroupName, timelineY, timelineState) => {
     const { cursorPos } = useCustomCursorContext();
 
-    const { closePanel, closeParamsPanel, openPanel, panels } = useContext(PanelContext);
+    const { closePanel, openPanel, panels } = useContext(PanelContext);
     const openInstrumentPanelTimeoutRef = useRef();
 
     const openInstrumentPanel = useCallback(() => {
-        // Close the parameters panel if it's open
-        if (panels[PARAMS_PANEL_ID]) {
-            closeParamsPanel();
-        }
-
-        // Open the instrument panel
         openPanel({
             id: INSTRUMENTS_PANEL_ID,
             instrumentLayer: parentGroupName,
             x: cursorPos.screenX,
-            y: timelineY + timelineState.canvasOffsetY + 200 // Assuming TimelineHeight is 200 as per the given code
+            y: timelineY + timelineState.canvasOffsetY + 200
         });
-    }, [
-        closeParamsPanel,
-        cursorPos.screenX,
-        openPanel,
-        parentGroupName,
-        panels,
-        timelineState.canvasOffsetY,
-        timelineY
-    ]);
+    }, [cursorPos.screenX, openPanel, parentGroupName, timelineState.canvasOffsetY, timelineY]);
 
     const closeInstrumentPanel = useCallback(() => {
         if (panels[INSTRUMENTS_PANEL_ID]) {

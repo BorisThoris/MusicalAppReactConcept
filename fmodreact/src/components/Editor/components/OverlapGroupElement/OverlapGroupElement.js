@@ -13,13 +13,8 @@ import { TimelineContext } from '../../../../providers/TimelineProvider';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 import useElementSelectionMovement from '../SoundEventElement/useElementSelectionMovement';
 
-// Constants
-const GROUP_COLOR = 'blue';
-
 const GROUP_STROKE_WIDTH = 4;
-const GROUP_TEXT = 'Overlapping Events';
-const TEXT_OFFSET_X = 10;
-const TEXT_OFFSET_Y = 20;
+
 const LOCK_OFFSET_Y = -10;
 const TEXT_FONT_SIZE = 18;
 
@@ -30,9 +25,9 @@ export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeigh
     const { timelineState } = useContext(TimelineContext);
     const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
-    const { openParamsPanel, openSelectionsPanel } = useContext(PanelContext);
+    const { openSelectionsPanel } = useContext(PanelContext);
 
-    const { endTime, events, id, instrumentName, locked, startTime } = groupData;
+    const { endTime, events, id, locked, startTime } = groupData;
     const eventsArray = Object.values(events).sort((a, b) => a.startTime - b.startTime);
 
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
@@ -66,17 +61,10 @@ export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeigh
 
     const handleOverlapGroupClick = useCallback(
         (e) => {
-            const isLeftClickWithCtrl = e?.evt?.button === 0 && e?.evt?.ctrlKey;
-            if (isLeftClickWithCtrl && groupElmRef.current) {
-                toggleItem(eventsArray);
-                openSelectionsPanel({ y: groupY });
-            } else {
-                const groupX = get(groupElmRef, 'current.parent.attrs.x') || 0;
-
-                openParamsPanel({ index, instrumentName, overlapGroup: groupData, x: groupX, y: groupY });
-            }
+            toggleItem(eventsArray);
+            openSelectionsPanel({ y: groupY });
         },
-        [eventsArray, groupData, groupY, index, instrumentName, openParamsPanel, openSelectionsPanel, toggleItem]
+        [eventsArray, groupY, openSelectionsPanel, toggleItem]
     );
 
     const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);

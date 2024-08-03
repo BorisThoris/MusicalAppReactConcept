@@ -2,7 +2,6 @@ import React, { useContext, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
-import { useAddInstrumentLayer } from '../../../../hooks/useAddInstrumentLayer';
 import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
@@ -11,7 +10,6 @@ import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
-import { TimelinesHeader } from '../TimelinesHeader/TimelinesHeader';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
 const Timelines = React.memo(() => {
@@ -32,7 +30,6 @@ const Timelines = React.memo(() => {
 
     return (
         <>
-            <TimelinesHeader />
             <PaintingTopBar />
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>

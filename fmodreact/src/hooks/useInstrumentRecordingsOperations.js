@@ -10,7 +10,8 @@ import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { flatOverlapGroups, setOverlapGroups } = useContext(InstrumentRecordingsContext);
+    const { calculateOverlapsForAllInstruments, flatOverlapGroups, overlapGroups, setOverlapGroups } =
+        useContext(InstrumentRecordingsContext);
 
     const getEventById = useCallback(
         (id) => {
@@ -139,7 +140,6 @@ export const useInstrumentRecordingsOperations = () => {
 
             setOverlapGroups((prevGroups) => {
                 const updatedGroups = { ...prevGroups };
-
                 updatedGroups[newGroup.instrumentName][newGroup.id] = newGroup;
 
                 return updatedGroups;
@@ -224,19 +224,20 @@ export const useInstrumentRecordingsOperations = () => {
                 searchAndUpdateRecording(instrumentRecordings, index, newStartTime);
             };
 
-            setOverlapGroups((prevRecordings) => {
-                const recordingsCopy = { ...prevRecordings };
+            const recordingsCopy = { ...overlapGroups };
 
-                if (Array.isArray(data)) {
-                    data.forEach((item) => updateStartTime(item, recordingsCopy));
-                } else {
-                    updateStartTime(data, recordingsCopy);
-                }
+            if (Array.isArray(data)) {
+                data.forEach((item) => updateStartTime(item, recordingsCopy));
+            } else {
+                updateStartTime(data, recordingsCopy);
+            }
 
-                return recordingsCopy;
-            });
+            const testSad = calculateOverlapsForAllInstruments(recordingsCopy);
+
+            // prevOverlapGroupsRef.current = testSad;
+            setOverlapGroups(testSad);
         },
-        [setOverlapGroups]
+        [calculateOverlapsForAllInstruments, overlapGroups, setOverlapGroups]
     );
 
     const updateOverlapGroupTimes = useCallback(

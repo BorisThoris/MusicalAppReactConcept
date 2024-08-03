@@ -10,7 +10,7 @@ import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../
 export const useTimelinePointerEffects = ({ index, instrumentName }) => {
     const { setTrackerPosition } = useContext(RecordingsPlayerContext);
     const { timelineState } = useContext(TimelineContext);
-    const { closeParamsPanel } = useContext(PanelContext);
+
     const { addRipple, removeRipple, ripples } = useRipples();
 
     const timelineY = TimelineHeight * index + markersAndTrackerOffset;
@@ -38,8 +38,6 @@ export const useTimelinePointerEffects = ({ index, instrumentName }) => {
                 clearSelection();
             }
 
-            closeParamsPanel();
-
             setupDelayedOpen(() => {
                 addRipple(cursorPos.x, cursorPos.y, 'red');
             }, 500);
@@ -53,7 +51,6 @@ export const useTimelinePointerEffects = ({ index, instrumentName }) => {
             cursorPos.y,
             addRipple,
             timelineY,
-            closeParamsPanel,
             setupDelayedOpen,
             clearSelection
         ]
