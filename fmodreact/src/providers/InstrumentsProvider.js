@@ -29,11 +29,15 @@ export const useInstrumentRecordings = () => useContext(InstrumentRecordingsCont
 
 export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
+    const [selectedBeat, setSelectedBeat] = useState(null);
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
-    const { openSavePanel } = useContext(PanelContext);
+    const { openLoadPanel } = useContext(PanelContext);
 
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
+    const [hasChanged, setHasChanged] = useState(false);
+    const [initialEventCounts, setInitialEventCounts] = useState({});
+    const [initialEventTimes, setInitialEventTimes] = useState({});
 
     const prevOverlapGroupsRef = useRef({});
     const recalculationsDisabledRef = useRef(false);
@@ -95,21 +99,116 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         [calculateOverlapsForAllInstruments, overlapGroups, pushToHistory]
     );
 
+    const countNamedEvents = useCallback((groups) => {
+        const counts = {};
+        Object.entries(groups).forEach(([instrumentName, instrumentData]) => {
+            counts[instrumentName] = Object.values(instrumentData).reduce((sum, group) => {
+                if (group.events) {
+                    // eslint-disable-next-line no-param-reassign
+                    sum += Object.keys(group.events).length;
+                }
+                return sum;
+            }, 0);
+        });
+        return counts;
+    }, []);
+
+    const extractEventTimes = useCallback((groups) => {
+        const times = {};
+        Object.entries(groups).forEach(([instrumentName, instrumentData]) => {
+            times[instrumentName] = Object.values(instrumentData).reduce((acc, group) => {
+                if (group.events) {
+                    Object.values(group.events).forEach((event) => {
+                        acc[event.id] = { endTime: event.endTime, startTime: event.startTime };
+                    });
+                }
+                return acc;
+            }, {});
+        });
+        return times;
+    }, []);
+
+    const updateCurrentBeat = useCallback(() => {
+        if (selectedBeat && selectedBeat.name) {
+            const updatedBeat = {
+                ...selectedBeat,
+                data: overlapGroups,
+                date: new Date().toLocaleString()
+            };
+            const savedBeats = JSON.parse(localStorage.getItem('beats')) || [];
+            const updatedBeats = savedBeats.map((beat) => (beat.name === updatedBeat.name ? updatedBeat : beat));
+            localStorage.setItem('beats', JSON.stringify(updatedBeats));
+            alert('Beat updated successfully.');
+
+            // Refresh the tracking states
+            setInitialEventCounts(countNamedEvents(overlapGroups));
+            setInitialEventTimes(extractEventTimes(overlapGroups));
+            setHasChanged(false);
+        } else {
+            alert('No beat selected to update.');
+        }
+    }, [selectedBeat, overlapGroups, countNamedEvents, extractEventTimes]);
+
     useEffect(() => {
         if (!recalculationsDisabledRef.current) {
             calculateAndSetOverlapGroups(overlapGroups);
         } else {
             recalculationsDisabledRef.current = false;
         }
-    }, [overlapGroups, calculateOverlapsForAllInstruments, calculateAndSetOverlapGroups, history]);
+
+        const currentEventCounts = countNamedEvents(overlapGroups);
+        const hasEventCountsChanged = Object.keys(initialEventCounts).some(
+            (key) => initialEventCounts[key] !== currentEventCounts[key]
+        );
+
+        const currentEventTimes = extractEventTimes(overlapGroups);
+
+        const getSortedEventTimes = (events) =>
+            Object.values(events)
+                .map(({ endTime, startTime }) => ({ endTime, startTime }))
+                .sort((a, b) => a.startTime - b.startTime || a.endTime - b.endTime);
+
+        const haveEventTimesChanged = (current, initial) => {
+            const currentInstruments = Object.keys(current);
+            const initialInstruments = Object.keys(initial);
+
+            if (currentInstruments.length !== initialInstruments.length) return true;
+
+            return currentInstruments.some((instrument) => {
+                if (!initial[instrument]) return true;
+                const currentSorted = getSortedEventTimes(current[instrument]);
+                const initialSorted = getSortedEventTimes(initial[instrument]);
+
+                if (currentSorted.length !== initialSorted.length) return true;
+
+                return currentSorted.some(
+                    (time, i) =>
+                        time.startTime !== initialSorted[i].startTime || time.endTime !== initialSorted[i].endTime
+                );
+            });
+        };
+
+        const hasEventTimesChanged = haveEventTimesChanged(currentEventTimes, initialEventTimes);
+
+        setHasChanged(hasEventCountsChanged || hasEventTimesChanged);
+    }, [
+        overlapGroups,
+        calculateAndSetOverlapGroups,
+        history,
+        selectedBeat,
+        initialEventCounts,
+        initialEventTimes,
+        countNamedEvents,
+        extractEventTimes
+    ]);
 
     useEffect(() => {
         if (Object.values(overlapGroups).length === 0) {
-            openSavePanel();
+            openLoadPanel();
 
             prevOverlapGroupsRef.current = cloneDeep(overlapGroups);
         }
-    }, [overlapGroups, openSavePanel]);
+    }, [openLoadPanel, overlapGroups]);
 
     const undo = useCallback(() => {
         setHistory((prevHistory) => {
@@ -149,6 +248,18 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         });
     }, [overlapGroups]);
 
+    useEffect(() => {
+        // Set the initial event counts and times on first render
+        if (Object.keys(initialEventCounts).length === 0 && Object.keys(overlapGroups).length > 0) {
+            setInitialEventCounts(countNamedEvents(overlapGroups));
+            setInitialEventTimes(extractEventTimes(overlapGroups));
+        }
+    }, [overlapGroups, initialEventCounts, initialEventTimes, countNamedEvents, extractEventTimes]);
+
+    const handleOverlapGroupsChange = useCallback((newOverlapGroups) => {
+        setOverlapGroups(newOverlapGroups);
+    }, []);
+
     const flatOverlapGroups = useMemo(() => {
         const flattenEvents = (group) => {
             const flatEvents = {};
@@ -182,6 +293,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             calculateOverlapsForAllInstruments,
             cleanUpMalformedEventGroups,
             flatOverlapGroups,
+            hasChanged,
             history,
             overlapGroups,
             prevOverlapGroupsRef,
@@ -189,19 +301,27 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             recordings: overlapGroups,
             redo,
             redoHistory,
-            setOverlapGroups,
-            undo
+            selectedBeat,
+            setHasChanged,
+            setOverlapGroups: handleOverlapGroupsChange,
+            setSelectedBeat,
+            undo,
+            updateCurrentBeat
         }),
         [
             calculateAndSetOverlapGroups,
             calculateOverlapsForAllInstruments,
             flatOverlapGroups,
+            hasChanged,
             history,
             overlapGroups,
             pushToHistory,
             redo,
             redoHistory,
-            undo
+            selectedBeat,
+            handleOverlapGroupsChange,
+            undo,
+            updateCurrentBeat
         ]
     );
 

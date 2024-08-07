@@ -3,11 +3,13 @@ import styled from 'styled-components';
 import {
     INSTRUMENT_LAYER_PANEL_ID,
     INSTRUMENTS_PANEL_ID,
+    LOAD_PANEL_ID,
     PanelContext,
     SAVE_PANEL_ID,
     SELECTIONS_PANEL_ID
 } from '../../hooks/usePanelState';
 import { InstrumentLayerPanel } from './components/InstrumentLayerPanel/InstrumentLayerPanel';
+import { LoadPanel } from './components/LoadPanel/LoadPanel';
 import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
 import { SavePanel } from './components/SavePanel/SavePanel';
 import { SelectionsPanel } from './components/SelectionsPanel/SelectionsPanel';
@@ -37,6 +39,8 @@ const Editor = () => {
             case INSTRUMENT_LAYER_PANEL_ID:
                 return <InstrumentLayerPanel />;
 
+            case LOAD_PANEL_ID:
+                return <LoadPanel />;
             case SAVE_PANEL_ID:
                 return <SavePanel />;
 

@@ -1,21 +1,19 @@
 import React, { useContext } from 'react';
-import { useAddInstrumentLayer } from '../../../../hooks/useAddInstrumentLayer';
-import { PanelContext } from '../../../../hooks/usePanelState';
+import styled from 'styled-components';
+import { BeatManagementControls } from '../BeatManagementControls/BeatManagementControls';
 import { HistoryControls } from '../HistoryControls/HistoryButtons';
 import { PlaybackControls } from '../PlaybackControls/PlaybackControls';
 
-export const TimelinesHeader = () => {
-    const { onAddLayer } = useAddInstrumentLayer();
-    const { openSavePanel } = useContext(PanelContext);
+const HeaderContainer = styled.div``;
 
+export const TimelinesHeader = () => {
     return (
         <>
-            <button onClick={openSavePanel}>💾</button>
-
-            <PlaybackControls />
-            <HistoryControls />
-
-            <button onClick={onAddLayer}>Add Instrument Layer</button>
+            <HeaderContainer>
+                <BeatManagementControls />
+                <PlaybackControls />
+                <HistoryControls />
+            </HeaderContainer>
         </>
     );
 };
