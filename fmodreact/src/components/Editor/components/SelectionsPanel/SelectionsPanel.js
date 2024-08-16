@@ -2,10 +2,10 @@ import React, { useCallback, useContext, useMemo } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
 import { useSelectionState } from '../../../../hooks/useSelectionState';
+import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -54,8 +54,10 @@ export const SelectionsPanel = () => {
         updateSelectedItemsStartTime
     } = useContext(SelectionContext);
 
-    const { deleteRecording } = useInstrumentRecordingsOperations();
+    const { deleteRecording } = useContext(InstrumentRecordingsContext);
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
+
+    const { copyEvents } = useContext(InstrumentRecordingsContext);
 
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
 
@@ -98,6 +100,10 @@ export const SelectionsPanel = () => {
         deleteRecording(selectedValues);
     }, [selectedValues, deleteRecording]);
 
+    const onCopyClick = useCallback(() => {
+        copyEvents(selectedValues);
+    }, [selectedValues, copyEvents]);
+
     if (selectedValues.length > 0) {
         // Sort the selected values by start time
         const sortedSelectedValues = selectedValues.slice().sort((a, b) => a.startTime - b.startTime);
@@ -106,6 +112,7 @@ export const SelectionsPanel = () => {
         return (
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
                 <button onClick={duplicateSelections}>DupTest</button>
+                <button onClick={onCopyClick}>Copy</button>
 
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
                 <FlexContainer>

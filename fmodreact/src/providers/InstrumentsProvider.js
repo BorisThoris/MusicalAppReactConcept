@@ -1,7 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 import PropTypes from 'prop-types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { recreateEvents } from '../globalHelpers/createSound';
+import { createEvent, recreateEvents } from '../globalHelpers/createSound';
 import { useOverlapCalculator } from '../hooks/useOverlapCalculator/useOverlapCalculator';
 import { PanelContext } from '../hooks/usePanelState';
 
@@ -33,6 +33,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
     const { openLoadPanel } = useContext(PanelContext);
 
+    const [copiedEvents, setCopiedEvents] = useState([]);
     const [history, setHistory] = useState([]);
     const [redoHistory, setRedoHistory] = useState([]);
     const [hasChanged, setHasChanged] = useState(false);
@@ -287,14 +288,66 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         return allFlatEvents;
     }, [overlapGroups]);
 
+    const copyEvents = useCallback((events) => {
+        setCopiedEvents(events);
+    }, []);
+
+    const insertRecording = useCallback(
+        ({ instrumentName, startTime }) => {
+            // Sort copiedEvents by startTime before doing anything
+            const sortedEvents = [...copiedEvents].sort((a, b) => a.startTime - b.startTime);
+
+            const updatedGroups = { ...overlapGroups };
+
+            const initialStart = startTime;
+            const firstEvent = sortedEvents[0];
+            const offset = initialStart - firstEvent.startTime; // Calculate the offset for the first event
+
+            sortedEvents.forEach((event, index) => {
+                const newStartTime = index === 0 ? initialStart : event.startTime + offset;
+                const newEvent = createEvent(event, instrumentName, null, newStartTime);
+
+                if (!updatedGroups[instrumentName]) {
+                    updatedGroups[instrumentName] = {};
+                }
+                updatedGroups[instrumentName][newEvent.id] = newEvent;
+            });
+
+            pushToHistory(updatedGroups);
+            setOverlapGroups(updatedGroups);
+        },
+        [copiedEvents, overlapGroups, pushToHistory]
+    );
+
+    const deleteRecording = useCallback(
+        (selectedEvents) => {
+            const updatedGroups = { ...overlapGroups };
+
+            selectedEvents.forEach((event) => {
+                const instrument = event.instrumentName;
+                if (updatedGroups[instrument] && updatedGroups[instrument][event.id]) {
+                    delete updatedGroups[instrument][event.id];
+                }
+            });
+
+            pushToHistory(updatedGroups);
+            setOverlapGroups(updatedGroups);
+        },
+        [overlapGroups, pushToHistory]
+    );
+
     const contextValue = useMemo(
         () => ({
             calculateAndSetOverlapGroups,
             calculateOverlapsForAllInstruments,
             cleanUpMalformedEventGroups,
+            copiedEvents,
+            copyEvents,
+            deleteRecording,
             flatOverlapGroups,
             hasChanged,
             history,
+            insertRecording,
             overlapGroups,
             prevOverlapGroupsRef,
             pushToHistory,
@@ -311,9 +364,12 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
         [
             calculateAndSetOverlapGroups,
             calculateOverlapsForAllInstruments,
+            copiedEvents,
+            copyEvents,
             flatOverlapGroups,
             hasChanged,
             history,
+            insertRecording,
             overlapGroups,
             pushToHistory,
             redo,
@@ -321,7 +377,8 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
             selectedBeat,
             handleOverlapGroupsChange,
             undo,
-            updateCurrentBeat
+            updateCurrentBeat,
+            deleteRecording
         ]
     );
 

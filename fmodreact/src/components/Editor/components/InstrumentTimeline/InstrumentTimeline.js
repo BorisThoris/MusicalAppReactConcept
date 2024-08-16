@@ -7,7 +7,6 @@ import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { usePaintings } from '../../../../providers/PaintingProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
-import { Cursor } from '../Cursor/Cursor';
 import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
@@ -15,7 +14,7 @@ import { useTimelinePointerEffects } from './useTimelinePointerEffects';
 
 const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
-    const { timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+    const { calculatedStageWidth, timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
     const { paintEvent, paintingTarget } = usePaintings();
@@ -78,7 +77,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
             <Rect
                 offset={timelineState.panelCompensationOffset}
                 height={TimelineHeight}
-                width={timelineWidth}
+                width={calculatedStageWidth}
                 // eslint-disable-next-line no-nested-ternary
                 fill={isInstrumentSelected ? (isMuted ? 'darkred' : 'lightgray') : isMuted ? 'red' : fillColor}
                 onPointerUp={onPointerUp}

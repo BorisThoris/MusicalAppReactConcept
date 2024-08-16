@@ -36,6 +36,9 @@ export const useInstrumentRecordingsOperations = () => {
 
             setOverlapGroups((prevRecordings) => {
                 const updateParamsInEvent = (event, updatedParam) => {
+                    console.log('change for event');
+                    console.log(event);
+
                     if (event.id === eventId) {
                         return {
                             ...event,
@@ -199,7 +202,7 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const updateRecordingStartTime = useCallback(
-        (data) => {
+        (data, newInstrumentName) => {
             const updateStartTime = ({ newStartTime, recording }, recordingsCopy) => {
                 const { eventLength, id: index, instrumentName } = recording;
                 const instrumentRecordings = recordingsCopy[instrumentName];

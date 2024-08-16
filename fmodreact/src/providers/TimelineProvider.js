@@ -1,6 +1,6 @@
-// @ts-nocheck
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import threeMinuteMs from '../globalConstants/songLimit';
 import useStageWidth from '../hooks/useStageWidth';
 import { InstrumentRecordingsContext } from './InstrumentsProvider';
 
@@ -27,11 +27,15 @@ export const TimelineProvider = ({ children }) => {
 
     const [timelineState, setTimelineState] = useState(defaultTimelineState);
 
-    // Calculate stage width based on recordings
-    useEffect(() => {
+    // Function to calculate the stage width
+    const calculateStageWidth = useCallback(() => {
         const widthBasedOnLastSound = furthestEndTime * pixelToSecondRatio;
-        const calculatedStageWidth =
-            window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+        return window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+    }, [furthestEndTime]);
+
+    // Effect to update stage width when relevant values change
+    useEffect(() => {
+        const calculatedStageWidth = calculateStageWidth();
 
         setTimelineState((prevState) => ({
             ...prevState,
@@ -39,8 +43,25 @@ export const TimelineProvider = ({ children }) => {
             furthestEndTimes,
             stageWidth: calculatedStageWidth
         }));
-    }, [furthestEndTime, furthestEndTimes, recordings]); // React to changes in recordings
+    }, [furthestEndTime, furthestEndTimes, recordings, calculateStageWidth]);
 
+    // Add event listener for window resize to update the stage width
+    useEffect(() => {
+        const handleResize = () => {
+            const newStageWidth = calculateStageWidth();
+            setTimelineState((prevState) => ({
+                ...prevState,
+                stageWidth: newStageWidth
+            }));
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [calculateStageWidth]);
+
+    // Function to update the timeline state
     const updateTimelineState = (updates) => {
         setTimelineState((prevState) => ({
             ...prevState,
@@ -48,13 +69,18 @@ export const TimelineProvider = ({ children }) => {
         }));
     };
 
+    // Pre-calculate a width based on the maximum allowed sound duration
+    const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
+    const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+
     // Memoize the context value to avoid unnecessary re-renders
     const value = useMemo(
         () => ({
+            calculatedStageWidth,
             timelineState,
             updateTimelineState
         }),
-        [timelineState]
+        [calculatedStageWidth, timelineState]
     );
 
     return <TimelineContext.Provider value={value}>{children}</TimelineContext.Provider>;

@@ -54,14 +54,14 @@ export const createSound = ({ eventInstance, eventPath, instrumentName, passedPa
 };
 
 // Helper function to create a main event or sub-event
-export const createEvent = (recording, instrumentName, parentId = null) => {
+export const createEvent = (recording, instrumentName, parentId = null, passedStartTime = null) => {
     const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
     const mainEvent = createSound({
         eventInstance,
         eventPath: recording.eventPath || 'Drum/Snare',
         instrumentName,
         passedParams: recording.params,
-        startTime: recording.startTime
+        startTime: passedStartTime || recording.startTime
     });
 
     let { startTime } = mainEvent;
@@ -70,7 +70,7 @@ export const createEvent = (recording, instrumentName, parentId = null) => {
     // Process child events to determine the overall start and end times
     const events = recording.events ? Object.values(recording.events) : [];
     const childEvents = events.reduce((acc, subEvent) => {
-        const subGroup = createEvent(subEvent, instrumentName, mainEvent.id);
+        const subGroup = createEvent(subEvent, instrumentName, mainEvent.id, passedStartTime);
         acc[subGroup.id] = subGroup;
 
         if (subGroup.startTime < startTime) {
@@ -82,6 +82,17 @@ export const createEvent = (recording, instrumentName, parentId = null) => {
 
         return acc;
     }, {});
+
+    // If there's only one child event, set its ID to match the main event's ID
+    if (Object.values(childEvents).length === 1) {
+        const singularEventKey = Object.keys(childEvents)[0];
+        childEvents[mainEvent.id] = {
+            ...childEvents[singularEventKey],
+            id: mainEvent.id, // Override the child event's ID with the main event's ID
+            parentId: mainEvent.id // Ensure the parentId also matches
+        };
+        delete childEvents[singularEventKey];
+    }
 
     return {
         ...mainEvent,

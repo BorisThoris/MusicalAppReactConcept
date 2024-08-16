@@ -40,10 +40,6 @@ const useRecordingsPlayer = () => {
         changePlaybackStatus(!playbackStatus.isPlaying);
     }, [playbackStatus.isPlaying, changePlaybackStatus]);
 
-    const stopPlayback = useCallback(() => {
-        changePlaybackStatus(false, null);
-    }, [changePlaybackStatus]);
-
     const flattenRecordings = useCallback((recordings) => {
         const flatten = (recs) => {
             return Object.values(recs).reduce((acc, recording) => {
@@ -117,7 +113,7 @@ const useRecordingsPlayer = () => {
         replayAllRecordedSounds: playAllOrSpecificInstrumentRecordings,
         replayInstrumentRecordings: playAllOrSpecificInstrumentRecordings,
         setTrackerPosition,
-        stopPlayback,
+
         toggleMute,
         trackerPosition
     };

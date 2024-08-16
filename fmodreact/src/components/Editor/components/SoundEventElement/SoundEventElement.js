@@ -67,6 +67,7 @@ const SoundEventElement = React.memo(
         });
 
         const { dragBoundFunc, handleDragEnd, handleDragStart } = useCustomDrag({
+            groupRef,
             isSelected,
             parent,
             recording,
@@ -117,6 +118,7 @@ const SoundEventElement = React.memo(
                 ref={groupRef}
                 key={index}
                 x={elementXPosition}
+                y={0}
                 draggable={!parent?.locked}
                 dragBoundFunc={dragBoundFunc}
                 onDragMove={handleSelectionBoxMove}
