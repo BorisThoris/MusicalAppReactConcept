@@ -9,7 +9,7 @@ export const useEventHandlers = (overlapGroup) => {
 
     const {
         deleteOverlapGroup: deleteOverlapGroupFunc,
-        deleteRecording,
+
         duplicateOverlapGroup,
         updateOverlapGroupTimes
     } = useInstrumentRecordingsOperations();
@@ -30,7 +30,6 @@ export const useEventHandlers = (overlapGroup) => {
 
     return {
         deleteOverlapGroup,
-        deleteRecording,
         handleClose,
         handlePlayEvent,
         onDuplicateGroup,

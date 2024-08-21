@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import { useBoxMove } from '../hooks/useBoxMove';
 import { usePanelControl } from '../hooks/usePanelControl';
 import { PanelContext } from '../hooks/usePanelState';
 import { useSelectionState } from '../hooks/useSelectionState';
+import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { TimelineContext } from './TimelineProvider';
 
 export const SelectionContext = createContext({
@@ -10,7 +11,7 @@ export const SelectionContext = createContext({
     isItemSelected: (id) => false,
     selectedItems: {},
     selectedValues: [{}],
-    setSelectionBasedOnCoordinates: ({ endX, endY, startX, startY }) => {},
+    setSelectionBasedOnCoordinates: ({ intersectedElements, yLevel }) => {},
 
     toggleItem: (id) => {}
 });
@@ -18,6 +19,7 @@ export const SelectionContext = createContext({
 export const SelectionProvider = ({ children }) => {
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, openSelectionsPanel, panels } = useContext(PanelContext);
+    const { overlapGroups, pushToHistory, setOverlapGroups } = useContext(CollisionsContext);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
@@ -45,11 +47,34 @@ export const SelectionProvider = ({ children }) => {
 
     usePanelControl(selectedItems, panels, openSelectionsPanel, closePanel);
 
+    // Implement the deleteRecording function
+    const deleteSelections = useCallback(
+        (selectedEvents) => {
+            const updatedGroups = { ...overlapGroups };
+
+            // Ensure selectedEvents is an array, even if a single event is passed
+            const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
+
+            eventsArray.forEach((event) => {
+                const instrument = event.instrumentName;
+                if (updatedGroups[instrument] && updatedGroups[instrument][event.id]) {
+                    delete updatedGroups[instrument][event.id];
+                }
+            });
+
+            pushToHistory(updatedGroups);
+            setOverlapGroups(updatedGroups);
+        },
+        [overlapGroups, pushToHistory, setOverlapGroups]
+    );
+
     const selectedValues = Object.values(flatValues);
 
     const value = useMemo(() => {
         return {
             clearSelection,
+            deleteSelections,
+
             duplicateSelections,
             endTime: groupEndTime,
             handleSelectionBoxClick,
@@ -68,6 +93,8 @@ export const SelectionProvider = ({ children }) => {
         };
     }, [
         clearSelection,
+        deleteSelections,
+        duplicateSelections,
         groupEndTime,
         handleSelectionBoxClick,
         handleSelectionBoxDragEnd,
@@ -81,7 +108,6 @@ export const SelectionProvider = ({ children }) => {
         setSelectionBasedOnCoordinates,
         groupStartTime,
         toggleItem,
-        duplicateSelections,
         updateSelectedItemsStartTime
     ]);
 

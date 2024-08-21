@@ -5,7 +5,7 @@ import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
 import { useSelectionState } from '../../../../hooks/useSelectionState';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -54,10 +54,9 @@ export const SelectionsPanel = () => {
         updateSelectedItemsStartTime
     } = useContext(SelectionContext);
 
-    const { deleteRecording } = useContext(InstrumentRecordingsContext);
+    const { copyEvents } = useContext(CollisionsContext);
+    const { deleteSelections } = useContext(SelectionContext);
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
-
-    const { copyEvents } = useContext(InstrumentRecordingsContext);
 
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
 
@@ -81,12 +80,12 @@ export const SelectionsPanel = () => {
         clearSelection();
     }, [clearSelection, closePanel]);
 
-    const onDeleteRecording = useCallback(
+    const onDeleteChildRecording = useCallback(
         (event) => {
-            deleteRecording(event);
+            deleteSelections(event);
             unSelectItem(event);
         },
-        [deleteRecording, unSelectItem]
+        [deleteSelections, unSelectItem]
     );
 
     const onPlayEvent = useCallback(
@@ -97,8 +96,8 @@ export const SelectionsPanel = () => {
     );
 
     const onTrashClick = useCallback(() => {
-        deleteRecording(selectedValues);
-    }, [selectedValues, deleteRecording]);
+        deleteSelections(selectedValues);
+    }, [selectedValues, deleteSelections]);
 
     const onCopyClick = useCallback(() => {
         copyEvents(selectedValues);
@@ -131,7 +130,7 @@ export const SelectionsPanel = () => {
                 <EventsContainer>
                     <SelectedEventsList
                         selectedValues={organizedEvents}
-                        onDeleteRecording={onDeleteRecording}
+                        onDeleteRecording={onDeleteChildRecording}
                         onPlayEvent={onPlayEvent}
                         onClose={handleClose}
                     />

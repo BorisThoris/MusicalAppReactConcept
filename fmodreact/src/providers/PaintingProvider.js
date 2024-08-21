@@ -4,7 +4,7 @@ import useRecorder from '../hooks/useRecorder';
 
 // Create the Context
 const PaintingContext = createContext({
-    paintEvent: ({ instrumentName, x }) => {},
+    paintEvent: ({ target, x }) => {},
     paintingTarget: '',
     selectedEvent: null
 });
@@ -15,9 +15,10 @@ const PaintingProviderComponent = ({ children }) => {
     const { recordEventNoVerify } = useRecorder();
 
     const paintEvent = useCallback(
-        ({ instrumentName, x }) => {
+        ({ target, x }) => {
             const eventInstance = createAndPlayEventIntance(`${paintingTarget.instrument}/${paintingTarget.event}`);
-            recordEventNoVerify({ event: eventInstance, instrumentName, x });
+
+            recordEventNoVerify({ event: eventInstance, instrumentName: target, x });
         },
         [paintingTarget, recordEventNoVerify]
     );

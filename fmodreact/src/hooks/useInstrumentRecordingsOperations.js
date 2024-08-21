@@ -6,12 +6,12 @@ import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
 import { createSound } from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
     const { calculateOverlapsForAllInstruments, flatOverlapGroups, overlapGroups, setOverlapGroups } =
-        useContext(InstrumentRecordingsContext);
+        useContext(CollisionsContext);
 
     const getEventById = useCallback(
         (id) => {
@@ -36,9 +36,6 @@ export const useInstrumentRecordingsOperations = () => {
 
             setOverlapGroups((prevRecordings) => {
                 const updateParamsInEvent = (event, updatedParam) => {
-                    console.log('change for event');
-                    console.log(event);
-
                     if (event.id === eventId) {
                         return {
                             ...event,
@@ -309,43 +306,6 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
-    const deleteEventInstances = useCallback(
-        (events) => {
-            const eventArray = Array.isArray(events) ? events : [events];
-
-            setOverlapGroups((prevOverlapGroups) => {
-                const updatedOverlapGroups = { ...prevOverlapGroups };
-
-                eventArray.forEach((event) => {
-                    const { id: eventId, parentId } = event;
-
-                    if (!eventId) {
-                        console.warn('No event ID provided for deletion');
-                        return;
-                    }
-
-                    Object.values(updatedOverlapGroups).forEach((instrumentData) => {
-                        const instrumentRecordings = instrumentData;
-
-                        if (parentId) {
-                            const parentGroup = instrumentRecordings[parentId];
-                            if (parentGroup && parentGroup.events) {
-                                const updatedEvents = { ...parentGroup.events };
-                                delete updatedEvents[eventId];
-                                parentGroup.events = updatedEvents;
-                            }
-                        } else if (instrumentRecordings[eventId] && instrumentRecordings[eventId].events) {
-                            delete instrumentRecordings[eventId].events[eventId];
-                        }
-                    });
-                });
-
-                return updatedOverlapGroups;
-            });
-        },
-        [setOverlapGroups]
-    );
-
     const deleteAllRecordingsForInstrument = useCallback(
         (instrumentName) => {
             setOverlapGroups((prev) => {
@@ -465,7 +425,6 @@ export const useInstrumentRecordingsOperations = () => {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
         deleteOverlapGroup,
-        deleteRecording: deleteEventInstances,
         duplicateInstrument,
         duplicateMultipleOverlapGroups,
         duplicateOverlapGroup,

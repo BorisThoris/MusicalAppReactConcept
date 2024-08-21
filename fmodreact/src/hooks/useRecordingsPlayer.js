@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { playEventInstance } from '../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { TimelineContext } from '../providers/TimelineProvider';
 import usePlayback from './usePlayback';
 
@@ -15,7 +15,7 @@ const useRecordingsPlayer = () => {
     });
     const [trackerPosition, setTrackerPosition] = useState(-0.1);
     const [mutedInstruments, setMutedInstruments] = useState([]);
-    const { overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups } = useContext(CollisionsContext);
     const { clearAllTimeouts, setNewTimeout } = usePlayback({
         playbackStatus: playbackStatus.isPlaying
     });

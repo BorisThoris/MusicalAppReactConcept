@@ -1,14 +1,34 @@
-import React, { useContext } from 'react';
+import { isEqual } from 'lodash';
+import React, { useContext, useLayoutEffect } from 'react';
 import { Group } from 'react-konva';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { OverlapGroupElement } from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
-export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {
+export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
     const { timelineState } = useContext(TimelineContext);
 
+    const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
+    const timelineRef = React.useRef(); // Ref for the entire timeline group
+
+    useLayoutEffect(() => {
+        const currentTimelineRef = timelineRef.current; // Capture the current ref value
+
+        if (currentTimelineRef) {
+            currentTimelineRef.timelineY = timelineY; // Attach timelineY to the ref
+            addTimelineRef(`${instrumentName}`, currentTimelineRef);
+        }
+
+        return () => {
+            if (currentTimelineRef) {
+                removeTimelineRef(currentTimelineRef);
+            }
+        };
+    }, [addTimelineRef, removeTimelineRef, instrumentName, timelineY]);
+
     return (
-        <Group offset={timelineState.panelCompensationOffset}>
+        <Group offset={timelineState.panelCompensationOffset} id={`${instrumentName}-events`} ref={timelineRef}>
             {Object.values(eventGroups).map((groupData, index) => {
                 const events = Object.values(groupData.events || {});
 
@@ -39,6 +59,6 @@ export const TimelineEvents = ({ eventGroups, timelineHeight, timelineY }) => {
             })}
         </Group>
     );
-};
+}, isEqual);
 
 export default TimelineEvents;

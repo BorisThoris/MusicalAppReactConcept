@@ -1,9 +1,9 @@
 import { useCallback, useContext } from 'react';
 import { recreateEvents } from '../globalHelpers/createSound';
-import { InstrumentRecordingsContext } from '../providers/InstrumentsProvider';
+import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 
 export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage }) => {
-    const { setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(InstrumentRecordingsContext);
+    const { setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(CollisionsContext);
 
     const handleSave = useCallback(
         (beatName, overlapGroups) => {

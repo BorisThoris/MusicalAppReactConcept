@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import styled from 'styled-components';
 import { useAddInstrumentLayer } from '../../../../hooks/useAddInstrumentLayer';
 import { PanelContext } from '../../../../hooks/usePanelState';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 
 const Container = styled.div`
     display: flex;
@@ -41,7 +41,7 @@ const Input = styled.input`
 export const BeatManagementControls = () => {
     const { onAddLayer } = useAddInstrumentLayer();
     const { openLoadPanel, openSavePanel } = useContext(PanelContext);
-    const { changeBeatName, hasChanged, selectedBeat, updateCurrentBeat } = useContext(InstrumentRecordingsContext);
+    const { changeBeatName, hasChanged, selectedBeat, updateCurrentBeat } = useContext(CollisionsContext);
 
     const [isEditingName, setIsEditingName] = useState(false);
     const [newBeatName, setNewBeatName] = useState(selectedBeat?.name || '');

@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import { Layer, Rect } from 'react-konva';
@@ -15,13 +16,13 @@ import { useTimelinePointerEffects } from './useTimelinePointerEffects';
 const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { calculatedStageWidth, timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
     const { paintEvent, paintingTarget } = usePaintings();
 
     const isInstrumentSelected = paintingTarget?.instrument ? instrumentName.includes(paintingTarget.instrument) : true;
 
-    const timelineRef = useRef();
     const timelineY = TimelineHeight * index + markersAndTrackerOffset;
     const isMuted = mutedInstruments.includes(instrumentName);
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
@@ -34,6 +35,8 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
         index,
         instrumentName
     });
+
+    const timelineRef = React.useRef();
 
     useEffect(() => {
         if (timelineRef.current) {
@@ -48,7 +51,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     const onTimelinePointerDown = useCallback(
         (e) => {
             if (paintingTarget) {
-                paintEvent({ instrumentName, x: cursorX });
+                paintEvent({ target: instrumentName, x: cursorX });
             }
 
             onPointerDown(e);
@@ -59,11 +62,11 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     return (
         <Layer
             y={timelineY}
-            ref={timelineRef}
             onMouseLeave={handleMouseLeave}
             onMouseMove={onMouseMove}
             onMouseEnter={handleMouseEnter}
             draggable={false}
+            ref={timelineRef}
         >
             <InstrumentTimelinePanelComponent
                 timelineHeight={TimelineHeight}
@@ -86,7 +89,12 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 onPointerDown={onTimelinePointerDown}
             />
 
-            <TimelineEvents eventGroups={events} timelineHeight={TimelineHeight} timelineY={timelineY} />
+            <TimelineEvents
+                eventGroups={events}
+                timelineHeight={TimelineHeight}
+                timelineY={timelineY}
+                instrumentName={instrumentName}
+            />
 
             {isLocked && (
                 <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
@@ -95,7 +103,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
             <Ripples ripples={ripples} removeRipple={removeRipple} />
         </Layer>
     );
-});
+}, isEqual);
 
 InstrumentTimeline.propTypes = {
     events: PropTypes.arrayOf(

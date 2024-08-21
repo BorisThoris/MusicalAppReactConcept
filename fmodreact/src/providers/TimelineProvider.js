@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../globalConstants/songLimit';
 import useStageWidth from '../hooks/useStageWidth';
-import { InstrumentRecordingsContext } from './InstrumentsProvider';
+import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 
 export const TimelineHeight = 200;
 export const Y_OFFSET = 20;
@@ -22,8 +22,8 @@ export const defaultTimelineState = {
 export const TimelineContext = createContext(defaultTimelineState);
 
 export const TimelineProvider = ({ children }) => {
-    const { recordings } = useContext(InstrumentRecordingsContext);
-    const { furthestEndTime, furthestEndTimes } = useStageWidth({ recordings });
+    const { overlapGroups } = useContext(CollisionsContext);
+    const { furthestEndTime, furthestEndTimes } = useStageWidth({ overlapGroups });
 
     const [timelineState, setTimelineState] = useState(defaultTimelineState);
 
@@ -43,7 +43,7 @@ export const TimelineProvider = ({ children }) => {
             furthestEndTimes,
             stageWidth: calculatedStageWidth
         }));
-    }, [furthestEndTime, furthestEndTimes, recordings, calculateStageWidth]);
+    }, [furthestEndTime, furthestEndTimes, overlapGroups, calculateStageWidth]);
 
     // Add event listener for window resize to update the stage width
     useEffect(() => {

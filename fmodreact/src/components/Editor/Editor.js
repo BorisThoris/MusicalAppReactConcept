@@ -8,6 +8,7 @@ import {
     SAVE_PANEL_ID,
     SELECTIONS_PANEL_ID
 } from '../../hooks/usePanelState';
+import FPSMonitor from './components/FpsMonitor/FpsMonitor';
 import { InstrumentLayerPanel } from './components/InstrumentLayerPanel/InstrumentLayerPanel';
 import { LoadPanel } from './components/LoadPanel/LoadPanel';
 import { PlayInstrumentsPanel } from './components/PlayInstrumentsPanel/PlayInstrumentsPanel';
@@ -50,7 +51,8 @@ const Editor = () => {
     };
 
     return (
-        <>
+        <div>
+            <FPSMonitor />
             <StyledEditorWrapper>
                 <StyledTimeline>
                     <TimelinesHeader />
@@ -59,7 +61,7 @@ const Editor = () => {
             </StyledEditorWrapper>
 
             {panelsArr.map(renderPanel)}
-        </>
+        </div>
     );
 };
 

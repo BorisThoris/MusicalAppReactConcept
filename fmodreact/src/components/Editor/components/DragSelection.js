@@ -1,14 +1,16 @@
+import Konva from 'konva';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Layer, Rect } from 'react-konva';
-import pixelToSecondRatio from '../../../globalConstants/pixelToSeconds';
+import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../providers/TimelineProvider';
 
 export const DragSelection = ({ stageRef }) => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
     const [isDragging, setIsDragging] = useState(false);
-    const { timelineState } = useContext(TimelineContext);
+
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
+    const { getProcessedElements, timelineRefs } = useContext(CollisionsContext);
 
     const hasMoved = useCallback(() => {
         if (!dragPos.start || !dragPos.end) return false;
@@ -19,19 +21,38 @@ export const DragSelection = ({ stageRef }) => {
         ({ end, start }) => {
             if (!start || !end) return;
 
-            const adjustedStartX =
-                (Math.min(start.x, end.x) + timelineState.panelCompensationOffset.x) / pixelToSecondRatio;
-            const adjustedEndX =
-                (Math.max(start.x, end.x) + timelineState.panelCompensationOffset.x) / pixelToSecondRatio;
+            const selectionRect = {
+                height: Math.abs(start.y - end.y),
+                width: Math.abs(start.x - end.x),
+                x: Math.min(start.x, end.x),
+                y: Math.min(start.y, end.y)
+            };
 
-            setSelectionBasedOnCoordinates({
-                endX: adjustedEndX,
-                endY: Math.max(start.y, end.y),
-                startX: adjustedStartX,
-                startY: Math.min(start.y, end.y)
+            const intersectedElements = [];
+
+            const processedElements = getProcessedElements(timelineRefs);
+            processedElements.forEach((elementData) => {
+                const { element, height, timelineY, width, x, y } = elementData;
+                const elementRect = { height, width, x, y };
+
+                if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
+                    intersectedElements.push({
+                        ...elementData.recording,
+                        endX: x + width,
+                        endY: y + height,
+                        startX: x,
+                        startY: y,
+                        timelineY
+                    });
+                }
             });
+
+            if (intersectedElements.length > 0) {
+                const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
+                setSelectionBasedOnCoordinates({ intersectedElements, yLevel: maxYLevel });
+            }
         },
-        [setSelectionBasedOnCoordinates, timelineState.panelCompensationOffset.x]
+        [getProcessedElements, timelineRefs, setSelectionBasedOnCoordinates]
     );
 
     const handleDrag = useCallback(
@@ -46,17 +67,24 @@ export const DragSelection = ({ stageRef }) => {
         },
         [updateSelection]
     );
-
     useEffect(() => {
         if (!stageRef.current) return;
+
         const stage = stageRef.current;
 
+        // Handlers
         const mouseDownHandler = (e) => {
             if (e.target?.attrs?.id?.includes('Timeline')) {
                 handleDrag(e, true);
             }
         };
-        const mouseMoveHandler = (e) => isDragging && handleDrag(e, false);
+
+        const mouseMoveHandler = (e) => {
+            if (isDragging) {
+                handleDrag(e, false);
+            }
+        };
+
         const mouseUpHandler = () => {
             if (hasMoved()) {
                 updateSelection(dragPos);
@@ -65,16 +93,18 @@ export const DragSelection = ({ stageRef }) => {
             setDragPos({ end: null, start: null });
         };
 
+        // Add event listeners
         stage.on('mousedown touchstart', mouseDownHandler);
         stage.on('mousemove touchmove', mouseMoveHandler);
         stage.on('mouseup touchend', mouseUpHandler);
 
+        // Cleanup function to remove event listeners
         return () => {
             stage.off('mousedown touchstart', mouseDownHandler);
             stage.off('mousemove touchmove', mouseMoveHandler);
             stage.off('mouseup touchend', mouseUpHandler);
         };
-    }, [handleDrag, isDragging, hasMoved, stageRef, dragPos, updateSelection]);
+    }, [handleDrag, hasMoved, dragPos, isDragging, updateSelection, stageRef]);
 
     const rectProps =
         isDragging && hasMoved()

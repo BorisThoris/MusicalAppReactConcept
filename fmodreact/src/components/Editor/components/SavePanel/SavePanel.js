@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useState } from 'react';
 import styled from 'styled-components';
 import { PanelContext } from '../../../../hooks/usePanelState';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import Modal from '../Modal/Modal';
 
 const InputWrapper = styled.div`
@@ -28,7 +28,7 @@ const SaveButton = styled.button`
 export const SavePanel = ({ onClose }) => {
     const [beatName, setBeatName] = useState('');
     const { closeSavePanel } = useContext(PanelContext);
-    const { overlapGroups } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups } = useContext(CollisionsContext);
 
     const handleSave = useCallback(() => {
         if (!beatName.trim()) {

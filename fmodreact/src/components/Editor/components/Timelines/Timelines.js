@@ -1,10 +1,15 @@
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
+import {
+    markersAndTrackerOffset,
+    markersHeight,
+    TimelineContext,
+    TimelineHeight
+} from '../../../../providers/TimelineProvider';
 import { Cursor } from '../Cursor/Cursor';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
@@ -15,9 +20,8 @@ import TimelineTracker from '../TimelineTracker/TimelineTracker';
 const Timelines = React.memo(() => {
     const stageRef = useRef(null);
 
-    const { recordings } = useContext(InstrumentRecordingsContext);
+    const { overlapGroups } = useContext(CollisionsContext);
     const { playbackStatus } = useContext(RecordingsPlayerContext);
-
     const { timelineState } = useContext(TimelineContext);
 
     const { furthestEndTime, furthestEndTimes } = timelineState;
@@ -25,7 +29,8 @@ const Timelines = React.memo(() => {
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
 
-    const recordingsArr = Object.entries(recordings);
+    const recordingsArr = Object.entries(overlapGroups);
+
     const EditorHeight = recordingsArr.length * TimelineHeight + markersHeight || 500;
 
     return (

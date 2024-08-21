@@ -1,7 +1,7 @@
 import React, { useCallback, useContext } from 'react';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { INSTRUMENTS_PANEL_ID, PanelContext } from '../../../../hooks/usePanelState';
-import { InstrumentRecordingsContext } from '../../../../providers/InstrumentsProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import Drums from '../../../Drums/Drums';
 import Guitar from '../../../Guitar/Guitar';
@@ -13,7 +13,7 @@ export const PlayInstrumentsPanel = () => {
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, panels } = useContext(PanelContext);
     const { instrumentLayer, x, y } = panels[INSTRUMENTS_PANEL_ID];
-    const { insertRecording } = useContext(InstrumentRecordingsContext);
+    const { insertRecording } = useContext(CollisionsContext);
 
     const instrumentName = instrumentLayer?.split(' ')[0];
 

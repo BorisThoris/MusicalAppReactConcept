@@ -31,6 +31,10 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
     const [selectedBeat, setSelectedBeat] = useState(null);
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
+
+    // console.log('overlapGroups');
+    // console.log(overlapGroups);
+
     const { openLoadPanel } = useContext(PanelContext);
 
     const [copiedEvents, setCopiedEvents] = useState([]);
@@ -84,7 +88,7 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
                 JSON.stringify(newOverlapGroups) !== JSON.stringify(prevOverlapGroupsRef.current);
 
             if (isOverlapGroupsChanged) {
-                findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
+                // findDifferences(newOverlapGroups, prevOverlapGroupsRef.current);
 
                 pushToHistory(prevOverlapGroupsRef.current);
                 const cleanedUpGroups = cleanUpMalformedEventGroups(newOverlapGroups);

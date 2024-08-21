@@ -1,13 +1,14 @@
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Circle, Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { useCustomDrag } from '../../../../hooks/useCustomDrag';
 import { useDynamicStyles } from '../../../../hooks/useDynamicStyles';
 import { useEventFocus } from '../../../../hooks/useEventFocus';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import useElementSelectionMovement from './useElementSelectionMovement';
 import { useClickHandlers } from './useEventClickHandlers';
@@ -38,6 +39,12 @@ const SoundEventElement = React.memo(
         const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
         const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
             useContext(SelectionContext);
+        const { calculateCollisions } = useContext(CollisionsContext);
+
+        useEffect(() => {
+            // console.log('TEST: Component re-rendered due to prop changes');
+            // eslint-disable-next-line max-len
+        }, [handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY]);
 
         const isSelected = isItemSelected(id);
 
@@ -113,12 +120,20 @@ const SoundEventElement = React.memo(
             baseColor
         );
 
+        const handleDelete = useCallback(() => {
+            if (groupRef.current) {
+                groupRef.current.destroy(); // Remove the element from the Konva layer
+                calculateCollisions();
+            }
+        }, [calculateCollisions]);
+
         return (
             <Group
                 ref={groupRef}
                 key={index}
                 x={elementXPosition}
                 y={0}
+                data-recording={recording}
                 draggable={!parent?.locked}
                 dragBoundFunc={dragBoundFunc}
                 onDragMove={handleSelectionBoxMove}
@@ -127,6 +142,7 @@ const SoundEventElement = React.memo(
                 onClick={handleClick}
                 onDblClick={handleDoubleClick}
                 listening={listening}
+                id={`element-${id}`}
             >
                 <Rect
                     onMouseEnter={handleMouseEnter}
@@ -148,6 +164,8 @@ const SoundEventElement = React.memo(
                     shadowOpacity={CONSTANTS.SHADOW.OPACITY}
                     opacity={CONSTANTS.TRANSPARENCY_VALUE}
                 />
+                {/* Delete Button */}
+
                 <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
                 {!parent && (
                     <Text
@@ -159,10 +177,37 @@ const SoundEventElement = React.memo(
                         fill="white"
                     />
                 )}
+
+                <Circle
+                    x={lengthBasedWidth - 10} // Position at the right end of the event
+                    y={10} // Position near the top
+                    radius={8} // Small circle as a delete button
+                    fill="red"
+                    onClick={handleDelete} // Handle delete action
+                    listening
+                />
             </Group>
         );
     },
-    isEqual
+    (prevProps, nextProps) => {
+        const areEqual = isEqual(prevProps, nextProps);
+
+        // if (!areEqual) {
+        //     console.log('SoundEventElement is re-rendering due to prop changes:');
+        //     console.log('Previous props:', prevProps);
+        //     console.log('Current props:', nextProps);
+        //     console.log('Differences:', {
+        //         handleClickOverlapGroup: prevProps.handleClickOverlapGroup !== nextProps.handleClickOverlapGroup,
+        //         index: prevProps.index !== nextProps.index,
+        //         listening: prevProps.listening !== nextProps.listening,
+        //         recording: !isEqual(prevProps.recording, nextProps.recording),
+        //         timelineHeight: prevProps.timelineHeight !== nextProps.timelineHeight,
+        //         timelineY: prevProps.timelineY !== nextProps.timelineY
+        //     });
+        // }
+
+        return areEqual;
+    }
 );
 
 SoundEventElement.propTypes = {
