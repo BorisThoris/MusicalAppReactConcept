@@ -107,9 +107,9 @@ export const PanelContainer = styled.div`
     position: absolute !important;
     left: ${({ x }) => x}px;
     top: ${({ y }) => y}px;
-    transform: ${({ timelineState }) => `translate(${-timelineState.panelCompensationOffset.x}px, 0)`};
+    transform: ${({ timelinestate }) => `translate(${-timelinestate.panelCompensationOffset.x}px, 0)`};
 
-    border-radius: ${({ isSpeechBubble }) => (isSpeechBubble ? '8px' : '0')};
+    border-radius: ${({ isspeechbubble }) => (isspeechbubble ? '8px' : '0')};
 `;
 
 export const SpeechBubbleArrow = styled.div`

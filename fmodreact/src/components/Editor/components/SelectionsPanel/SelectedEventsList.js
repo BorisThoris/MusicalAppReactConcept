@@ -28,7 +28,7 @@ const renderEventItems = ({
     selectedValues,
     updateOverlapGroupTimes
 }) => {
-    return selectedValues.map((event) => {
+    return selectedValues.map((event, index) => {
         const { children, endTime, eventInstance, id, startTime } = event;
         const isGroup = children.length > 0;
         const onlyChildren = !id;
@@ -40,8 +40,11 @@ const renderEventItems = ({
         const onDelete = () => onDeleteRecording(event);
         const onPlay = () => onPlayEvent(eventInstance);
 
+        // Ensure the key is unique
+        const uniqueKey = id || `${eventInstance}-${startTime}-${endTime}-${index}`;
+
         return (
-            <EventContainer key={id || eventInstance}>
+            <EventContainer key={uniqueKey}>
                 {isGroup && !onlyChildren && <button>unselected group</button>}
 
                 {isGroup && !onlyChildren && (

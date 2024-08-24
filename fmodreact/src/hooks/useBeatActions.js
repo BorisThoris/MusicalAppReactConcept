@@ -3,7 +3,7 @@ import { recreateEvents } from '../globalHelpers/createSound';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 
 export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage }) => {
-    const { setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(CollisionsContext);
+    const { deleteAllElements, setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(CollisionsContext);
 
     const handleSave = useCallback(
         (beatName, overlapGroups) => {
@@ -60,6 +60,7 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
             if (beatToLoad) {
                 let savedOverlapGroups = JSON.parse(JSON.stringify(beatToLoad.data));
                 savedOverlapGroups = recreateEvents(savedOverlapGroups);
+                deleteAllElements();
                 setOverlapGroups(savedOverlapGroups);
                 setSelectedBeat(beatToLoad);
                 setHasChanged(false);
@@ -68,7 +69,7 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
                 alert('Beat not found.');
             }
         },
-        [beats, setOverlapGroups, setSelectedBeat, setHasChanged, closeLoadPanel]
+        [beats, deleteAllElements, setOverlapGroups, setSelectedBeat, setHasChanged, closeLoadPanel]
     );
 
     const handleDuplicate = useCallback(

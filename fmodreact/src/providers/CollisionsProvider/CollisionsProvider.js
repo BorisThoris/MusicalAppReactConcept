@@ -14,42 +14,15 @@ export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);
     const [copiedEvents, setCopiedEvents] = useState([]); // Add copiedEvents state
 
-    const { addTimelineRef, removeTimelineRef, timelineRefs } = useTimelineRefs();
-
-    const getProcessedElements = useCallback(() => {
-        const processedElements = [];
-
-        timelineRefs.forEach(({ instrumentName, ref }) => {
-            if (ref && ref.children && ref.children.length > 0) {
-                const elements = ref.find((node) => node.id().startsWith('element-'));
-
-                if (!elements || elements.length === 0) {
-                    console.warn(`No elements found for instrument ${instrumentName}, possible ref issue.`);
-                    return;
-                }
-
-                elements.forEach((element) => {
-                    const { height, width, x, y } = element.getClientRect();
-                    const elementData = {
-                        element,
-                        height,
-                        instrumentName,
-                        recording: element.attrs['data-recording'],
-                        timelineY: ref.timelineY,
-                        width,
-                        x,
-                        y // Assuming ref contains timelineY
-                    };
-
-                    processedElements.push(elementData);
-                });
-            } else {
-                console.log(`No children found in ref for instrument ${instrumentName}, skipping update.`);
-            }
-        });
-
-        return processedElements;
-    }, [timelineRefs]);
+    const {
+        addStageRef,
+        addTimelineRef,
+        deleteAllElements,
+        deleteAllTimelines,
+        getProcessedElements,
+        removeTimelineRef,
+        timelineRefs
+    } = useTimelineRefs({ setHasChanged });
 
     const {
         calculateCollisions,
@@ -72,22 +45,16 @@ export const CollisionsProvider = ({ children }) => {
     const { selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({ overlapGroups, setHasChanged });
 
     const previousOverlapGroupsRef = useRef({});
-    const previousTimelineRefsRef = useRef({});
 
     useEffect(() => {
         const stringifyOverlapGroups = JSON.stringify(overlapGroups);
-        const stringifyTimelineRefs = JSON.stringify(timelineRefs);
 
-        if (
-            previousOverlapGroupsRef.current !== stringifyOverlapGroups ||
-            previousTimelineRefsRef.current !== stringifyTimelineRefs
-        ) {
+        if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
             console.log('Recalculating collisions due to changes in overlapGroups or timelineRefs');
             calculateCollisions();
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
-            previousTimelineRefsRef.current = stringifyTimelineRefs;
         }
-    }, [calculateCollisions, overlapGroups, timelineRefs]);
+    }, [calculateCollisions, overlapGroups]);
 
     // Implement the insertRecording function
     const insertRecording = useCallback(
@@ -116,6 +83,8 @@ export const CollisionsProvider = ({ children }) => {
         [copiedEvents, overlapGroups, pushToHistory, setOverlapGroups]
     );
 
+    console.log(overlapGroups);
+
     // Implement the copyEvents function
     const copyEvents = useCallback((events) => {
         setCopiedEvents(events);
@@ -123,12 +92,15 @@ export const CollisionsProvider = ({ children }) => {
 
     const contextValue = useMemo(
         () => ({
+            addStageRef,
             addTimelineRef,
             calculateCollisions,
             calculateOverlapsForAllInstruments,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
+            deleteAllElements,
+            deleteAllTimelines,
             flatOverlapGroups,
             getProcessedElements,
             hasChanged,
@@ -153,8 +125,11 @@ export const CollisionsProvider = ({ children }) => {
         }),
         [
             calculateCollisions,
+            addStageRef,
+            deleteAllTimelines,
             addTimelineRef,
             timelineRefs,
+            deleteAllElements,
             removeTimelineRef,
             overlapGroups,
             flatOverlapGroups,

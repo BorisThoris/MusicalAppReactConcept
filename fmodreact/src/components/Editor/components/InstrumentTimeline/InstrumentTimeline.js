@@ -67,6 +67,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
             onMouseEnter={handleMouseEnter}
             draggable={false}
             ref={timelineRef}
+            id={`timeline-${instrumentName}`}
         >
             <InstrumentTimelinePanelComponent
                 timelineHeight={TimelineHeight}

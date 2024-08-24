@@ -22,7 +22,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
 
         return () => {
             if (currentTimelineRef) {
-                removeTimelineRef(currentTimelineRef);
+                removeTimelineRef(instrumentName);
             }
         };
     }, [addTimelineRef, removeTimelineRef, instrumentName, timelineY]);

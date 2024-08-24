@@ -105,7 +105,7 @@ export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeigh
     );
 
     return (
-        <Group>
+        <Group id={`parent-${id}`}>
             <Group
                 key={index}
                 x={elementXPosition}

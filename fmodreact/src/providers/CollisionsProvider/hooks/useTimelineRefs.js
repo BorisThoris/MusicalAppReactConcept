@@ -1,32 +1,121 @@
+import { filter, findIndex, flatMap } from 'lodash';
 import { useCallback, useState } from 'react';
 
-export const useTimelineRefs = () => {
+export const useTimelineRefs = ({ setHasChanged }) => {
     const [timelineRefs, setTimelineRefs] = useState([]);
+    const [stageRef, setStageRef] = useState(null);
 
-    console.log('REF CHANGE');
-
-    // Add or update a timeline reference
-    const addTimelineRef = useCallback((instrumentName, ref) => {
+    const updateTimelineRefs = useCallback((updateFn) => {
         setTimelineRefs((prevRefs) => {
-            const existingRefIndex = prevRefs.findIndex((r) => r.instrumentName === instrumentName);
-            if (existingRefIndex !== -1) {
-                // If the ref already exists for this instrument, update it
-                const updatedRefs = [...prevRefs];
-                updatedRefs[existingRefIndex] = { instrumentName, ref };
-                return updatedRefs;
-            }
-            // Otherwise, add a new ref
-            return [...prevRefs, { instrumentName, ref }];
+            const updatedRefs = updateFn(prevRefs);
+            return updatedRefs;
         });
     }, []);
 
-    // Remove a timeline reference
-    const removeTimelineRef = useCallback((instrumentName) => {
-        setTimelineRefs((prevRefs) => prevRefs.filter((r) => r.instrumentName !== instrumentName));
+    const addStageRef = useCallback((ref) => setStageRef(ref), []);
+
+    const addTimelineRef = useCallback(
+        (instrumentName, ref) => {
+            updateTimelineRefs((prevRefs) => {
+                const existingRefIndex = findIndex(prevRefs, { instrumentName });
+                return existingRefIndex !== -1
+                    ? prevRefs.map((r, i) => (i === existingRefIndex ? { instrumentName, ref } : r))
+                    : [...prevRefs, { instrumentName, ref }];
+            });
+        },
+        [updateTimelineRefs]
+    );
+
+    const removeTimelineRef = useCallback(
+        (instrumentName) => {
+            updateTimelineRefs((prevRefs) => filter(prevRefs, (r) => r.instrumentName !== instrumentName));
+        },
+        [updateTimelineRefs]
+    );
+
+    const processElement = (element, instrumentName, ref) => {
+        const { height, width, x, y } = element.getClientRect();
+        return {
+            element,
+            height,
+            instrumentName,
+            recording: element.attrs['data-recording'],
+            timelineY: ref.timelineY,
+            width,
+            x,
+            y
+        };
+    };
+
+    const getProcessedElements = useCallback(() => {
+        const processedElements = [];
+
+        timelineRefs.forEach(({ instrumentName, ref }) => {
+            if (ref && ref.children && ref.children.length > 0) {
+                const elements = ref.find((node) => node.id().startsWith('element-'));
+
+                if (!elements || elements.length === 0) {
+                    console.warn(`No elements found for instrument ${instrumentName}, possible ref issue.`);
+                    return;
+                }
+
+                elements.forEach((element) => {
+                    const { height, width, x, y } = element.getClientRect();
+                    const elementData = {
+                        element,
+                        height,
+                        instrumentName,
+                        recording: element.attrs['data-recording'],
+                        timelineY: ref.timelineY,
+                        width,
+                        x,
+                        y // Assuming ref contains timelineY
+                    };
+
+                    processedElements.push(elementData);
+                });
+            } else {
+                console.log(`No children found in ref for instrument ${instrumentName}, skipping update.`);
+            }
+        });
+
+        return processedElements;
+    }, [timelineRefs]);
+
+    const clearElements = useCallback((elements) => {
+        elements.forEach((element) => {
+            element
+                .getStage()
+                ?.findOne(`#parent-${element.id().replace('element-', '')}`)
+                ?.destroy();
+            element.destroy();
+        });
     }, []);
 
+    const deleteAllElements = useCallback(() => {
+        timelineRefs.forEach(({ ref }) => {
+            clearElements(ref?.find((node) => node.id().startsWith('element-')) || []);
+        });
+        setTimelineRefs([]);
+        setHasChanged(true);
+    }, [timelineRefs, clearElements, setHasChanged]);
+
+    const deleteAllTimelines = useCallback(() => {
+        if (!stageRef?.current) {
+            console.warn('Stage reference is not set.');
+            return;
+        }
+        clearElements(stageRef.current.find((node) => node.id().startsWith('timeline-')));
+        setTimelineRefs([]);
+        setHasChanged(true);
+    }, [stageRef, clearElements, setHasChanged]);
+
     return {
+        addStageRef,
         addTimelineRef,
+        deleteAllElements,
+        deleteAllTimelines,
+        getProcessedElements,
         removeTimelineRef,
         timelineRefs
     };

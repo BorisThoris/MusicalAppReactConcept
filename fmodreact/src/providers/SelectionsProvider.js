@@ -19,7 +19,7 @@ export const SelectionContext = createContext({
 export const SelectionProvider = ({ children }) => {
     const { timelineState } = useContext(TimelineContext);
     const { closePanel, openSelectionsPanel, panels } = useContext(PanelContext);
-    const { overlapGroups, pushToHistory, setOverlapGroups } = useContext(CollisionsContext);
+    const { calculateCollisions, getProcessedElements } = useContext(CollisionsContext);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
@@ -47,25 +47,39 @@ export const SelectionProvider = ({ children }) => {
 
     usePanelControl(selectedItems, panels, openSelectionsPanel, closePanel);
 
-    // Implement the deleteRecording function
     const deleteSelections = useCallback(
         (selectedEvents) => {
-            const updatedGroups = { ...overlapGroups };
-
             // Ensure selectedEvents is an array, even if a single event is passed
             const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
 
-            eventsArray.forEach((event) => {
-                const instrument = event.instrumentName;
-                if (updatedGroups[instrument] && updatedGroups[instrument][event.id]) {
-                    delete updatedGroups[instrument][event.id];
-                }
+            // Get all processed elements from the timeline
+            const processedElements = getProcessedElements();
+
+            // Filter the elements that match the selected events and destroy them
+            processedElements.forEach(({ element, instrumentName, recording }) => {
+                eventsArray.forEach((event) => {
+                    // Extract the ID from the element and remove the "element-" prefix for comparison
+                    const elementId = element.id().replace('element-', '');
+
+                    if (event.instrumentName === instrumentName && event.id === elementId) {
+                        if (event.parentId) {
+                            // Look for the parent group by ID prefixed with "parent-"
+                            const parentElement = element.getStage()?.findOne(`#parent-${event.parentId}`);
+
+                            if (parentElement) {
+                                parentElement.destroy(); // Remove the parent group from the Konva layer
+                            }
+                        }
+
+                        element.destroy(); // Remove the element from the Konva layer
+                    }
+                });
             });
 
-            pushToHistory(updatedGroups);
-            setOverlapGroups(updatedGroups);
+            // Recalculate collisions after elements are destroyed
+            calculateCollisions();
         },
-        [overlapGroups, pushToHistory, setOverlapGroups]
+        [calculateCollisions, getProcessedElements]
     );
 
     const selectedValues = Object.values(flatValues);

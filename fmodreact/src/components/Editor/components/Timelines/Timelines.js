@@ -4,12 +4,7 @@ import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import {
-    markersAndTrackerOffset,
-    markersHeight,
-    TimelineContext,
-    TimelineHeight
-} from '../../../../providers/TimelineProvider';
+import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Cursor } from '../Cursor/Cursor';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
@@ -20,7 +15,7 @@ import TimelineTracker from '../TimelineTracker/TimelineTracker';
 const Timelines = React.memo(() => {
     const stageRef = useRef(null);
 
-    const { overlapGroups } = useContext(CollisionsContext);
+    const { addStageRef, overlapGroups } = useContext(CollisionsContext);
     const { playbackStatus } = useContext(RecordingsPlayerContext);
     const { timelineState } = useContext(TimelineContext);
 
@@ -32,6 +27,10 @@ const Timelines = React.memo(() => {
     const recordingsArr = Object.entries(overlapGroups);
 
     const EditorHeight = recordingsArr.length * TimelineHeight + markersHeight || 500;
+
+    useEffect(() => {
+        addStageRef(stageRef);
+    }, [addStageRef, stageRef]);
 
     return (
         <>
