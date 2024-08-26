@@ -1,14 +1,16 @@
 import { useCallback, useContext } from 'react';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../providers/SelectionsProvider';
 
-export const useCustomDrag = ({ groupRef, isSelected, recording, updateStartTime }) => {
+export const useCustomDrag = ({ groupRef, isSelected, recording, timelineY, updateStartTime }) => {
     const { clearSelection } = useContext(SelectionContext);
+    const { timelineRefs } = useContext(CollisionsContext);
 
     const dragBoundFunc = useCallback(
         (pos) => ({
             x: pos.x - 60 > 0 ? pos.x : 60,
-            y: pos.y // Allow free movement along the y-axis during dragging
+            y: pos.y
         }),
         []
     );
@@ -23,76 +25,59 @@ export const useCustomDrag = ({ groupRef, isSelected, recording, updateStartTime
         [clearSelection, isSelected]
     );
 
-    function haveIntersection(r1, r2) {
-        return !(
-            r2.x > r1.x + r1.width ||
-            r2.x + r2.width < r1.x ||
-            r2.y > r1.y + r1.height ||
-            r2.y + r2.height < r1.y
-        );
-    }
-
     const handleDragMoveWithCollision = useCallback(
         (e) => {
             const groupNode = groupRef.current;
+            if (!groupNode) {
+                console.error('Group node ref is not available.');
+                return null;
+            }
+
             const targetRect = groupNode.getClientRect();
+            let nearestTimeline = null;
+            let minYDistance = Infinity;
 
-            // Get the layer containing this group
-            const layer = groupNode.getLayer();
-
-            let nearestCollision = null;
-            let minDistance = Infinity;
-
-            layer.parent.children.forEach((group) => {
-                if (group === groupNode) {
-                    return; // skip self
+            timelineRefs.forEach(({ instrumentName, ref }) => {
+                if (!ref) {
+                    console.warn(`Ref for instrument ${instrumentName} is not set.`);
+                    return;
                 }
-                const groupRect = group.getClientRect();
 
-                if (haveIntersection(groupRect, targetRect)) {
-                    // Calculate the distance between the centers of the two rectangles
-                    const distance = Math.sqrt(
-                        (targetRect.x + targetRect.width / 2 - (groupRect.x + groupRect.width / 2)) ** 2 +
-                            (targetRect.y + targetRect.height / 2 - (groupRect.y + groupRect.height / 2)) ** 2
-                    );
+                const timelineRect = ref.getClientRect();
+                const adjustedTimelineY = timelineRect.y;
+                const yDistance = Math.abs(targetRect.y - timelineY - adjustedTimelineY);
 
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestCollision = group;
-                    }
+                if (yDistance < minYDistance) {
+                    minYDistance = yDistance;
+                    nearestTimeline = instrumentName;
                 }
             });
 
-            if (nearestCollision) {
-                const rectsWithTimelineId = nearestCollision.children.find(
-                    (node) => node.className === 'Rect' && node.attrs.id && node.attrs.id.includes('Timeline')
-                );
-
-                if (rectsWithTimelineId) {
-                    console.log(`Nearest collision with: ${rectsWithTimelineId.attrs.id}`);
-
-                    return rectsWithTimelineId.attrs.id;
-                    // Additional handling logic for the nearest collision can be added here
-                }
+            if (nearestTimeline) {
+                return nearestTimeline;
             }
+
+            return null;
         },
-        [groupRef]
+        [groupRef, timelineRefs, timelineY]
     );
 
     const handleDragEnd = useCallback(
         (e) => {
             const newStartTime = e.target.x() / pixelToSecondRatio;
+            const closestTimeline = handleDragMoveWithCollision(e);
 
-            // Snap back to the original timelineY after drag ends
-            // const currentTimeline = handleDragMoveWithCollision(e);
-            updateStartTime({
-                newStartTime,
-                recording
-            });
+            updateStartTime(
+                {
+                    newStartTime,
+                    recording
+                },
+                closestTimeline
+            );
 
             e.target.y(0);
         },
-        [updateStartTime, recording]
+        [handleDragMoveWithCollision, updateStartTime, recording]
     );
 
     return { dragBoundFunc, handleDragEnd, handleDragStart };

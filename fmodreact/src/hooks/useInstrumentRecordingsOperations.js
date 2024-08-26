@@ -10,8 +10,7 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { calculateOverlapsForAllInstruments, flatOverlapGroups, overlapGroups, setOverlapGroups } =
-        useContext(CollisionsContext);
+    const { flatOverlapGroups, setOverlapGroups } = useContext(CollisionsContext);
 
     const getEventById = useCallback(
         (id) => {
@@ -200,44 +199,44 @@ export const useInstrumentRecordingsOperations = () => {
 
     const updateRecordingStartTime = useCallback(
         (data, newInstrumentName) => {
-            const updateStartTime = ({ newStartTime, recording }, recordingsCopy) => {
-                const { eventLength, id: index, instrumentName } = recording;
-                const instrumentRecordings = recordingsCopy[instrumentName];
+            setOverlapGroups((preOverlapGroups) => {
+                const updatedGroups = { ...preOverlapGroups };
 
-                const searchAndUpdateRecording = (recordings, id, newStart) => {
-                    const recordingKey = Object.keys(recordings).find((key) => `${recordings[key].id}` === `${id}`);
-                    const recording = recordings[recordingKey];
+                const updateStartTime = ({ newStartTime, recording }) => {
+                    const { eventLength, id: recordingId, instrumentName: oldInstrumentName } = recording;
+                    const targetInstrumentName = newInstrumentName || oldInstrumentName;
 
-                    if (recording) {
-                        const roundedStartTime = parseFloat(newStart.toFixed(2));
-                        const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
-                        recording.startTime = roundedStartTime;
-                        recording.endTime = roundedEndTime;
+                    // Step 1: Remove the recording from the old instrument if necessary
+                    if (newInstrumentName && oldInstrumentName !== newInstrumentName) {
+                        delete updatedGroups[oldInstrumentName][recordingId];
                     }
 
-                    return Object.values(recordings).some(
-                        (rec) => rec.events && searchAndUpdateRecording(rec.events, id, newStart)
-                    );
+                    // Step 2: Update the recording's start time and move it to the new instrument's recordings
+                    const roundedStartTime = parseFloat(newStartTime.toFixed(2));
+                    const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
+                    recording.startTime = roundedStartTime;
+                    recording.endTime = roundedEndTime;
+                    recording.instrumentName = targetInstrumentName;
+
+                    // Ensure the target instrument group exists
+                    if (!updatedGroups[targetInstrumentName]) {
+                        updatedGroups[targetInstrumentName] = {};
+                    }
+
+                    // Add or update the recording in the target instrument group
+                    updatedGroups[targetInstrumentName][recordingId] = recording;
                 };
 
-                // Start the recursive search and update process
-                searchAndUpdateRecording(instrumentRecordings, index, newStartTime);
-            };
+                if (Array.isArray(data)) {
+                    data.forEach((item) => updateStartTime(item));
+                } else {
+                    updateStartTime(data);
+                }
 
-            const recordingsCopy = { ...overlapGroups };
-
-            if (Array.isArray(data)) {
-                data.forEach((item) => updateStartTime(item, recordingsCopy));
-            } else {
-                updateStartTime(data, recordingsCopy);
-            }
-
-            const testSad = calculateOverlapsForAllInstruments(recordingsCopy);
-
-            // prevOverlapGroupsRef.current = testSad;
-            setOverlapGroups(testSad);
+                return updatedGroups;
+            });
         },
-        [calculateOverlapsForAllInstruments, overlapGroups, setOverlapGroups]
+        [setOverlapGroups]
     );
 
     const updateOverlapGroupTimes = useCallback(

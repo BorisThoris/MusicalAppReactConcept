@@ -1,8 +1,9 @@
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Circle, Group, Rect, Text } from 'react-konva';
+import { Circle, Group, Layer, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { Portal } from '../../../../globalHelpers/Portal';
 import { useCustomDrag } from '../../../../hooks/useCustomDrag';
 import { useDynamicStyles } from '../../../../hooks/useDynamicStyles';
 import { useEventFocus } from '../../../../hooks/useEventFocus';
@@ -37,18 +38,24 @@ const SoundEventElement = React.memo(
         const { eventLength, id, locked, name, parentId, startTime } = recording;
 
         const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
+        const [elementYPosition, setElementYPosition] = useState(0); // Initialize Y position
+
         const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected } =
             useContext(SelectionContext);
         const { calculateCollisions } = useContext(CollisionsContext);
 
-        useEffect(() => {
-            // console.log('TEST: Component re-rendered due to prop changes');
-            // eslint-disable-next-line max-len
-        }, [handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY]);
+        const [isDragging, setDragging] = useState(false);
 
         const isSelected = isItemSelected(id);
 
-        useElementSelectionMovement({ elementXPosition, isSelected, recording, setElementXPosition });
+        useElementSelectionMovement({
+            elementXPosition,
+            elementYPosition,
+            isSelected,
+            recording,
+            setElementXPosition,
+            setElementYPosition
+        });
 
         const groupRef = useRef();
         const elementRef = useRef();
@@ -73,14 +80,33 @@ const SoundEventElement = React.memo(
             timelineY
         });
 
-        const { dragBoundFunc, handleDragEnd, handleDragStart } = useCustomDrag({
+        const {
+            dragBoundFunc,
+            handleDragEnd: customHandleDragEnd,
+            handleDragStart: customHandleDragStart
+        } = useCustomDrag({
             groupRef,
             isSelected,
-            parent,
             recording,
             timelineY,
             updateStartTime
         });
+
+        const handleDragStart = useCallback(
+            (e) => {
+                setDragging(true);
+                customHandleDragStart(e);
+            },
+            [customHandleDragStart]
+        );
+
+        const handleDragEnd = useCallback(
+            (e) => {
+                setDragging(false);
+                customHandleDragEnd(e);
+            },
+            [customHandleDragEnd]
+        );
 
         const onLockSoundEventElement = useCallback(
             () => lockOverlapGroupById({ groupId: id }),
@@ -128,83 +154,61 @@ const SoundEventElement = React.memo(
         }, [calculateCollisions]);
 
         return (
-            <Group
-                ref={groupRef}
-                key={index}
-                x={elementXPosition}
-                y={0}
-                data-recording={recording}
-                draggable={!parent?.locked}
-                dragBoundFunc={dragBoundFunc}
-                onDragMove={handleSelectionBoxMove}
-                onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
-                onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
-                onClick={handleClick}
-                onDblClick={handleDoubleClick}
-                listening={listening}
-                id={`element-${id}`}
-            >
-                <Rect
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={restoreZIndex}
-                    ref={elementRef}
-                    x={0}
-                    y={isFocused ? -height * 0.1 : 0}
-                    width={lengthBasedWidth}
-                    height={isFocused ? height * 1.1 : height}
-                    fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
-                    fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
-                    fillLinearGradientColorStops={dynamicColorStops}
-                    fill={dynamicStroke}
-                    stroke="black"
-                    strokeWidth={CONSTANTS.STROKE_WIDTH}
-                    cornerRadius={CONSTANTS.CORNER_RADIUS}
-                    shadowOffset={CONSTANTS.SHADOW.OFFSET}
-                    shadowBlur={dynamicShadowBlur}
-                    shadowOpacity={CONSTANTS.SHADOW.OPACITY}
-                    opacity={CONSTANTS.TRANSPARENCY_VALUE}
-                />
-                {/* Delete Button */}
-
-                <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
-                {!parent && (
-                    <Text
-                        onClick={onLockSoundEventElement}
-                        x={-10}
-                        y={-10}
-                        text={locked ? '🔒' : '✔️'}
-                        fontSize={18}
-                        fill="white"
+            <Portal selector=".top-layer" enabled={isDragging}>
+                <Group
+                    ref={groupRef}
+                    key={index}
+                    y={elementYPosition}
+                    x={elementXPosition}
+                    data-recording={recording}
+                    draggable={!parent?.locked}
+                    dragBoundFunc={dragBoundFunc}
+                    onDragMove={handleSelectionBoxMove}
+                    onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
+                    onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
+                    onClick={handleClick}
+                    onDblClick={handleDoubleClick}
+                    listening={listening}
+                    id={`element-${id}`}
+                >
+                    <Rect
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={restoreZIndex}
+                        ref={elementRef}
+                        x={0}
+                        y={isFocused ? -height * 0.1 : 0}
+                        width={lengthBasedWidth}
+                        height={isFocused ? height * 1.1 : height}
+                        fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
+                        fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
+                        fillLinearGradientColorStops={dynamicColorStops}
+                        fill={dynamicStroke}
+                        stroke="black"
+                        strokeWidth={CONSTANTS.STROKE_WIDTH}
+                        cornerRadius={CONSTANTS.CORNER_RADIUS}
+                        shadowOffset={CONSTANTS.SHADOW.OFFSET}
+                        shadowBlur={dynamicShadowBlur}
+                        shadowOpacity={CONSTANTS.SHADOW.OPACITY}
+                        opacity={CONSTANTS.TRANSPARENCY_VALUE}
                     />
-                )}
-
-                <Circle
-                    x={lengthBasedWidth - 10} // Position at the right end of the event
-                    y={10} // Position near the top
-                    radius={8} // Small circle as a delete button
-                    fill="red"
-                    onClick={handleDelete} // Handle delete action
-                    listening
-                />
-            </Group>
+                    <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
+                    {!parent && (
+                        <Text
+                            onClick={onLockSoundEventElement}
+                            x={-10}
+                            y={-10}
+                            text={locked ? '🔒' : '✔️'}
+                            fontSize={18}
+                            fill="white"
+                        />
+                    )}
+                    <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
+                </Group>
+            </Portal>
         );
     },
     (prevProps, nextProps) => {
         const areEqual = isEqual(prevProps, nextProps);
-
-        // if (!areEqual) {
-        //     console.log('SoundEventElement is re-rendering due to prop changes:');
-        //     console.log('Previous props:', prevProps);
-        //     console.log('Current props:', nextProps);
-        //     console.log('Differences:', {
-        //         handleClickOverlapGroup: prevProps.handleClickOverlapGroup !== nextProps.handleClickOverlapGroup,
-        //         index: prevProps.index !== nextProps.index,
-        //         listening: prevProps.listening !== nextProps.listening,
-        //         recording: !isEqual(prevProps.recording, nextProps.recording),
-        //         timelineHeight: prevProps.timelineHeight !== nextProps.timelineHeight,
-        //         timelineY: prevProps.timelineY !== nextProps.timelineY
-        //     });
-        // }
 
         return areEqual;
     }

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useBoxMove } from '../hooks/useBoxMove';
 import { usePanelControl } from '../hooks/usePanelControl';
 import { PanelContext } from '../hooks/usePanelState';
@@ -56,7 +56,7 @@ export const SelectionProvider = ({ children }) => {
             const processedElements = getProcessedElements();
 
             // Filter the elements that match the selected events and destroy them
-            processedElements.forEach(({ element, instrumentName, recording }) => {
+            processedElements.forEach(({ element, instrumentName }) => {
                 eventsArray.forEach((event) => {
                     // Extract the ID from the element and remove the "element-" prefix for comparison
                     const elementId = element.id().replace('element-', '');

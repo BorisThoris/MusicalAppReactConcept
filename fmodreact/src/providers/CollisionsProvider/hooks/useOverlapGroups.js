@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import Konva from 'konva';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timelineRefs }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
@@ -24,8 +24,6 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
     };
 
     const calculateCollisions = useCallback(() => {
-        console.log(timelineRefs);
-
         if (!timelineRefs || Object.keys(timelineRefs).length === 0) {
             console.log('No timelineRefs provided, skipping collision calculation.');
             return;

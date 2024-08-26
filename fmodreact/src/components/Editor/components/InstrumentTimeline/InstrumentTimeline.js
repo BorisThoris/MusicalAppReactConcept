@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useRef } from 'react';
-import { Layer, Rect } from 'react-konva';
+import React, { useCallback, useContext, useEffect } from 'react';
+import { Group, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
@@ -60,7 +60,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     );
 
     return (
-        <Layer
+        <Group
             y={timelineY}
             onMouseLeave={handleMouseLeave}
             onMouseMove={onMouseMove}
@@ -102,7 +102,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
             )}
 
             <Ripples ripples={ripples} removeRipple={removeRipple} />
-        </Layer>
+        </Group>
     );
 }, isEqual);
 

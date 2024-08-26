@@ -1,7 +1,14 @@
 import { useCallback, useContext, useEffect } from 'react';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 
-const useElementSelectionMovement = ({ elementXPosition, isSelected, recording, setElementXPosition }) => {
+const useElementSelectionMovement = ({
+    elementXPosition,
+    elementYPosition,
+    isSelected,
+    recording,
+    setElementXPosition,
+    setElementYPosition
+}) => {
     const { setSelectedElementsCords } = useContext(SelectionContext);
 
     const targetId = recording.id + recording.endTime;
@@ -9,10 +16,19 @@ const useElementSelectionMovement = ({ elementXPosition, isSelected, recording, 
     const updateCords = useCallback(() => {
         setSelectedElementsCords((prevCords) => {
             if (isSelected) {
-                if (prevCords[targetId]?.elementXPosition !== elementXPosition) {
+                if (
+                    prevCords[targetId]?.elementXPosition !== elementXPosition ||
+                    prevCords[targetId]?.elementYPosition !== elementYPosition
+                ) {
                     return {
                         ...prevCords,
-                        [targetId]: { elementXPosition, recording, setElementXPosition }
+                        [targetId]: {
+                            elementXPosition,
+                            elementYPosition,
+                            recording,
+                            setElementXPosition,
+                            setElementYPosition
+                        }
                     };
                 }
             } else {
@@ -21,7 +37,16 @@ const useElementSelectionMovement = ({ elementXPosition, isSelected, recording, 
             }
             return prevCords;
         });
-    }, [elementXPosition, isSelected, recording, setElementXPosition, setSelectedElementsCords, targetId]);
+    }, [
+        elementXPosition,
+        elementYPosition,
+        isSelected,
+        recording,
+        setElementXPosition,
+        setElementYPosition,
+        setSelectedElementsCords,
+        targetId
+    ]);
 
     useEffect(() => {
         updateCords();
@@ -29,11 +54,20 @@ const useElementSelectionMovement = ({ elementXPosition, isSelected, recording, 
         return () => {
             setSelectedElementsCords((prevCords) => {
                 const { [targetId]: omitted, ...rest } = prevCords;
-
                 return rest;
             });
         };
-    }, [elementXPosition, isSelected, setSelectedElementsCords, setElementXPosition, recording, updateCords, targetId]);
+    }, [
+        elementXPosition,
+        elementYPosition,
+        isSelected,
+        setSelectedElementsCords,
+        setElementXPosition,
+        setElementYPosition,
+        recording,
+        updateCords,
+        targetId
+    ]);
 };
 
 export default useElementSelectionMovement;

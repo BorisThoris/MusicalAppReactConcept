@@ -21,6 +21,7 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllTimelines,
         getProcessedElements,
         removeTimelineRef,
+        stageRef,
         timelineRefs
     } = useTimelineRefs({ setHasChanged });
 
@@ -50,7 +51,6 @@ export const CollisionsProvider = ({ children }) => {
         const stringifyOverlapGroups = JSON.stringify(overlapGroups);
 
         if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
-            console.log('Recalculating collisions due to changes in overlapGroups or timelineRefs');
             calculateCollisions();
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
         }
@@ -82,8 +82,6 @@ export const CollisionsProvider = ({ children }) => {
         },
         [copiedEvents, overlapGroups, pushToHistory, setOverlapGroups]
     );
-
-    console.log(overlapGroups);
 
     // Implement the copyEvents function
     const copyEvents = useCallback((events) => {
@@ -119,6 +117,7 @@ export const CollisionsProvider = ({ children }) => {
             setHasChanged,
             setOverlapGroups,
             setSelectedBeat,
+            stageRef,
             timelineRefs,
             undo,
             updateCurrentBeat
@@ -144,6 +143,7 @@ export const CollisionsProvider = ({ children }) => {
             pushToHistory,
             undo,
             redo,
+            stageRef,
             selectedBeat,
             setSelectedBeat,
             updateCurrentBeat,

@@ -32,9 +32,6 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [selectedBeat, setSelectedBeat] = useState(null);
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
 
-    // console.log('overlapGroups');
-    // console.log(overlapGroups);
-
     const { openLoadPanel } = useContext(PanelContext);
 
     const [copiedEvents, setCopiedEvents] = useState([]);

@@ -7,7 +7,7 @@ import usePlayback from '../../../../hooks/usePlayback';
 import { useSelectionState } from '../../../../hooks/useSelectionState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { TimelineContext, TimelineHeight, Y_OFFSET } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
 import { PanelWrapper } from '../Panel/PanelWrapper';
 import TimeControl from '../Panel/TimeControl';
@@ -67,7 +67,10 @@ export const SelectionsPanel = () => {
     const { y } = panels[SELECTIONS_PANEL_ID];
     const startTimeCorrected = selectedValues[0]?.startTime;
     const calculatedYLevel = highestYLevel + timelineState.canvasOffsetY;
-    const panelYPosition = y > calculatedYLevel ? y + timelineState.canvasOffsetY : calculatedYLevel;
+    const panelYPosition =
+        y > calculatedYLevel
+            ? y + timelineState.canvasOffsetY + TimelineHeight * 2
+            : calculatedYLevel + TimelineHeight * 1.5;
 
     const useReplayEvents = useCallback(() => {
         selectedValues.forEach((event) => {

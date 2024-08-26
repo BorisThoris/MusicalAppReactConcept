@@ -37,15 +37,17 @@ const Timelines = React.memo(() => {
             <PaintingTopBar />
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
-                {recordingsArr.map(([parentGroupName, events], index) => (
-                    <InstrumentTimeline
-                        key={parentGroupName}
-                        instrumentName={parentGroupName}
-                        events={events}
-                        index={index}
-                        markersHeight={markersHeight}
-                    />
-                ))}
+                <Layer name="top-layer">
+                    {recordingsArr.map(([parentGroupName, events], index) => (
+                        <InstrumentTimeline
+                            key={parentGroupName}
+                            instrumentName={parentGroupName}
+                            events={events}
+                            index={index}
+                            markersHeight={markersHeight}
+                        />
+                    ))}
+                </Layer>
 
                 <Cursor />
 

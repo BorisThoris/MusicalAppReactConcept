@@ -1,8 +1,9 @@
-import { filter, findIndex, flatMap } from 'lodash';
+import { filter, findIndex } from 'lodash';
 import { useCallback, useState } from 'react';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
     const [timelineRefs, setTimelineRefs] = useState([]);
+
     const [stageRef, setStageRef] = useState(null);
 
     const updateTimelineRefs = useCallback((updateFn) => {
@@ -54,10 +55,10 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             if (ref && ref.children && ref.children.length > 0) {
                 const elements = ref.find((node) => node.id().startsWith('element-'));
 
-                if (!elements || elements.length === 0) {
-                    console.warn(`No elements found for instrument ${instrumentName}, possible ref issue.`);
-                    return;
-                }
+                // if (!elements || elements.length === 0) {
+                //     console.warn(`No elements found for instrument ${instrumentName}, possible ref issue.`);
+                //     return;
+                // }
 
                 elements.forEach((element) => {
                     const { height, width, x, y } = element.getClientRect();
@@ -74,8 +75,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
                     processedElements.push(elementData);
                 });
-            } else {
-                console.log(`No children found in ref for instrument ${instrumentName}, skipping update.`);
             }
         });
 
@@ -117,6 +116,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllTimelines,
         getProcessedElements,
         removeTimelineRef,
+        stageRef,
         timelineRefs
     };
 };

@@ -1,6 +1,6 @@
 import Konva from 'konva';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Layer, Rect } from 'react-konva';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Layer, Rect, Transformer } from 'react-konva';
 import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../providers/TimelineProvider';
@@ -8,14 +8,46 @@ import { TimelineContext } from '../../../providers/TimelineProvider';
 export const DragSelection = ({ stageRef }) => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
     const [isDragging, setIsDragging] = useState(false);
+    const [selectedIds, selectShapes] = useState([]);
+    const trRef = useRef();
+    const selectionRectRef = useRef();
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
     const { getProcessedElements, timelineRefs } = useContext(CollisionsContext);
+
+    useEffect(() => {
+        if (trRef.current && stageRef.current) {
+            const nodes = selectedIds
+                .map((id) => stageRef.current.findOne(`#${id}`))
+                .filter((node) => node !== undefined && node !== null);
+
+            if (nodes.length > 0) {
+                trRef.current.nodes(nodes);
+            } else {
+                trRef.current.nodes([]);
+            }
+        }
+    }, [selectedIds, stageRef]);
 
     const hasMoved = useCallback(() => {
         if (!dragPos.start || !dragPos.end) return false;
         return dragPos.start.x !== dragPos.end.x || dragPos.start.y !== dragPos.end.y;
     }, [dragPos.start, dragPos.end]);
+
+    const updateSelectionRect = useCallback(() => {
+        const node = selectionRectRef.current;
+        if (node && dragPos.start && dragPos.end) {
+            node.setAttrs({
+                fill: 'rgba(0,0,255,0.5)',
+                height: Math.abs(dragPos.start.y - dragPos.end.y),
+                visible: isDragging,
+                width: Math.abs(dragPos.start.x - dragPos.end.x),
+                x: Math.min(dragPos.start.x, dragPos.end.x),
+                y: Math.min(dragPos.start.y, dragPos.end.y)
+            });
+            node.getLayer().batchDraw();
+        }
+    }, [dragPos.end, dragPos.start, isDragging]);
 
     const updateSelection = useCallback(
         ({ end, start }) => {
@@ -32,7 +64,7 @@ export const DragSelection = ({ stageRef }) => {
 
             const processedElements = getProcessedElements(timelineRefs);
             processedElements.forEach((elementData) => {
-                const { element, height, timelineY, width, x, y } = elementData;
+                const { height, width, x, y } = elementData;
                 const elementRect = { height, width, x, y };
 
                 if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
@@ -42,7 +74,7 @@ export const DragSelection = ({ stageRef }) => {
                         endY: y + height,
                         startX: x,
                         startY: y,
-                        timelineY
+                        timelineY: elementData.timelineY
                     });
                 }
             });
@@ -50,6 +82,7 @@ export const DragSelection = ({ stageRef }) => {
             if (intersectedElements.length > 0) {
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
                 setSelectionBasedOnCoordinates({ intersectedElements, yLevel: maxYLevel });
+                selectShapes(intersectedElements.map((el) => el.id)); // Update selected shapes
             }
         },
         [getProcessedElements, timelineRefs, setSelectionBasedOnCoordinates]
@@ -57,16 +90,22 @@ export const DragSelection = ({ stageRef }) => {
 
     const handleDrag = useCallback(
         (event, isStart) => {
-            const { x, y } = event.target.getStage().getPointerPosition();
+            const pointerPosition = event.target.getStage().getPointerPosition();
+            if (!pointerPosition) return; // Check if pointer position is valid
+
+            const { x, y } = pointerPosition;
             setDragPos((prevPos) => {
                 const newPos = isStart ? { end: prevPos.end, start: { x, y } } : { ...prevPos, end: { x, y } };
+
                 if (!isStart && newPos.start) updateSelection(newPos);
                 return newPos;
             });
             if (isStart) setIsDragging(true);
+            if (!isStart) updateSelectionRect(); // Update selection rect during drag
         },
-        [updateSelection]
+        [updateSelection, updateSelectionRect]
     );
+
     useEffect(() => {
         if (!stageRef.current) return;
 
@@ -122,7 +161,7 @@ export const DragSelection = ({ stageRef }) => {
     return (
         rectProps && (
             <Layer>
-                <Rect {...rectProps} />
+                <Rect {...rectProps} ref={selectionRectRef} />
             </Layer>
         )
     );
