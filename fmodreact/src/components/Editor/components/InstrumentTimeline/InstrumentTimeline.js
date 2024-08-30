@@ -88,6 +88,8 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 id={`Timeline-${timelineY}`}
                 onMouseMove={onMouseMove}
                 onPointerDown={onTimelinePointerDown}
+                stroke="black" // Border color
+                strokeWidth={2} // Border thickness
             />
 
             <TimelineEvents

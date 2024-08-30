@@ -5,7 +5,9 @@ import { useOverlapCalculator } from './useOverlapCalculator/useOverlapCalculato
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { flatOverlapGroups, overlapGroups } = useContext(CollisionsContext);
+    const { calculateCollisions, flatOverlapGroups, getProcessedElements, overlapGroups, stageRef } =
+        useContext(CollisionsContext);
+
     const { duplicateMultipleOverlapGroups } = useInstrumentRecordingsOperations();
     const { getEventById, updateRecording } = useInstrumentRecordingsOperations();
 
@@ -47,7 +49,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             for (const group of Object.values(flatOverlapGroups)) {
                 if (`${group.id}` === `${itemId}`) {
                     // eslint-disable-next-line no-param-reassign
-                    newSelectedItems[itemId] = { ...group };
+                    newSelectedItems[itemId] = { ...group, element: stageRef.current.findOne(`#element-${group.id}`) };
                     break;
                 }
             }
@@ -56,19 +58,33 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
         prevSelectedItemsRef.current = overlapGroups;
         setSelectedItems(updatedSelectedItems);
-    }, [flatOverlapGroups, overlapGroups, selectedItems]);
+    }, [flatOverlapGroups, overlapGroups, selectedItems, stageRef]);
 
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
             const newSelectedItems = intersectedElements.reduce((acc, element) => {
-                acc[element.id] = element;
+                acc[element.id] = {
+                    ...element,
+                    endX: element.endX,
+                    endY: element.endY,
+                    startX: element.startX,
+                    startY: element.startY,
+                    timelineY: element.timelineY
+                };
                 return acc;
             }, {});
 
-            setSelectedItems(newSelectedItems);
-            setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
+            // Convert both objects to JSON strings for easy comparison
+            const prevSelectedItemsJson = JSON.stringify(selectedItems);
+            const newSelectedItemsJson = JSON.stringify(newSelectedItems);
+
+            // Only update state if the new selected items are different
+            if (prevSelectedItemsJson !== newSelectedItemsJson) {
+                setSelectedItems(newSelectedItems);
+                setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
+            }
         },
-        [markersAndTrackerOffset]
+        [selectedItems, markersAndTrackerOffset]
     );
 
     const clearSelection = useCallback(() => {
@@ -149,8 +165,38 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         duplicateMultipleOverlapGroups(groupsToDuplicate);
     };
 
+    const deleteSelections = useCallback(
+        (selectedEvents) => {
+            const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
+
+            const processedElements = getProcessedElements();
+
+            processedElements.forEach(({ element, instrumentName }) => {
+                eventsArray.forEach((event) => {
+                    const elementId = element.id().replace('element-', '');
+
+                    if (event.instrumentName === instrumentName && event.id === elementId) {
+                        if (event.parentId) {
+                            const parentElement = element.getStage()?.findOne(`#parent-${event.parentId}`);
+
+                            if (parentElement) {
+                                parentElement.destroy();
+                            }
+                        }
+
+                        element.destroy();
+                    }
+                });
+            });
+
+            calculateCollisions();
+        },
+        [calculateCollisions, getProcessedElements]
+    );
+
     return {
         clearSelection,
+        deleteSelections,
         duplicateSelections,
         flatValues,
         groupEndTime,

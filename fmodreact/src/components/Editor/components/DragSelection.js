@@ -1,9 +1,8 @@
 import Konva from 'konva';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Layer, Rect, Transformer } from 'react-konva';
+import { Layer, Rect } from 'react-konva';
 import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
-import { TimelineContext } from '../../../providers/TimelineProvider';
 
 export const DragSelection = ({ stageRef }) => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
@@ -14,6 +13,7 @@ export const DragSelection = ({ stageRef }) => {
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
     const { getProcessedElements, timelineRefs } = useContext(CollisionsContext);
+    const processedElements = getProcessedElements(timelineRefs);
 
     useEffect(() => {
         if (trRef.current && stageRef.current) {
@@ -62,7 +62,6 @@ export const DragSelection = ({ stageRef }) => {
 
             const intersectedElements = [];
 
-            const processedElements = getProcessedElements(timelineRefs);
             processedElements.forEach((elementData) => {
                 const { height, width, x, y } = elementData;
                 const elementRect = { height, width, x, y };
@@ -70,6 +69,7 @@ export const DragSelection = ({ stageRef }) => {
                 if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
                     intersectedElements.push({
                         ...elementData.recording,
+                        element: elementData.element,
                         endX: x + width,
                         endY: y + height,
                         startX: x,
@@ -82,16 +82,16 @@ export const DragSelection = ({ stageRef }) => {
             if (intersectedElements.length > 0) {
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
                 setSelectionBasedOnCoordinates({ intersectedElements, yLevel: maxYLevel });
-                selectShapes(intersectedElements.map((el) => el.id)); // Update selected shapes
+                selectShapes(intersectedElements.map((el) => el.id));
             }
         },
-        [getProcessedElements, timelineRefs, setSelectionBasedOnCoordinates]
+        [processedElements, setSelectionBasedOnCoordinates]
     );
 
     const handleDrag = useCallback(
         (event, isStart) => {
             const pointerPosition = event.target.getStage().getPointerPosition();
-            if (!pointerPosition) return; // Check if pointer position is valid
+            if (!pointerPosition) return;
 
             const { x, y } = pointerPosition;
             setDragPos((prevPos) => {

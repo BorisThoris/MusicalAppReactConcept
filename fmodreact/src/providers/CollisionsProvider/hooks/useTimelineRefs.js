@@ -34,52 +34,41 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [updateTimelineRefs]
     );
 
-    const processElement = (element, instrumentName, ref) => {
-        const { height, width, x, y } = element.getClientRect();
-        return {
-            element,
-            height,
-            instrumentName,
-            recording: element.attrs['data-recording'],
-            timelineY: ref.timelineY,
-            width,
-            x,
-            y
-        };
-    };
-
     const getProcessedElements = useCallback(() => {
         const processedElements = [];
+        const seenElementIds = new Set(); // To track unique element IDs
 
-        timelineRefs.forEach(({ instrumentName, ref }) => {
-            if (ref && ref.children && ref.children.length > 0) {
-                const elements = ref.find((node) => node.id().startsWith('element-'));
+        if (stageRef && stageRef.current) {
+            const stage = stageRef.current;
+            const elements = stage.find((node) => node.id().startsWith('element-'));
 
-                // if (!elements || elements.length === 0) {
-                //     console.warn(`No elements found for instrument ${instrumentName}, possible ref issue.`);
-                //     return;
-                // }
+            elements.forEach((element) => {
+                const elementId = element.id(); // Get the element ID
 
-                elements.forEach((element) => {
+                if (!seenElementIds.has(elementId)) {
+                    // Check if the ID is already seen
                     const { height, width, x, y } = element.getClientRect();
+                    const { instrumentName } = element.attrs['data-recording'];
+
                     const elementData = {
                         element,
                         height,
                         instrumentName,
                         recording: element.attrs['data-recording'],
-                        timelineY: ref.timelineY,
+                        timelineY: element.parent.attrs.timelineY, // Assuming timelineY is stored in the parent
                         width,
                         x,
-                        y // Assuming ref contains timelineY
+                        y
                     };
 
                     processedElements.push(elementData);
-                });
-            }
-        });
+                    seenElementIds.add(elementId); // Mark this ID as seen
+                }
+            });
+        }
 
         return processedElements;
-    }, [timelineRefs]);
+    }, [stageRef]);
 
     const clearElements = useCallback((elements) => {
         elements.forEach((element) => {
@@ -92,12 +81,26 @@ export const useTimelineRefs = ({ setHasChanged }) => {
     }, []);
 
     const deleteAllElements = useCallback(() => {
-        timelineRefs.forEach(({ ref }) => {
-            clearElements(ref?.find((node) => node.id().startsWith('element-')) || []);
-        });
-        setTimelineRefs([]);
-        setHasChanged(true);
-    }, [timelineRefs, clearElements, setHasChanged]);
+        const seenElementIds = new Set(); // To track unique element IDs
+
+        if (stageRef && stageRef.current) {
+            const stage = stageRef.current;
+            const elements = stage.find((node) => node.id().startsWith('element-'));
+
+            elements.forEach((element) => {
+                const elementId = element.id();
+
+                if (!seenElementIds.has(elementId)) {
+                    // Ensure we haven't already processed this element
+                    clearElements([element]); // Clear this specific element
+                    seenElementIds.add(elementId); // Mark this ID as processed
+                }
+            });
+        }
+
+        setTimelineRefs([]); // Clear the timeline references
+        setHasChanged(true); // Mark that changes have occurred
+    }, [stageRef, clearElements, setTimelineRefs, setHasChanged]);
 
     const deleteAllTimelines = useCallback(() => {
         if (!stageRef?.current) {

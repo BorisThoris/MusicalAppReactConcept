@@ -1,7 +1,6 @@
 // Import statements grouped by source
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
-import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -11,7 +10,6 @@ import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 // Relative imports
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
-import useElementSelectionMovement from '../SoundEventElement/useElementSelectionMovement';
 
 const GROUP_STROKE_WIDTH = 4;
 
@@ -35,13 +33,9 @@ export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeigh
     const groupWidth = (endTime - startTime) * pixelToSecondRatio;
     const groupY = timelineY + canvasOffsetY + get(groupElmRef, 'current.attrs.height');
 
-    const { handleSelectionBoxClick, handleSelectionBoxDragEnd, handleSelectionBoxMove, isItemSelected, toggleItem } =
-        useContext(SelectionContext);
+    const { handleSelectionBoxMove, toggleItem } = useContext(SelectionContext);
 
-    const isSelected = isItemSelected(id);
     const [elementXPosition, setElementXPosition] = useState(startingPositionInTimeline);
-
-    useElementSelectionMovement({ elementXPosition, isSelected, recording: groupData, setElementXPosition });
 
     useEffect(() => {
         setElementXPosition(startTime * pixelToSecondRatio);
@@ -112,8 +106,8 @@ export const OverlapGroupElement = React.memo(({ groupData, index, timelineHeigh
                 draggable={locked}
                 onDragMove={handleSelectionBoxMove}
                 dragBoundFunc={dragBoundFunc}
-                onDragStart={!isSelected ? handleDragStart : handleSelectionBoxClick}
-                onDragEnd={!isSelected ? handleDragEnd : handleSelectionBoxDragEnd}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
                 width={groupWidth}
                 onClick={onGroupWrapperClick}
             >
