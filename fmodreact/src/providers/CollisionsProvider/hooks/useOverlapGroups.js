@@ -29,13 +29,16 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
             return;
         }
 
-        const groupedEvents = Object.values(timelineRefs).reduce((acc, timelineRef) => {
-            acc[timelineRef.instrumentName] = [];
+        // Initialize grouped events with empty arrays for each instrument name
+        const groupedEvents = Object.keys(timelineRefs).reduce((acc, instrumentName) => {
+            acc[instrumentName] = [];
             return acc;
         }, {});
 
-        const processedElements = getProcessedElements(timelineRefs);
+        // Process elements using the getProcessedElements function
+        const processedElements = getProcessedElements();
 
+        // Group the processed elements by their instrument name
         const updatedGroupedEvents = processedElements.reduce((acc, elementData) => {
             const { element, height, instrumentName, recording, width, x, y } = elementData;
 
@@ -45,6 +48,7 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
             };
         }, groupedEvents);
 
+        // Update overlap groups state
         setOverlapGroups((prevOverlapGroups) => {
             const newOverlapGroups = Object.keys(updatedGroupedEvents).reduce(
                 (groupAcc, instrumentName) => {
@@ -72,7 +76,7 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                             let hasMerged = false;
                             let mergedGroups = [];
 
-                            groups.forEach((group, i) => {
+                            groups.forEach((group) => {
                                 let merged = false;
 
                                 mergedGroups = mergedGroups.map((mg) => {

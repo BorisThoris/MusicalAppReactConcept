@@ -12,8 +12,8 @@ export const DragSelection = ({ stageRef }) => {
     const selectionRectRef = useRef();
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
-    const { getProcessedElements, timelineRefs } = useContext(CollisionsContext);
-    const processedElements = getProcessedElements(timelineRefs);
+    const { getProcessedElements } = useContext(CollisionsContext);
+    const processedElements = getProcessedElements();
 
     useEffect(() => {
         if (trRef.current && stageRef.current) {

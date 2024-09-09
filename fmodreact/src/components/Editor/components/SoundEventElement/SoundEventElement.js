@@ -4,7 +4,6 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import { Circle, Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
-import { useCustomDrag } from '../../../../hooks/useCustomDrag';
 import { useDynamicStyles } from '../../../../hooks/useDynamicStyles';
 import { useEventFocus } from '../../../../hooks/useEventFocus';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -36,14 +35,27 @@ const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 
 // Component
 const SoundEventElement = React.memo(
-    ({ handleClickOverlapGroup, index, listening, recording, timelineHeight, timelineY }) => {
+    ({
+        dragBoundFunc,
+        handleClickOverlapGroup,
+        handleDragEnd,
+        handleDragMove,
+        handleDragStart,
+        index,
+        isElementBeingDragged,
+        listening,
+        recording,
+        timelineHeight,
+        timelineY
+    }) => {
         const { eventLength, id, locked, name, parentId, startTime } = recording;
 
         // Refs and State
         const groupRef = useRef();
         const elementRef = useRef();
         const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
-        const [isDragging, setDragging] = useState(false);
+        const isDragging = isElementBeingDragged(id);
+
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
@@ -51,11 +63,7 @@ const SoundEventElement = React.memo(
         const { calculateCollisions } = useContext(CollisionsContext);
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-        const {
-            getEventById,
-            lockOverlapGroupById,
-            updateRecording: updateStartTime
-        } = useInstrumentRecordingsOperations();
+        const { getEventById, lockOverlapGroupById } = useInstrumentRecordingsOperations();
 
         // Derived values
         const isSelected = isItemSelected(id);
@@ -76,36 +84,6 @@ const SoundEventElement = React.memo(
             isSelected,
             false,
             COLORS[index % COLORS.length]
-        );
-
-        const {
-            dragBoundFunc,
-            handleDragEnd: customHandleDragEnd,
-            handleDragMove,
-            handleDragStart: customHandleDragStart
-        } = useCustomDrag({
-            groupRef,
-            isSelected,
-            recording,
-            timelineY,
-            updateStartTime
-        });
-
-        // Event Handlers
-        const handleDragStart = useCallback(
-            (e) => {
-                setDragging(true);
-                customHandleDragStart(e);
-            },
-            [customHandleDragStart]
-        );
-
-        const handleDragEnd = useCallback(
-            (e) => {
-                setDragging(false);
-                customHandleDragEnd(e);
-            },
-            [customHandleDragEnd]
         );
 
         const onLockSoundEventElement = useCallback(
@@ -144,16 +122,15 @@ const SoundEventElement = React.memo(
 
         // Component Render
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
-        const height = timelineHeight * 0.8;
 
         return (
-            <Portal selector=".top-layer" enabled={isDragging || isSelected}>
+            <Portal selector=".top-layer" enabled={isDragging}>
                 <Group
                     ref={groupRef}
                     key={index}
-                    y={isDragging || isSelected ? timelineY : 0}
+                    y={isDragging ? timelineY : 0}
                     x={elementXPosition}
-                    offset={isSelected ? timelineState.panelCompensationOffset : undefined}
+                    offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
                     draggable={!parent?.locked}
@@ -173,7 +150,7 @@ const SoundEventElement = React.memo(
                         x={0}
                         y={0}
                         width={lengthBasedWidth}
-                        height={isFocused ? height : height}
+                        height={timelineHeight}
                         fillLinearGradientStartPoint={CONSTANTS.GRADIENT_START}
                         fillLinearGradientEndPoint={CONSTANTS.GRADIENT_END}
                         fillLinearGradientColorStops={dynamicColorStops}

@@ -2,6 +2,7 @@ import { isEqual } from 'lodash';
 import React, { useContext, useLayoutEffect } from 'react';
 import { Group } from 'react-konva';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { SoundEventDragContext } from '../../../../providers/SoundEventDragProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { OverlapGroupElement } from '../OverlapGroupElement/OverlapGroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
@@ -10,13 +11,15 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
     const { timelineState } = useContext(TimelineContext);
 
     const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
-    const timelineRef = React.useRef(); // Ref for the entire timeline group
+    const { dragBoundFunc, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } =
+        useContext(SoundEventDragContext);
 
+    const timelineRef = React.useRef();
     useLayoutEffect(() => {
-        const currentTimelineRef = timelineRef.current; // Capture the current ref value
+        const currentTimelineRef = timelineRef.current;
 
         if (currentTimelineRef) {
-            currentTimelineRef.timelineY = timelineY; // Attach timelineY to the ref
+            currentTimelineRef.timelineY = timelineY;
             addTimelineRef(`${instrumentName}`, currentTimelineRef);
         }
 
@@ -40,6 +43,11 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                             recording={groupData}
                             index={index}
                             timelineY={timelineY}
+                            handleDragEnd={handleDragEnd}
+                            handleDragStart={handleDragStart}
+                            dragBoundFunc={dragBoundFunc}
+                            handleDragMove={handleDragMove}
+                            isElementBeingDragged={isElementBeingDragged}
                         />
                     );
                 }
@@ -51,6 +59,11 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                             index={index}
                             timelineHeight={timelineHeight}
                             timelineY={timelineY}
+                            handleChildDragEnd={handleDragEnd}
+                            handleChildDragStart={handleDragStart}
+                            childDragBoundFunc={dragBoundFunc}
+                            handleChildDragMove={handleDragMove}
+                            isChildElementBeingDragged={isElementBeingDragged}
                         />
                     );
                 }

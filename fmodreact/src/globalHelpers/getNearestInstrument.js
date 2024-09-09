@@ -10,7 +10,8 @@ export const getNearestInstrument = ({ deltaY, groupNode, timelineRefs }) => {
     let nearestTimeline = null;
     let minYDistance = Infinity;
 
-    timelineRefs.forEach(({ instrumentName, ref }) => {
+    Object.entries(timelineRefs).forEach(([instrumentName, ref]) => {
+        // Use Object.entries to iterate over the keys and values
         if (!ref) {
             console.warn(`Ref for instrument ${instrumentName} is not set.`);
             return;

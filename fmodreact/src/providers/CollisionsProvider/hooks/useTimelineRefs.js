@@ -1,9 +1,7 @@
-import { filter, findIndex } from 'lodash';
 import { useCallback, useState } from 'react';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
-    const [timelineRefs, setTimelineRefs] = useState([]);
-
+    const [timelineRefs, setTimelineRefs] = useState({}); // Change to an object
     const [stageRef, setStageRef] = useState(null);
 
     const updateTimelineRefs = useCallback((updateFn) => {
@@ -17,19 +15,20 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const addTimelineRef = useCallback(
         (instrumentName, ref) => {
-            updateTimelineRefs((prevRefs) => {
-                const existingRefIndex = findIndex(prevRefs, { instrumentName });
-                return existingRefIndex !== -1
-                    ? prevRefs.map((r, i) => (i === existingRefIndex ? { instrumentName, ref } : r))
-                    : [...prevRefs, { instrumentName, ref }];
-            });
+            updateTimelineRefs((prevRefs) => ({
+                ...prevRefs,
+                [instrumentName]: ref // Add or update the ref for the instrumentName
+            }));
         },
         [updateTimelineRefs]
     );
 
     const removeTimelineRef = useCallback(
         (instrumentName) => {
-            updateTimelineRefs((prevRefs) => filter(prevRefs, (r) => r.instrumentName !== instrumentName));
+            updateTimelineRefs((prevRefs) => {
+                const { [instrumentName]: _, ...rest } = prevRefs; // Remove the ref for the instrumentName
+                return rest;
+            });
         },
         [updateTimelineRefs]
     );
@@ -98,7 +97,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             });
         }
 
-        setTimelineRefs([]); // Clear the timeline references
+        setTimelineRefs({}); // Clear the timeline references (now an object)
         setHasChanged(true); // Mark that changes have occurred
     }, [stageRef, clearElements, setTimelineRefs, setHasChanged]);
 
@@ -108,7 +107,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             return;
         }
         clearElements(stageRef.current.find((node) => node.id().startsWith('timeline-')));
-        setTimelineRefs([]);
+        setTimelineRefs({}); // Clear the timeline references (now an object)
         setHasChanged(true);
     }, [stageRef, clearElements, setHasChanged]);
 

@@ -15,6 +15,7 @@ import { InstrumentRecordingsProvider } from './providers/InstrumentsProvider';
 import { PaintingProvider } from './providers/PaintingProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
 import { SelectionProvider } from './providers/SelectionsProvider';
+import { SoundEventDragProvider } from './providers/SoundEventDragProvider';
 import { TimelineProvider } from './providers/TimelineProvider';
 
 const NavContainer = styled.nav`
@@ -63,18 +64,20 @@ function App() {
                             <TimelineProvider>
                                 <RecordingsPlayerProvider>
                                     <SelectionProvider>
-                                        <Router>
-                                            <TopNav />
+                                        <SoundEventDragProvider>
+                                            <Router>
+                                                <TopNav />
 
-                                            <Routes>
-                                                <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                                <Route path="/guitar" element={<Guitar />} />
-                                                <Route path="/piano" element={<Piano />} />
-                                                <Route path="/tambourine" element={<Tambourine />} />
-                                                <Route path="/drums" element={<Drums />} />
-                                                <Route path="/editor" element={<Editor />} />
-                                            </Routes>
-                                        </Router>
+                                                <Routes>
+                                                    <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                                    <Route path="/guitar" element={<Guitar />} />
+                                                    <Route path="/piano" element={<Piano />} />
+                                                    <Route path="/tambourine" element={<Tambourine />} />
+                                                    <Route path="/drums" element={<Drums />} />
+                                                    <Route path="/editor" element={<Editor />} />
+                                                </Routes>
+                                            </Router>
+                                        </SoundEventDragProvider>
                                     </SelectionProvider>
                                 </RecordingsPlayerProvider>
                             </TimelineProvider>
