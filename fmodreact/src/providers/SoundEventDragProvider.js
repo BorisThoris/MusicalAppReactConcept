@@ -176,6 +176,9 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             const finalizeDrag = (element) => {
+                console.log('FINALIZING FOR ELEMENT');
+                console.log(element);
+
                 updateStartTimeForElement({
                     element
                 });

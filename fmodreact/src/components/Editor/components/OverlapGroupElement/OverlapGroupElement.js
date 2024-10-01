@@ -32,7 +32,7 @@ export const OverlapGroupElement = React.memo(
         const groupElmRef = useRef();
         const [isDragged, setIsDragged] = useState(false);
         const { timelineState } = useContext(TimelineContext);
-        const { lockOverlapGroupById, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
+        const { lockOverlapGroup, updateOverlapGroupTimes } = useInstrumentRecordingsOperations();
 
         const { openSelectionsPanel } = useContext(PanelContext);
 
@@ -64,19 +64,16 @@ export const OverlapGroupElement = React.memo(
             [id, updateOverlapGroupTimes]
         );
 
-        const handleOverlapGroupClick = useCallback(
-            (e) => {
-                toggleItem(eventsArray);
-                openSelectionsPanel({ y: groupY });
-            },
-            [eventsArray, groupY, openSelectionsPanel, toggleItem]
-        );
+        const handleOverlapGroupClick = useCallback(() => {
+            toggleItem(eventsArray);
+            openSelectionsPanel({ y: groupY });
+        }, [eventsArray, groupY, openSelectionsPanel, toggleItem]);
 
         const dragBoundFunc = useCallback((pos) => ({ x: pos.x, y: timelineY }), [timelineY]);
 
         const onLockOverlapGroup = useCallback(() => {
-            lockOverlapGroupById({ groupId: id });
-        }, [id, lockOverlapGroupById]);
+            lockOverlapGroup({ group: groupData });
+        }, [groupData, lockOverlapGroup]);
 
         const handleDragStart = useCallback(() => {
             setIsDragged(true);

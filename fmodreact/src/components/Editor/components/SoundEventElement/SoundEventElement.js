@@ -63,7 +63,7 @@ const SoundEventElement = React.memo(
         const { calculateCollisions } = useContext(CollisionsContext);
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-        const { getEventById, lockOverlapGroupById } = useInstrumentRecordingsOperations();
+        const { getEventById, lockOverlapGroup } = useInstrumentRecordingsOperations();
 
         // Derived values
         const isSelected = isItemSelected(id);
@@ -87,8 +87,8 @@ const SoundEventElement = React.memo(
         );
 
         const onLockSoundEventElement = useCallback(
-            () => lockOverlapGroupById({ groupId: id }),
-            [id, lockOverlapGroupById]
+            () => lockOverlapGroup({ group: recording }),
+            [lockOverlapGroup, recording]
         );
 
         const handleDelete = useCallback(() => {

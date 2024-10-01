@@ -6,6 +6,11 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
     const [overlapGroups, setOverlapGroups] = useState({});
 
     const doEventsCollide = useCallback((eventA, eventB) => {
+        // If either event is locked, they should not be considered as colliding
+        if (eventA.recording.locked || eventB.recording.locked) {
+            return false;
+        }
+
         const rectA = eventA.element.getClientRect();
         const rectB = eventB.element.getClientRect();
         return Konva.Util.haveIntersection(rectA, rectB);
@@ -108,17 +113,20 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                             const endTime = Math.max(...group.map((e) => e.recording.endTime));
 
                             const groupId = generateGroupId(group);
+                            const prevGroup = prevOverlapGroups[instrumentName]?.[groupId];
+
                             groupAcc2[groupId] = {
                                 endTime: parseFloat(endTime?.toFixed(2)),
                                 eventInstance: group[0].recording.eventInstance || {},
                                 eventLength: parseFloat((endTime - startTime).toFixed(2)),
                                 eventPath: group[0].recording.eventPath,
                                 events: group.reduce((eventAcc, event) => {
+                                    const prevRecording = prevGroup?.events?.[event.recording.id];
                                     eventAcc[event.recording.id] = {
                                         ...event.recording,
                                         events: null,
                                         length: parseFloat(event.recording.length?.toFixed(2)),
-                                        locked: event.recording.locked || false,
+                                        locked: prevRecording?.locked || event.recording.locked || false,
                                         parentId: groupId,
                                         startTime: parseFloat(event.recording.startTime?.toFixed(2))
                                     };
@@ -127,7 +135,7 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                                 id: groupId,
                                 instrumentName,
                                 length: parseFloat((endTime - startTime).toFixed(2)),
-                                locked: false,
+                                locked: prevGroup?.locked || false, // Preserve the locked state of the group
                                 name: group[0].recording.name,
                                 params: group[0].recording.params,
                                 parentId: null,

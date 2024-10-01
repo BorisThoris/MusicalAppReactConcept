@@ -10,21 +10,24 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { flatOverlapGroups, setOverlapGroups } = useContext(CollisionsContext);
+    const { flatOverlapGroups, overlapGroups, setOverlapGroups } = useContext(CollisionsContext);
 
-    const getEventById = useCallback(
-        (id) => {
-            return flatOverlapGroups[id];
-        },
-        [flatOverlapGroups]
-    );
+    // Utility function to update overlapGroups state
+    const updateGroups = (setOverlapGroups, updateCallback) => {
+        setOverlapGroups((prevGroups) => {
+            const updatedGroups = { ...prevGroups };
+            updateCallback(updatedGroups);
+            return updatedGroups;
+        });
+    };
+
+    const getEventById = useCallback((id) => flatOverlapGroups[id], [flatOverlapGroups]);
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
-            setOverlapGroups((prev) => ({
-                ...prev,
-                [instrumentName]: {}
-            }));
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                updatedGroups[instrumentName] = {};
+            });
         },
         [setOverlapGroups]
     );
@@ -33,8 +36,8 @@ export const useInstrumentRecordingsOperations = () => {
         ({ event, updatedParam }) => {
             const { id: eventId, instrumentName, parentId } = event;
 
-            setOverlapGroups((prevRecordings) => {
-                const updateParamsInEvent = (event, updatedParam) => {
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                const updateParamsInEvent = (event) => {
                     if (event.id === eventId) {
                         return {
                             ...event,
@@ -43,48 +46,30 @@ export const useInstrumentRecordingsOperations = () => {
                             )
                         };
                     }
-
                     if (event.events) {
-                        const updatedNestedEvents = Object.entries(event.events).reduce(
+                        event.events = Object.entries(event.events).reduce(
                             (acc, [key, nestedEvent]) => ({
                                 ...acc,
-                                [key]: updateParamsInEvent(nestedEvent, updatedParam)
+                                [key]: updateParamsInEvent(nestedEvent)
                             }),
                             {}
                         );
-
-                        return { ...event, events: updatedNestedEvents };
                     }
-
                     return event;
                 };
 
-                const instrumentRecordings = prevRecordings[instrumentName];
-                const updatedEvent = updateParamsInEvent(event, updatedParam);
-                const { name: paramName } = updatedParam.param;
-
-                event.eventInstance.setParameterByName(paramName, updatedParam.value, false);
-
+                const instrumentRecordings = updatedGroups[instrumentName];
                 if (parentId) {
-                    const parentEvent = instrumentRecordings[parentId];
-                    parentEvent.events[eventId] = updatedEvent;
-                    instrumentRecordings[parentId] = updateParamsInEvent(parentEvent, updatedParam);
+                    instrumentRecordings[parentId].events[eventId] = updateParamsInEvent(event);
                 } else {
-                    instrumentRecordings[eventId] = updatedEvent;
-                    const childEvent = instrumentRecordings[eventId].events[eventId];
-                    const updatedChildEvent = updateParamsInEvent(childEvent, updatedParam);
-
-                    instrumentRecordings[eventId].events[eventId] = updatedChildEvent;
-                    updatedChildEvent.eventInstance.setParameterByName(paramName, updatedParam.value, false);
+                    instrumentRecordings[eventId] = updateParamsInEvent(event);
                 }
-
-                return { ...prevRecordings };
             });
         },
         [setOverlapGroups]
     );
 
-    const processNewGroup = ({ locked = true, overlapGroup, startTimeOffset = 0 }) => {
+    const processNewGroup = useCallback(({ locked = true, overlapGroup, startTimeOffset = 0 }) => {
         const timeOffset = 2 + startTimeOffset;
 
         const newGroup = recreateEvents({
@@ -101,139 +86,95 @@ export const useInstrumentRecordingsOperations = () => {
         newGroup.locked = locked;
 
         return newGroup;
-    };
+    }, []);
 
     const duplicateMultipleOverlapGroups = useCallback(
         (groups) => {
-            const duplicatedGroups = {};
+            if (!groups || groups.length === 0) {
+                return;
+            }
 
-            groups.forEach((group) => {
-                const newGroup = processNewGroup({ ...group, locked: true });
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                groups.forEach((group) => {
+                    const newGroup = processNewGroup({ ...group, locked: true });
 
-                if (!duplicatedGroups[newGroup.instrumentName]) {
-                    duplicatedGroups[newGroup.instrumentName] = {};
-                }
-                duplicatedGroups[newGroup.instrumentName][newGroup.id] = newGroup;
-            });
-
-            setOverlapGroups((prevGroups) => {
-                const updatedGroups = { ...prevGroups };
-
-                Object.keys(duplicatedGroups).forEach((instrumentName) => {
-                    if (!updatedGroups[instrumentName]) {
-                        updatedGroups[instrumentName] = {};
+                    if (!updatedGroups[newGroup.instrumentName]) {
+                        updatedGroups[newGroup.instrumentName] = {};
                     }
 
-                    Object.assign(updatedGroups[instrumentName], duplicatedGroups[instrumentName]);
+                    updatedGroups[newGroup.instrumentName][newGroup.id] = newGroup;
                 });
-
-                return updatedGroups;
             });
         },
-        [setOverlapGroups]
+        [setOverlapGroups, processNewGroup]
     );
 
     const duplicateOverlapGroup = useCallback(
         (group) => {
             const newGroup = processNewGroup(group);
 
-            setOverlapGroups((prevGroups) => {
-                const updatedGroups = { ...prevGroups };
+            updateGroups(setOverlapGroups, (updatedGroups) => {
                 updatedGroups[newGroup.instrumentName][newGroup.id] = newGroup;
-
-                return updatedGroups;
             });
         },
-        [setOverlapGroups]
-    );
-
-    const duplicateInstrument = useCallback(
-        ({ instrumentName }) => {
-            const nameRegex = /^(.*?)(?:\s+(\d+))?$/;
-            const match = instrumentName.match(nameRegex);
-
-            const baseName = match ? match[1] : instrumentName;
-            let number = match && match[2] ? parseInt(match[2], 10) : 1;
-            let newInstrumentName = `${baseName} ${number}`;
-
-            setOverlapGroups((prevGroups) => {
-                const originalGroups = prevGroups[instrumentName];
-
-                if (!originalGroups) {
-                    alert('Original instrument data not found. Cannot duplicate.');
-                    return prevGroups;
-                }
-
-                // Check if newInstrumentName already exists and increment number if it does
-                while (Object.prototype.hasOwnProperty.call(prevGroups, newInstrumentName)) {
-                    number += 1;
-                    newInstrumentName = `${baseName} ${number}`;
-                }
-
-                // Duplicate each group in the original groups and recreate events
-                const duplicatedGroups = Object.values(originalGroups).reduce((newGroups, group) => {
-                    const recreatedGroup = recreateEvents({
-                        existingInstrumentName: newInstrumentName,
-                        groupsToRecreate: [group]
-                    })[0]; // Recreate events for the group
-
-                    newGroups[recreatedGroup.id] = {
-                        ...recreatedGroup,
-                        id: recreatedGroup.id,
-                        instrumentName: newInstrumentName
-                    };
-
-                    return newGroups;
-                }, {});
-
-                return {
-                    ...prevGroups,
-                    [newInstrumentName]: duplicatedGroups
-                };
-            });
-
-            return newInstrumentName;
-        },
-        [setOverlapGroups]
+        [setOverlapGroups, processNewGroup]
     );
 
     const updateRecordingStartTime = useCallback(
         (data, newInstrumentName) => {
-            setOverlapGroups((preOverlapGroups) => {
-                const updatedGroups = { ...preOverlapGroups };
-
+            updateGroups(setOverlapGroups, (updatedGroups) => {
                 const updateStartTime = ({ newStartTime, recording }) => {
-                    const { eventLength, id: recordingId, instrumentName: oldInstrumentName } = recording;
+                    const { eventLength, id: recordingId, instrumentName: oldInstrumentName, parentId } = recording;
                     const targetInstrumentName = newInstrumentName || oldInstrumentName;
 
-                    // Step 1: Remove the recording from the old instrument if necessary
-                    if (newInstrumentName && oldInstrumentName !== newInstrumentName) {
-                        delete updatedGroups[oldInstrumentName][recordingId];
+                    const roundedStartTime = parseFloat(newStartTime.toFixed(2));
+                    if (recording.startTime === roundedStartTime && oldInstrumentName === targetInstrumentName) {
+                        return;
                     }
 
-                    // Step 2: Update the recording's start time and move it to the new instrument's recordings
-                    const roundedStartTime = parseFloat(newStartTime.toFixed(2));
-                    const roundedEndTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
+                    if (newInstrumentName && oldInstrumentName !== newInstrumentName) {
+                        delete updatedGroups[oldInstrumentName]?.[recordingId];
+                    }
+
                     recording.startTime = roundedStartTime;
-                    recording.endTime = roundedEndTime;
+                    recording.endTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
                     recording.instrumentName = targetInstrumentName;
 
-                    // Ensure the target instrument group exists
                     if (!updatedGroups[targetInstrumentName]) {
                         updatedGroups[targetInstrumentName] = {};
                     }
 
-                    // Add or update the recording in the target instrument group
-                    updatedGroups[targetInstrumentName][recordingId] = recording;
+                    if (!parentId) {
+                        updatedGroups[targetInstrumentName][recordingId] = recording;
+                    } else {
+                        updatedGroups[targetInstrumentName][parentId].events[recordingId] = recording;
+                    }
                 };
 
                 if (Array.isArray(data)) {
-                    data.forEach((item) => updateStartTime(item));
+                    data.forEach(updateStartTime);
                 } else {
                     updateStartTime(data);
                 }
+            });
+        },
+        [setOverlapGroups]
+    );
 
-                return updatedGroups;
+    const lockOverlapGroup = useCallback(
+        ({ group }) => {
+            if (!group || !group.id || !group.instrumentName) {
+                alert('GROUP OR GROUP DETAILS NOT PROVIDED');
+                return;
+            }
+
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                const { id: groupId, instrumentName } = group;
+                const instrumentGroups = updatedGroups[instrumentName];
+
+                if (instrumentGroups && instrumentGroups[groupId]) {
+                    instrumentGroups[groupId].locked = !instrumentGroups[groupId].locked;
+                }
             });
         },
         [setOverlapGroups]
@@ -241,26 +182,19 @@ export const useInstrumentRecordingsOperations = () => {
 
     const updateOverlapGroupTimes = useCallback(
         ({ groupId, newStartTime }) => {
-            setOverlapGroups((prevGroups) => {
-                const updatedGroups = { ...prevGroups };
-
-                // Iterate over each instrument's group of events
+            updateGroups(setOverlapGroups, (updatedGroups) => {
                 Object.keys(updatedGroups).forEach((instrument) => {
                     const groups = updatedGroups[instrument];
-
-                    // Check if the specific group is present in the current instrument's groups
                     if (groups[groupId]) {
                         const group = groups[groupId];
                         const timeShift = newStartTime - group.startTime;
 
-                        // Update the main group's start and end times
                         groups[groupId] = {
                             ...group,
                             endTime: parseFloat((group.endTime + timeShift).toFixed(2)),
                             startTime: parseFloat(newStartTime.toFixed(2))
                         };
 
-                        // If there are nested events, update their times as well
                         if (group.events) {
                             Object.keys(group.events).forEach((eventId) => {
                                 const event = group.events[eventId];
@@ -273,8 +207,6 @@ export const useInstrumentRecordingsOperations = () => {
                         }
                     }
                 });
-
-                return updatedGroups;
             });
         },
         [setOverlapGroups]
@@ -289,17 +221,12 @@ export const useInstrumentRecordingsOperations = () => {
                 return;
             }
 
-            setOverlapGroups((prevOverlapGroups) => {
-                const updatedOverlapGroups = { ...prevOverlapGroups };
-
-                Object.values(updatedOverlapGroups).forEach((instrumentData) => {
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                Object.values(updatedGroups).forEach((instrumentData) => {
                     if (instrumentData[groupId]) {
-                        // Delete the entire group
                         delete instrumentData[groupId];
                     }
                 });
-
-                return updatedOverlapGroups;
             });
         },
         [setOverlapGroups]
@@ -307,10 +234,8 @@ export const useInstrumentRecordingsOperations = () => {
 
     const deleteAllRecordingsForInstrument = useCallback(
         (instrumentName) => {
-            setOverlapGroups((prev) => {
-                const updatedRecordings = { ...prev };
-                delete updatedRecordings[instrumentName];
-                return updatedRecordings;
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                delete updatedGroups[instrumentName];
             });
         },
         [setOverlapGroups]
@@ -322,61 +247,68 @@ export const useInstrumentRecordingsOperations = () => {
             const eventPath = getEventPath(eventInstance);
 
             const event = createSound({
-                // Ensure the new event has a unique ID
                 eventInstance,
                 eventPath,
                 instrumentName,
                 startTime: startOffset || startOffset === 0 ? elapsedTime : startTime
             });
 
-            // DIRTY GROUP FIX
             const newGroup = {
                 ...event,
                 events: { [event.id]: { ...event, parentId: event.id } },
                 locked: false
             };
 
-            setOverlapGroups((prevGroups) => {
-                const updatedGroups = { ...prevGroups };
-
-                if (updatedGroups[instrumentName]) {
-                    // Add the new event to the existing dictionary of events under this instrument
-                    updatedGroups[instrumentName][event.id] = newGroup;
-                } else {
-                    // Initialize this instrument's events dictionary if it doesn't exist
-                    updatedGroups[instrumentName] = { [event.id]: newGroup };
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                if (!updatedGroups[instrumentName]) {
+                    updatedGroups[instrumentName] = {};
                 }
-
-                return updatedGroups;
+                updatedGroups[instrumentName][event.id] = newGroup;
             });
         },
         [setOverlapGroups]
     );
 
-    const lockOverlapGroupById = useCallback(
-        ({ groupId }) => {
-            if (!groupId) {
-                alert('GROUP ID NOT PROVIDED');
-                return; // Early return to avoid further execution if groupId is not provided
-            }
+    const duplicateInstrument = useCallback(
+        ({ instrumentName }) => {
+            const nameRegex = /^(.*?)(?:\s+(\d+))?$/;
+            const match = instrumentName.match(nameRegex);
 
-            setOverlapGroups((prevGroups) => {
-                const updatedGroups = { ...prevGroups };
+            const baseName = match ? match[1] : instrumentName;
+            let number = match && match[2] ? parseInt(match[2], 10) : 1;
+            let newInstrumentName = `${baseName} ${number}`;
 
-                // Iterate over each instrument's group of events
-                Object.keys(updatedGroups).forEach((instrumentName) => {
-                    const groups = updatedGroups[instrumentName];
-                    if (groups[groupId]) {
-                        // If the group with the specified ID exists under this instrument, toggle its lock
-                        groups[groupId] = {
-                            ...groups[groupId],
-                            locked: !groups[groupId].locked
-                        };
-                    }
-                });
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                const originalGroups = updatedGroups[instrumentName];
+                if (!originalGroups) {
+                    alert('Original instrument data not found. Cannot duplicate.');
+                    return;
+                }
 
-                return updatedGroups;
+                while (Object.prototype.hasOwnProperty.call(updatedGroups, newInstrumentName)) {
+                    number += 1;
+                    newInstrumentName = `${baseName} ${number}`;
+                }
+
+                const duplicatedGroups = Object.values(originalGroups).reduce((newGroups, group) => {
+                    const recreatedGroup = recreateEvents({
+                        existingInstrumentName: newInstrumentName,
+                        groupsToRecreate: [group]
+                    })[0];
+
+                    newGroups[recreatedGroup.id] = {
+                        ...recreatedGroup,
+                        id: recreatedGroup.id,
+                        instrumentName: newInstrumentName
+                    };
+
+                    return newGroups;
+                }, {});
+
+                updatedGroups[newInstrumentName] = duplicatedGroups;
             });
+
+            return newInstrumentName;
         },
         [setOverlapGroups]
     );
@@ -401,18 +333,13 @@ export const useInstrumentRecordingsOperations = () => {
             let number = match && match[2] ? parseInt(match[2], 10) : 1;
             let newInstrumentName = `${baseName} ${number}`;
 
-            setOverlapGroups((prevGroups) => {
-                // Check if the new instrument name already exists and increment the number if it does
-                while (Object.prototype.hasOwnProperty.call(prevGroups, newInstrumentName)) {
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                while (Object.prototype.hasOwnProperty.call(updatedGroups, newInstrumentName)) {
                     number += 1;
                     newInstrumentName = `${baseName} ${number}`;
                 }
 
-                // Insert the new instrument layer as an empty object
-                return {
-                    ...prevGroups,
-                    [newInstrumentName]: {}
-                };
+                updatedGroups[newInstrumentName] = {};
             });
 
             return newInstrumentName;
@@ -429,7 +356,7 @@ export const useInstrumentRecordingsOperations = () => {
         duplicateOverlapGroup,
         getEventById,
         insertNewInstrument,
-        lockOverlapGroupById,
+        lockOverlapGroup,
         resetRecordings,
         updateOverlapGroupTimes,
         updateRecording: updateRecordingStartTime,

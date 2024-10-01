@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { BeatManagementControls } from '../BeatManagementControls/BeatManagementControls';
 import { HistoryControls } from '../HistoryControls/HistoryButtons';
@@ -12,6 +12,7 @@ export const TimelinesHeader = () => {
             <HeaderContainer>
                 <BeatManagementControls />
                 <PlaybackControls />
+
                 <HistoryControls />
             </HeaderContainer>
         </>

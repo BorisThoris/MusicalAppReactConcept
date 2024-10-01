@@ -1,5 +1,7 @@
 import { createEvent } from '@testing-library/react';
+import cloneDeep from 'lodash/cloneDeep';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useOverlapGroups } from './hooks/useOverlapGroups';
@@ -12,7 +14,8 @@ export const useCollisions = () => useContext(CollisionsContext);
 
 export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);
-    const [copiedEvents, setCopiedEvents] = useState([]); // Add copiedEvents state
+    const [copiedEvents, setCopiedEvents] = useState([]);
+    const { openLoadPanel } = useContext(PanelContext);
 
     const {
         addStageRef,
@@ -38,25 +41,36 @@ export const CollisionsProvider = ({ children }) => {
         setHasChanged,
         setOverlapGroups
     });
+
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
         calculateOverlapsForAllInstruments,
         overlapGroups,
         setOverlapGroups
     });
+
     const { selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({ overlapGroups, setHasChanged });
 
     const previousOverlapGroupsRef = useRef({});
 
     useEffect(() => {
+        calculateCollisions();
+    }, [calculateCollisions, timelineRefs]);
+
+    useEffect(() => {
         const stringifyOverlapGroups = JSON.stringify(overlapGroups);
+
+        if (Object.values(overlapGroups).length === 0) {
+            openLoadPanel();
+
+            previousOverlapGroupsRef.current = cloneDeep(overlapGroups);
+        }
 
         if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
             calculateCollisions();
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
         }
-    }, [calculateCollisions, overlapGroups]);
+    }, [calculateCollisions, openLoadPanel, overlapGroups, timelineRefs]);
 
-    // Implement the insertRecording function
     const insertRecording = useCallback(
         ({ instrumentName, startTime }) => {
             const sortedEvents = [...copiedEvents].sort((a, b) => a.startTime - b.startTime);
@@ -83,10 +97,11 @@ export const CollisionsProvider = ({ children }) => {
         [copiedEvents, overlapGroups, pushToHistory, setOverlapGroups]
     );
 
-    // Implement the copyEvents function
     const copyEvents = useCallback((events) => {
         setCopiedEvents(events);
     }, []);
+
+    console.log(overlapGroups);
 
     const contextValue = useMemo(
         () => ({
@@ -112,7 +127,7 @@ export const CollisionsProvider = ({ children }) => {
             removeTimelineRef,
             saveToLocalStorage,
             selectedBeat,
-            // Expose copiedEvents through the context
+
             setCopiedEvents,
             setHasChanged,
             setOverlapGroups,
