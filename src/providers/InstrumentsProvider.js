@@ -23,11 +23,11 @@ function findDifferences(obj1, obj2, parentKey = '') {
     }
 }
 
-export const InstrumentRecordingsContext = createContext();
+const InstrumentRecordingsContext = createContext();
 
-export const useInstrumentRecordings = () => useContext(InstrumentRecordingsContext);
+const useInstrumentRecordings = () => useContext(InstrumentRecordingsContext);
 
-export const InstrumentRecordingsProvider = React.memo(({ children }) => {
+const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
     const [selectedBeat, setSelectedBeat] = useState(null);
     const { calculateOverlapsForAllInstruments } = useOverlapCalculator(overlapGroups, overlapGroups);
@@ -389,5 +389,3 @@ export const InstrumentRecordingsProvider = React.memo(({ children }) => {
 InstrumentRecordingsProvider.propTypes = {
     children: PropTypes.node.isRequired
 };
-
-export default InstrumentRecordingsProvider;

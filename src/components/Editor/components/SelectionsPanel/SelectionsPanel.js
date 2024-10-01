@@ -144,5 +144,3 @@ export const SelectionsPanel = () => {
 
     return null;
 };
-
-export default SelectionsPanel;

@@ -13,5 +13,3 @@ export const usePanelControl = (selectedItems, panels, openSelectionsPanel, clos
         }
     }, [closePanel, openSelectionsPanel, panels, selectedItems]);
 };
-
-export default usePanelControl;

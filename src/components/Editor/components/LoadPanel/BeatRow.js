@@ -60,5 +60,3 @@ BeatFileRow.propTypes = {
     onDelete: PropTypes.func.isRequired,
     onLoad: PropTypes.func.isRequired
 };
-
-export default BeatFileRow;

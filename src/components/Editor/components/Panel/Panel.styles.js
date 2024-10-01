@@ -12,7 +12,7 @@ const hoverEffect = css`
     }
 `;
 
-export const TimelineContainer = styled.div`
+const TimelineContainer = styled.div`
     border: 1px solid black;
     margin: 20px;
     padding: 20px;
@@ -34,7 +34,7 @@ const basePressableIcon = css`
     ${flexCenter};
 `;
 
-export const PressableIcon = styled.button`
+const PressableIcon = styled.button`
     ${basePressableIcon}
     transition: transform 0.3s ease;
     ${hoverEffect};
@@ -66,7 +66,7 @@ export const TrashIcon = styled(PressableIcon)`
     }
 `;
 
-export const DuplicateIcon = styled(PressableIcon)`
+const DuplicateIcon = styled(PressableIcon)`
     background-color: #f5f5f5;
     border: 1px solid black;
     ${hoverEffect};
@@ -86,7 +86,7 @@ export const CloseIcon = styled(PressableIcon)`
     }
 `;
 
-export const Timeline = styled.div`
+const Timeline = styled.div`
     ${flexCenter};
     flex-direction: column;
     gap: 10px;
@@ -94,7 +94,7 @@ export const Timeline = styled.div`
     background-color: yellow;
 `;
 
-export const TimeMarker = styled.div`
+const TimeMarker = styled.div`
     justify-content: space-between;
     flex-direction: column;
     font-weight: bold;

@@ -200,5 +200,3 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
         setOverlapGroups
     };
 };
-
-export default useOverlapGroups;

@@ -166,5 +166,3 @@ export const DragSelection = ({ stageRef }) => {
         )
     );
 };
-
-export default DragSelection;

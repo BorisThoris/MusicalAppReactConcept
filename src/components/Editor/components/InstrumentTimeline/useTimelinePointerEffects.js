@@ -77,5 +77,3 @@ export const useTimelinePointerEffects = ({ index, instrumentName }) => {
         ripples
     };
 };
-
-export default useTimelinePointerEffects;

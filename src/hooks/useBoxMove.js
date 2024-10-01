@@ -31,5 +31,3 @@ export const useBoxMove = ({ selectedItems }) => {
         handleSelectionBoxMove
     };
 };
-
-export default useBoxMove;

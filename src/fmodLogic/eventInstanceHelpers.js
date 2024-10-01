@@ -147,7 +147,7 @@ const guidToString = (guid) => {
     return stringRepresentation;
 };
 
-export const getEventDescriptionId = (eventInstance) => {
+const getEventDescriptionId = (eventInstance) => {
     showAlertIfSystemNotInitialized();
 
     if (!eventInstance) {

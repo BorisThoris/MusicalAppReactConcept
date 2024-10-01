@@ -5,7 +5,7 @@
 /* eslint-disable prefer-const */
 // fmodLogic.js
 
-export const FMODConfig = { INITIAL_MEMORY: 80 * 1024 * 1024 };
+const FMODConfig = { INITIAL_MEMORY: 80 * 1024 * 1024 };
 
 export const FMOD = {};
 export var gSystem;
@@ -22,7 +22,7 @@ export function CHECK_RESULT(result) {
     }
 }
 
-export function prerun() {
+function prerun() {
     const fileUrl = '/FmodProject/Build/Desktop/';
     const folderName = '/';
     const canRead = true;
@@ -93,7 +93,7 @@ function updateApplication() {
     CHECK_RESULT(result6);
 }
 
-export function initializeFMOD() {
+function initializeFMOD() {
     const outval = {};
     let result;
 

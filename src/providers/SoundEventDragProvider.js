@@ -233,8 +233,6 @@ export const SoundEventDragProvider = ({ children }) => {
     return <SoundEventDragContext.Provider value={contextValue}>{children}</SoundEventDragContext.Provider>;
 };
 
-export const useDrag = () => {
+const useDrag = () => {
     return useContext(SoundEventDragContext);
 };
-
-export default SoundEventDragProvider;

@@ -74,5 +74,3 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
 
     return { handleClick, handleDoubleClick };
 };
-
-export default useClickHandlers;

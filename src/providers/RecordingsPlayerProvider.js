@@ -8,5 +8,3 @@ export const RecordingsPlayerProvider = ({ children }) => {
 
     return <RecordingsPlayerContext.Provider value={recordingsPlayer}>{children}</RecordingsPlayerContext.Provider>;
 };
-
-export default RecordingsPlayerProvider;

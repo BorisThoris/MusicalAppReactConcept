@@ -111,5 +111,3 @@ SelectedEventsList.propTypes = {
         })
     ).isRequired
 };
-
-export default React.memo(SelectedEventsList);

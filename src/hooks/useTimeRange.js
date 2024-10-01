@@ -28,5 +28,3 @@ export const useTimeRange = (selectedItems) => {
 
     return { groupEndTime, groupStartTime, updateGroupTimeRange };
 };
-
-export default useTimeRange;

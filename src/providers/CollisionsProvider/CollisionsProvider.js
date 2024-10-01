@@ -10,7 +10,7 @@ import { useTimelineRefs } from './hooks/useTimelineRefs';
 
 export const CollisionsContext = createContext();
 
-export const useCollisions = () => useContext(CollisionsContext);
+const useCollisions = () => useContext(CollisionsContext);
 
 export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);

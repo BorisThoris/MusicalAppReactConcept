@@ -10,5 +10,3 @@ export const PlaybackControls = () => {
 
     return <button onClick={handlePlay}>{playbackStatus.isPlaying ? 'Pause' : 'Start'}</button>;
 };
-
-export default PlaybackControls;

@@ -30,5 +30,3 @@ export const getNearestInstrument = ({ deltaY, groupNode, timelineRefs }) => {
 
     return nearestTimeline;
 };
-
-export default getNearestInstrument;

@@ -8,5 +8,3 @@ export const useEventFocus = (focusedEvent, setFocusedEvent, id) => {
 
     return { handleMouseEnter, isFocused, restoreZIndex };
 };
-
-export default useEventFocus;

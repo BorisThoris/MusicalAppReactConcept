@@ -86,5 +86,3 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
 
     return { handleDelete, handleDuplicate, handleLoad, handleSave };
 };
-
-export default useBeatActions;

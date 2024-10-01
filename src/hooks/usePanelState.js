@@ -131,5 +131,3 @@ export const PanelProvider = ({ children }) => {
 
     return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;
 };
-
-export default PanelProvider;

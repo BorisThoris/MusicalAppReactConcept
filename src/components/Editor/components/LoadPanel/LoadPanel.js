@@ -70,5 +70,3 @@ LoadPanel.propTypes = {
     setOverlapGroups: PropTypes.func,
     setSelectedBeat: PropTypes.func
 };
-
-export default LoadPanel;

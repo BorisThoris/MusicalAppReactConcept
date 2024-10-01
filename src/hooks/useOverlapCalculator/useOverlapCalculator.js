@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { combineOverlappingGroups, handleNonOverlappingEvent, mergeOverlappingEvents } from './GroupUtility';
 import { findOverlappingGroups, insertGroupsIntoTree } from './IntervalTreeUtility';
 
-export const processEvents = (overlapTree, recordingsForInstrument) => {
+const processEvents = (overlapTree, recordingsForInstrument) => {
     let groups = {};
 
     Object.values(recordingsForInstrument).forEach((recording) => {
@@ -43,7 +43,7 @@ export const processEvents = (overlapTree, recordingsForInstrument) => {
     return groups;
 };
 
-export const processOverlapCalculations = (recordings, initializedOverlapGroups, instrument) => {
+const processOverlapCalculations = (recordings, initializedOverlapGroups, instrument) => {
     const recordingsForInstrument = recordings[instrument];
     const initialOverlapGroups = initializedOverlapGroups[instrument];
     const iterableGroups = initialOverlapGroups ? Object.values(initialOverlapGroups) : [];
@@ -77,5 +77,3 @@ export const useOverlapCalculator = (recordings, prevOverlapGroups) => {
 
     return { calculateOverlapsForAllInstruments };
 };
-
-export default useOverlapCalculator;

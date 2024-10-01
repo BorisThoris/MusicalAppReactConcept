@@ -73,5 +73,3 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
         </Group>
     );
 }, isEqual);
-
-export default TimelineEvents;

@@ -11,5 +11,3 @@ export const HistoryControls = () => {
         </div>
     );
 };
-
-export default HistoryControls;

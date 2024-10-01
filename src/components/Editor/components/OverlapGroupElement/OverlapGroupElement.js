@@ -165,5 +165,3 @@ export const OverlapGroupElement = React.memo(
     },
     isEqual
 );
-
-export default OverlapGroupElement;

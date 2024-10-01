@@ -35,5 +35,3 @@ export const Ripples = ({ removeRipple, ripples }) => {
         </Group>
     );
 };
-
-export default Ripples;

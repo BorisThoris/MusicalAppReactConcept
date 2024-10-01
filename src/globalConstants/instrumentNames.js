@@ -1,4 +1,4 @@
-export const InstrumentsEnum = {
+const InstrumentsEnum = {
     Drum: 'Drum',
     Guitar: 'Guitar',
     Piano: 'Piano',

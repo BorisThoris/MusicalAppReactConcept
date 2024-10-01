@@ -64,5 +64,3 @@ export const PlayInstrumentsPanel = () => {
         </PanelWrapper>
     );
 };
-
-export default PlayInstrumentsPanel;

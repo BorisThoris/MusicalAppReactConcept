@@ -18,5 +18,3 @@ export const TimelinesHeader = () => {
         </>
     );
 };
-
-export default TimelinesHeader;

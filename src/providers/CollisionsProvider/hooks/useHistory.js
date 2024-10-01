@@ -60,5 +60,3 @@ export const useHistory = ({ calculateOverlapsForAllInstruments, overlapGroups, 
         undo
     };
 };
-
-export default useHistory;

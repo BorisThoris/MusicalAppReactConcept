@@ -95,5 +95,3 @@ EventItem.propTypes = {
     onPlay: PropTypes.func.isRequired,
     overlapGroup: PropTypes.object
 };
-
-export default EventItem;

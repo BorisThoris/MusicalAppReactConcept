@@ -18,5 +18,3 @@ export const useRipples = () => {
 
     return { addRipple, clearRipples, removeRipple, ripples };
 };
-
-export default useRipples;

@@ -29,5 +29,3 @@ export const useLocalStorage = ({ overlapGroups, setHasChanged, setOverlapGroups
         saveToLocalStorage
     };
 };
-
-export default useLocalStorage;

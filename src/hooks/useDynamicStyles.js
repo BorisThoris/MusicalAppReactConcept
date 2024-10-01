@@ -10,5 +10,3 @@ export const useDynamicStyles = (isFocused, isSelected, isOverlapping) => {
 
     return { dynamicColorStops, dynamicShadowBlur, dynamicStroke };
 };
-
-export default useDynamicStyles;

@@ -89,5 +89,3 @@ export const InstrumentLayerPanel = () => {
         </ParentWrapper>
     );
 };
-
-export default InstrumentLayerPanel;

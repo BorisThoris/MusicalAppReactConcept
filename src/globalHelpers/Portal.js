@@ -56,5 +56,3 @@ export const Portal = ({ children, enabled, selector }) => {
         </Group>
     );
 };
-
-export default Portal;

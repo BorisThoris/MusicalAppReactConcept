@@ -50,5 +50,3 @@ export const useInstrumentPanel = (parentGroupName, timelineY, timelineState) =>
         setupDelayedOpen
     };
 };
-
-export default useInstrumentPanel;

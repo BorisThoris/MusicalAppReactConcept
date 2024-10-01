@@ -7,10 +7,10 @@ import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 export const TimelineHeight = 200;
 export const Y_OFFSET = 20;
 export const markersHeight = 50;
-export const panelCompensationOffset = { x: -60 };
+const panelCompensationOffset = { x: -60 };
 export const markersAndTrackerOffset = markersHeight + Y_OFFSET;
 
-export const defaultTimelineState = {
+const defaultTimelineState = {
     furthestEndTime: 0,
     furthestEndTimes: 0,
     markersAndTrackerOffset,

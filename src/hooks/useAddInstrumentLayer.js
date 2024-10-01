@@ -12,5 +12,3 @@ export const useAddInstrumentLayer = () => {
         onAddLayer
     };
 };
-
-export default useAddInstrumentLayer;

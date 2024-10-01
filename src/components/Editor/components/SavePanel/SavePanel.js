@@ -67,5 +67,3 @@ export const SavePanel = ({ onClose }) => {
 SavePanel.propTypes = {
     onClose: PropTypes.func.isRequired
 };
-
-export default SavePanel;

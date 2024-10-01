@@ -27,5 +27,3 @@ export const useSelectedBeat = ({ overlapGroups, setHasChanged }) => {
         updateCurrentBeat
     };
 };
-
-export default useSelectedBeat;

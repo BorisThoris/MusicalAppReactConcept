@@ -210,5 +210,3 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         updateSelectedItemsStartTime
     };
 };
-
-export default useSelectionState;

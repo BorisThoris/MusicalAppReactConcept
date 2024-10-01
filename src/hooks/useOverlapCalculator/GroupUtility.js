@@ -10,9 +10,9 @@ import { createEvent } from '../../globalHelpers/createSound';
 import { createGroupFromEvent } from './EventUtility';
 import { notInTree } from './IntervalTreeUtility';
 
-export const filterOutOverlappedGroups = (groups, overlapped) => differenceWith(groups, overlapped, isEqual);
+const filterOutOverlappedGroups = (groups, overlapped) => differenceWith(groups, overlapped, isEqual);
 
-export const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
+const mergeGroupWithOverlaps = ({ group, overlapGroup }) => {
     if (!group.locked && !overlapGroup.locked) {
         group.startTime = Math.min(group.startTime, overlapGroup.startTime);
         group.endTime = Math.max(group.endTime, overlapGroup.endTime);
@@ -119,7 +119,7 @@ const findEventGroup = (tree, eventId) => {
     return traverseNodes(tree.items);
 };
 
-export const updatedGroup = (event, existingGroup) => {
+const updatedGroup = (event, existingGroup) => {
     const mappedEvents = {};
 
     if (event.events && Object.keys(event.events).length > 1) {

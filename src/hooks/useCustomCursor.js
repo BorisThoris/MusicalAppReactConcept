@@ -50,5 +50,3 @@ export const useCustomCursor = ({ initialVisibility = false }) => {
         pointerPath
     };
 };
-
-export default useCustomCursor;

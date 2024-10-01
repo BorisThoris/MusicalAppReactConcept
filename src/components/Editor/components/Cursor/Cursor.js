@@ -13,5 +13,3 @@ export const Cursor = () => {
         </Layer>
     );
 };
-
-export default Cursor;

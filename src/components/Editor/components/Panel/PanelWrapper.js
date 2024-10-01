@@ -22,5 +22,3 @@ PanelWrapper.propTypes = {
     x: PropTypes.number.isRequired, // Number and is required
     y: PropTypes.number.isRequired // Number and is required
 };
-
-export default PanelWrapper;

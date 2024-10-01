@@ -1,4 +1,4 @@
-export const isExactMatch = (event, eventSet) =>
+const isExactMatch = (event, eventSet) =>
     Object.values(eventSet).some(
         (existingEvent) =>
             existingEvent.id === event.id &&

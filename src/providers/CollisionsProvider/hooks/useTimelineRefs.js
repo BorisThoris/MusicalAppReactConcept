@@ -122,5 +122,3 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         timelineRefs
     };
 };
-
-export default useTimelineRefs;

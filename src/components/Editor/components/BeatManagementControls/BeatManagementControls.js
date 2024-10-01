@@ -106,5 +106,3 @@ export const BeatManagementControls = () => {
         </Container>
     );
 };
-
-export default BeatManagementControls;
