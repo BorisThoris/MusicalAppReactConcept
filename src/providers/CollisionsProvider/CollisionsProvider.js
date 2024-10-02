@@ -1,6 +1,6 @@
-import { createEvent } from '@testing-library/react';
 import cloneDeep from 'lodash/cloneDeep';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -9,8 +9,6 @@ import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
 
 export const CollisionsContext = createContext();
-
-const useCollisions = () => useContext(CollisionsContext);
 
 export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);
@@ -100,8 +98,6 @@ export const CollisionsProvider = ({ children }) => {
     const copyEvents = useCallback((events) => {
         setCopiedEvents(events);
     }, []);
-
-    console.log(overlapGroups);
 
     const contextValue = useMemo(
         () => ({
