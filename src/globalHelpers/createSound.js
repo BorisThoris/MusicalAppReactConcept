@@ -54,7 +54,7 @@ export const createSound = ({ eventInstance, eventPath, instrumentName, passedPa
 };
 
 // Helper function to create a main event or sub-event
-export const createEvent = (recording, instrumentName, parentId = null, passedStartTime = null) => {
+export const createEvent = ({ instrumentName, parentId = null, passedStartTime = null, recording }) => {
     const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
     const mainEvent = createSound({
         eventInstance,
@@ -70,7 +70,7 @@ export const createEvent = (recording, instrumentName, parentId = null, passedSt
     // Process child events to determine the overall start and end times
     const events = recording.events ? Object.values(recording.events) : [];
     const childEvents = events.reduce((acc, subEvent) => {
-        const subGroup = createEvent(subEvent, instrumentName, mainEvent.id, passedStartTime);
+        const subGroup = createEvent({ instrumentName, parentId: mainEvent.id, passedStartTime, recording: subEvent });
         acc[subGroup.id] = subGroup;
 
         if (subGroup.startTime < startTime) {
@@ -115,13 +115,13 @@ export const recreateEvents = (passedGroups) => {
         newRecordings[instrumentName] = {};
 
         Object.values(passedGroups[instrumentName]).forEach((recording) => {
-            const group = createEvent(recording, instrumentName);
+            const group = createEvent({ instrumentName, recording });
             const events = recording.events ? Object.values(recording.events) : [];
 
             group.events =
                 events.length > 1
                     ? events.reduce((acc, subEvent) => {
-                          const subGroup = createEvent(subEvent, instrumentName, group.id);
+                          const subGroup = createEvent({ instrumentName, parentId: group.id, recording: subEvent });
                           acc[subGroup.id] = subGroup;
                           return acc;
                       }, {})

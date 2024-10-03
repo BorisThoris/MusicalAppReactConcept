@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash/cloneDeep';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
@@ -9,6 +8,22 @@ import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
 
 export const CollisionsContext = createContext();
+
+function findDifferences(obj1, obj2, parentKey = '') {
+    if (obj1 === obj2) return;
+
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
+        console.log(`Difference at ${parentKey}:`, obj1, obj2);
+        return;
+    }
+
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key of allKeys) {
+        const newKey = parentKey ? `${parentKey}.${key}` : key;
+        findDifferences(obj1[key], obj2[key], newKey);
+    }
+}
 
 export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);
@@ -21,6 +36,7 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllElements,
         deleteAllTimelines,
         getProcessedElements,
+        getSoundEventById,
         removeTimelineRef,
         stageRef,
         timelineRefs
@@ -29,7 +45,7 @@ export const CollisionsProvider = ({ children }) => {
     const {
         calculateCollisions,
         calculateOverlapsForAllInstruments,
-        flatOverlapGroups,
+
         overlapGroups,
         setOverlapGroups
     } = useOverlapGroups({ getProcessedElements, setHasChanged, timelineRefs });
@@ -51,19 +67,18 @@ export const CollisionsProvider = ({ children }) => {
     const previousOverlapGroupsRef = useRef({});
 
     useEffect(() => {
-        calculateCollisions();
-    }, [calculateCollisions, timelineRefs]);
+        if (Object.values(overlapGroups).length === 0) {
+            openLoadPanel();
+
+            previousOverlapGroupsRef.current = JSON.stringify({});
+        }
+    }, [openLoadPanel, overlapGroups]);
 
     useEffect(() => {
         const stringifyOverlapGroups = JSON.stringify(overlapGroups);
 
-        if (Object.values(overlapGroups).length === 0) {
-            openLoadPanel();
-
-            previousOverlapGroupsRef.current = cloneDeep(overlapGroups);
-        }
-
         if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
+            // findDifferences(overlapGroups, JSON.parse(previousOverlapGroupsRef.current));
             calculateCollisions();
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
         }
@@ -81,12 +96,17 @@ export const CollisionsProvider = ({ children }) => {
 
             sortedEvents.forEach((event, index) => {
                 const newStartTime = index === 0 ? initialStart : event.startTime + offset;
-                const newEvent = createEvent(event, instrumentName, null, newStartTime);
+                const newEvent = createEvent({
+                    instrumentName: event.instrumentName,
+                    parentId: null,
+                    passedStartTime: newStartTime,
+                    recording: event
+                });
 
-                if (!updatedGroups[instrumentName]) {
-                    updatedGroups[instrumentName] = {};
+                if (!updatedGroups[newEvent.instrumentName]) {
+                    updatedGroups[newEvent.instrumentName] = {};
                 }
-                updatedGroups[instrumentName][newEvent.id] = newEvent;
+                updatedGroups[newEvent.instrumentName][newEvent.id] = newEvent;
             });
 
             pushToHistory(updatedGroups);
@@ -110,8 +130,9 @@ export const CollisionsProvider = ({ children }) => {
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
-            flatOverlapGroups,
+
             getProcessedElements,
+            getSoundEventById,
             hasChanged,
             history,
             insertRecording,
@@ -123,7 +144,6 @@ export const CollisionsProvider = ({ children }) => {
             removeTimelineRef,
             saveToLocalStorage,
             selectedBeat,
-
             setCopiedEvents,
             setHasChanged,
             setOverlapGroups,
@@ -134,6 +154,7 @@ export const CollisionsProvider = ({ children }) => {
             updateCurrentBeat
         }),
         [
+            getSoundEventById,
             calculateCollisions,
             addStageRef,
             deleteAllTimelines,
@@ -142,7 +163,7 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             removeTimelineRef,
             overlapGroups,
-            flatOverlapGroups,
+
             calculateOverlapsForAllInstruments,
             history,
             redoHistory,

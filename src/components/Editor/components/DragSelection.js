@@ -7,30 +7,18 @@ import { SelectionContext } from '../../../providers/SelectionsProvider';
 export const DragSelection = ({ stageRef }) => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
     const [isDragging, setIsDragging] = useState(false);
-    const [selectedIds, selectShapes] = useState([]);
-    const trRef = useRef();
+
     const selectionRectRef = useRef();
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
     const { getProcessedElements } = useContext(CollisionsContext);
     const processedElements = getProcessedElements();
 
-    useEffect(() => {
-        if (trRef.current && stageRef.current) {
-            const nodes = selectedIds
-                .map((id) => stageRef.current.findOne(`#${id}`))
-                .filter((node) => node !== undefined && node !== null);
-
-            if (nodes.length > 0) {
-                trRef.current.nodes(nodes);
-            } else {
-                trRef.current.nodes([]);
-            }
-        }
-    }, [selectedIds, stageRef]);
-
     const hasMoved = useCallback(() => {
-        if (!dragPos.start || !dragPos.end) return false;
+        if (!dragPos.start || !dragPos.end) {
+            return false;
+        }
+
         return dragPos.start.x !== dragPos.end.x || dragPos.start.y !== dragPos.end.y;
     }, [dragPos.start, dragPos.end]);
 
@@ -82,7 +70,6 @@ export const DragSelection = ({ stageRef }) => {
             if (intersectedElements.length > 0) {
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
                 setSelectionBasedOnCoordinates({ intersectedElements, yLevel: maxYLevel });
-                selectShapes(intersectedElements.map((el) => el.id));
             }
         },
         [processedElements, setSelectionBasedOnCoordinates]

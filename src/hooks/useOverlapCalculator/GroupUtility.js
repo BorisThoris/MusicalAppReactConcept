@@ -210,15 +210,15 @@ export const mergeOverlappingEvents = ({ event, groups, tree }) => {
 
 export const recreateEvents = ({ existingInstrumentName = false, groupsToRecreate, timeOffset = 0 }) =>
     groupsToRecreate.map((existingGroup) => {
-        const mainEvent = createEvent(
-            {
+        const mainEvent = createEvent({
+            instrumentName: existingInstrumentName || existingGroup.instrumentName,
+            recording: {
                 eventPath: existingGroup.eventPath,
                 locked: existingGroup.locked,
                 params: existingGroup.params,
                 startTime: existingGroup.startTime + timeOffset
-            },
-            existingInstrumentName || existingGroup.instrumentName
-        );
+            }
+        });
 
         const eventsArray = Object.values(existingGroup.events || {});
 
@@ -234,16 +234,16 @@ export const recreateEvents = ({ existingInstrumentName = false, groupsToRecreat
                     latestEndTime = subEvent.endTime + timeOffset;
                 }
 
-                const recreatedEvent = createEvent(
-                    {
+                const recreatedEvent = createEvent({
+                    instrumentName: existingInstrumentName || existingGroup.instrumentName,
+                    parentId: mainEvent.id,
+                    recording: {
                         eventPath: subEvent.eventPath,
                         locked: false,
                         params: subEvent.params,
                         startTime: subEvent.startTime + timeOffset
-                    },
-                    existingInstrumentName || existingGroup.instrumentName,
-                    mainEvent.id
-                );
+                    }
+                });
 
                 acc[recreatedEvent.id] = recreatedEvent;
                 return acc;

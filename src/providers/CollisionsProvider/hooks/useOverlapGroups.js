@@ -43,6 +43,9 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
         // Process elements using the getProcessedElements function
         const processedElements = getProcessedElements();
 
+        console.log('hello');
+        console.log(processedElements);
+
         // Group the processed elements by their instrument name
         const updatedGroupedEvents = processedElements.reduce((acc, elementData) => {
             const { element, height, instrumentName, recording, width, x, y } = elementData;
@@ -165,37 +168,10 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
         return recalculatedGroups;
     }, []);
 
-    const flatOverlapGroups = useMemo(() => {
-        const flattenEvents = (group) => {
-            const flatEvents = {};
-
-            Object.values(group).forEach((value) => {
-                flatEvents[value.id] = value;
-
-                const events = Object.values(value.events || {});
-                events.forEach((nestedEvent) => {
-                    if (nestedEvent.id && nestedEvent.id !== value.id) {
-                        flatEvents[nestedEvent.id] = nestedEvent;
-                    }
-                });
-            });
-
-            return flatEvents;
-        };
-
-        const allFlatEvents = {};
-
-        Object.values(overlapGroups).forEach((group) => {
-            Object.assign(allFlatEvents, flattenEvents(group));
-        });
-
-        return allFlatEvents;
-    }, [overlapGroups]);
-
     return {
         calculateCollisions,
         calculateOverlapsForAllInstruments,
-        flatOverlapGroups,
+
         overlapGroups,
         setOverlapGroups
     };

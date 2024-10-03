@@ -2,6 +2,15 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
+import assign from 'lodash/assign';
+import castArray from 'lodash/castArray';
+import cloneDeep from 'lodash/cloneDeep';
+import forEach from 'lodash/forEach';
+import get from 'lodash/get';
+import isEqual from 'lodash/isEqual';
+import round from 'lodash/round';
+import set from 'lodash/set';
+import unset from 'lodash/unset';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
 import { createSound } from '../globalHelpers/createSound';
@@ -10,18 +19,33 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 import { recreateEvents } from './useOverlapCalculator/GroupUtility';
 
 export const useInstrumentRecordingsOperations = () => {
-    const { flatOverlapGroups, overlapGroups, setOverlapGroups } = useContext(CollisionsContext);
+    const { getSoundEventById, setOverlapGroups } = useContext(CollisionsContext);
 
-    // Utility function to update overlapGroups state
     const updateGroups = (setOverlapGroups, updateCallback) => {
         setOverlapGroups((prevGroups) => {
-            const updatedGroups = { ...prevGroups };
+            const updatedGroups = cloneDeep(prevGroups);
             updateCallback(updatedGroups);
+
+            if (isEqual(prevGroups, updatedGroups)) {
+                console.log('EQUAl');
+
+                console.log(prevGroups);
+                console.log(updatedGroups);
+
+                return prevGroups;
+            }
+
             return updatedGroups;
         });
     };
 
-    const getEventById = useCallback((id) => flatOverlapGroups[id], [flatOverlapGroups]);
+    const getEventById = useCallback(
+        (id) => {
+            const element = getSoundEventById(id);
+            return element?.recording;
+        },
+        [getSoundEventById]
+    );
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
@@ -125,37 +149,71 @@ export const useInstrumentRecordingsOperations = () => {
             updateGroups(setOverlapGroups, (updatedGroups) => {
                 const updateStartTime = ({ newStartTime, recording }) => {
                     const { eventLength, id: recordingId, instrumentName: oldInstrumentName, parentId } = recording;
-                    const targetInstrumentName = newInstrumentName || oldInstrumentName;
 
-                    const roundedStartTime = parseFloat(newStartTime.toFixed(2));
+                    const targetInstrumentName = newInstrumentName || oldInstrumentName;
+                    const roundedStartTime = round(newStartTime, 2);
+
+                    // Skip updating if startTime and instrumentName have not changed
                     if (recording.startTime === roundedStartTime && oldInstrumentName === targetInstrumentName) {
                         return;
                     }
 
+                    // Remove the recording from the old instrument if it is being moved
                     if (newInstrumentName && oldInstrumentName !== newInstrumentName) {
-                        delete updatedGroups[oldInstrumentName]?.[recordingId];
+                        unset(updatedGroups, [oldInstrumentName, recordingId]);
                     }
 
-                    recording.startTime = roundedStartTime;
-                    recording.endTime = parseFloat((roundedStartTime + eventLength).toFixed(2));
-                    recording.instrumentName = targetInstrumentName;
+                    // If the recording has a parentId, try to remove it from the old parent's events
+                    if (parentId) {
+                        const oldParent = get(updatedGroups, [oldInstrumentName, parentId]);
+                        if (oldParent && oldParent.events) {
+                            unset(oldParent.events, recordingId);
+                        }
+                    }
 
+                    // Update recording properties
+                    assign(recording, {
+                        endTime: round(roundedStartTime + eventLength, 2),
+                        instrumentName: targetInstrumentName,
+                        startTime: roundedStartTime
+                    });
+
+                    console.log('RECORDING');
+                    console.log(recording);
+
+                    // Ensure the target instrument exists
                     if (!updatedGroups[targetInstrumentName]) {
                         updatedGroups[targetInstrumentName] = {};
                     }
 
+                    // Add or move the recording to the appropriate location in updatedGroups
                     if (!parentId) {
+                        console.log('TEST1');
+                        // Recording has no parent, add to the root of the target instrument
                         updatedGroups[targetInstrumentName][recordingId] = recording;
+                        set(updatedGroups, [targetInstrumentName, recordingId], recording);
                     } else {
-                        updatedGroups[targetInstrumentName][parentId].events[recordingId] = recording;
+                        // Recording has a parent, attempt to add it under the parent in the target instrument
+                        const parent = get(updatedGroups, [targetInstrumentName, parentId]);
+
+                        if (parent) {
+                            console.log('TEST2');
+                            set(parent, ['events', recordingId], recording);
+                        } else {
+                            console.log('TEST3');
+                            // Parent not found, add the recording to the root of the target instrument
+                            console.warn(
+                                `Parent with id ${parentId} not found in instrument ${targetInstrumentName}. Adding to root.`
+                            );
+                            set(updatedGroups, [targetInstrumentName, recordingId], recording);
+                        }
                     }
+
+                    console.log(updatedGroups);
                 };
 
-                if (Array.isArray(data)) {
-                    data.forEach(updateStartTime);
-                } else {
-                    updateStartTime(data);
-                }
+                // Iterate over each recording in the data array (handles both single and multiple records)
+                forEach(castArray(data), updateStartTime);
             });
         },
         [setOverlapGroups]

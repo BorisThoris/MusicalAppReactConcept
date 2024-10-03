@@ -49,8 +49,6 @@ const Timelines = React.memo(() => {
                     ))}
                 </Layer>
 
-                <Cursor />
-
                 <Layer>
                     <TimelineTracker
                         furthestEndTime={furthestEndTimes[playbackStatus.currentInstrument] || furthestEndTime}

@@ -26,7 +26,6 @@ export const SelectionProvider = ({ children }) => {
         clearSelection,
         deleteSelections,
         duplicateSelections,
-        flatValues,
         groupEndTime,
         groupStartTime,
         highestYLevel,
@@ -41,7 +40,7 @@ export const SelectionProvider = ({ children }) => {
 
     usePanelControl(selectedItems, panels, openSelectionsPanel, closePanel);
 
-    const selectedValues = Object.values(flatValues);
+    const selectedValues = Object.values(selectedItems);
 
     const value = useMemo(() => {
         return {

@@ -33,6 +33,37 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [updateTimelineRefs]
     );
 
+    const getSoundEventById = useCallback(
+        (id) => {
+            if (stageRef && stageRef.current) {
+                const stage = stageRef.current;
+
+                // Find the element with the specific ID
+                const element = stage.findOne((node) => node.id().startsWith('element-'));
+
+                if (element) {
+                    // Extract necessary attributes from the element
+                    const { height, width, x, y } = element.getClientRect();
+                    const { instrumentName } = element.attrs['data-recording'];
+                    const elementData = {
+                        element,
+                        height,
+                        instrumentName,
+                        recording: element.attrs['data-recording'],
+                        timelineY: element.parent.attrs.timelineY, // Assuming timelineY is stored in the parent
+                        width,
+                        x,
+                        y
+                    };
+
+                    return elementData; // Return the processed element data
+                }
+            }
+            return null; // Return null if no element was found with the given ID
+        },
+        [stageRef]
+    );
+
     const getProcessedElements = useCallback(() => {
         const processedElements = [];
         const seenElementIds = new Set(); // To track unique element IDs
@@ -117,6 +148,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllElements,
         deleteAllTimelines,
         getProcessedElements,
+        getSoundEventById,
         removeTimelineRef,
         stageRef,
         timelineRefs

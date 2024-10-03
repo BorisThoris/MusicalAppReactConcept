@@ -36,7 +36,7 @@ export const SoundEventDragProvider = ({ children }) => {
         ({ element }) => {
             if (!element) return;
             const recording = element.attrs['data-recording'];
-            if (!recording) return; // Ensure recording data exists
+            if (!recording) return;
 
             const newStartTime = element.x() / pixelToSecondRatio;
             const closestTimeline = closestTimelines.get(element.attrs.id);
@@ -176,9 +176,6 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             const finalizeDrag = (element) => {
-                console.log('FINALIZING FOR ELEMENT');
-                console.log(element);
-
                 updateStartTimeForElement({
                     element
                 });

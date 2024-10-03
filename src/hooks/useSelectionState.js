@@ -5,9 +5,8 @@ import { useOverlapCalculator } from './useOverlapCalculator/useOverlapCalculato
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { calculateCollisions, flatOverlapGroups, getProcessedElements, overlapGroups, stageRef } =
+    const { calculateCollisions, getProcessedElements, getSoundEventById, overlapGroups } =
         useContext(CollisionsContext);
-
     const { duplicateMultipleOverlapGroups } = useInstrumentRecordingsOperations();
     const { getEventById, updateRecording } = useInstrumentRecordingsOperations();
 
@@ -27,11 +26,13 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         const filterItemsByInstrument = (items) => {
             return Object.values(items).reduce((acc, item) => {
                 const instrument = item.instrumentName;
-                if (!acc[instrument]) {
-                    acc[instrument] = {};
-                }
-                acc[instrument][item.id] = item;
-                return acc;
+                return {
+                    ...acc,
+                    [instrument]: {
+                        ...acc[instrument],
+                        [item.id]: item
+                    }
+                };
             }, {});
         };
 
@@ -45,41 +46,37 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         }
 
         const updatedSelectedItems = Object.keys(selectedItems).reduce((newSelectedItems, itemId) => {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const group of Object.values(flatOverlapGroups)) {
-                if (`${group.id}` === `${itemId}`) {
-                    // eslint-disable-next-line no-param-reassign
-                    newSelectedItems[itemId] = { ...group, element: stageRef.current.findOne(`#element-${group.id}`) };
-                    break;
-                }
+            const elementData = getSoundEventById(itemId);
+            if (elementData) {
+                return {
+                    ...newSelectedItems,
+                    [itemId]: { ...elementData.recording, element: elementData.element }
+                };
             }
             return newSelectedItems;
         }, {});
 
         prevSelectedItemsRef.current = overlapGroups;
         setSelectedItems(updatedSelectedItems);
-    }, [flatOverlapGroups, overlapGroups, selectedItems, stageRef]);
+    }, [getProcessedElements, getSoundEventById, overlapGroups, selectedItems]);
 
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
             const newSelectedItems = intersectedElements.reduce((acc, element) => {
-                acc[element.id] = {
-                    ...element,
-                    endX: element.endX,
-                    endY: element.endY,
-                    startX: element.startX,
-                    startY: element.startY,
-                    timelineY: element.timelineY
+                return {
+                    ...acc,
+                    [element.id]: {
+                        ...element,
+                        endX: element.endX,
+                        endY: element.endY,
+                        startX: element.startX,
+                        startY: element.startY,
+                        timelineY: element.timelineY
+                    }
                 };
-                return acc;
             }, {});
 
-            // Convert both objects to JSON strings for easy comparison
-            const prevSelectedItemsJson = JSON.stringify(selectedItems);
-            const newSelectedItemsJson = JSON.stringify(newSelectedItems);
-
-            // Only update state if the new selected items are different
-            if (prevSelectedItemsJson !== newSelectedItemsJson) {
+            if (JSON.stringify(selectedItems) !== JSON.stringify(newSelectedItems)) {
                 setSelectedItems(newSelectedItems);
                 setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
             }
@@ -95,34 +92,42 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         (input) => {
             setSelectedItems((prevSelectedItems) => {
                 const itemsToToggle = Array.isArray(input) ? input : [input];
-                const newSelectedItems = { ...prevSelectedItems };
+                return itemsToToggle.reduce(
+                    (newSelectedItems, { id }) => {
+                        const processedElements = getProcessedElements();
+                        const elementData = processedElements.find(
+                            (element) => element.element.attrs.id === `element-${id}`
+                        );
 
-                itemsToToggle.forEach(({ id }) => {
-                    if (newSelectedItems[id]) {
-                        delete newSelectedItems[id];
-                    } else if (flatOverlapGroups[id]) {
-                        newSelectedItems[id] = { ...flatOverlapGroups[id] };
-                    }
-                });
-
-                return newSelectedItems;
+                        if (newSelectedItems[id]) {
+                            const { [id]: removed, ...rest } = newSelectedItems;
+                            return rest;
+                        }
+                        if (elementData) {
+                            return {
+                                ...newSelectedItems,
+                                [id]: { ...elementData.recording }
+                            };
+                        }
+                        return newSelectedItems;
+                    },
+                    { ...prevSelectedItems }
+                );
             });
         },
-        [flatOverlapGroups]
+        [getProcessedElements]
     );
 
     const unSelectItem = useCallback((input) => {
         setSelectedItems((prevSelectedItems) => {
             const itemsToDelete = Array.isArray(input) ? input : [input];
-            const newSelectedItems = { ...prevSelectedItems };
-
-            itemsToDelete.forEach(({ id }) => {
-                if (newSelectedItems[id]) {
-                    delete newSelectedItems[id];
-                }
-            });
-
-            return newSelectedItems;
+            return itemsToDelete.reduce(
+                (newSelectedItems, { id }) => {
+                    const { [id]: removed, ...rest } = newSelectedItems;
+                    return rest;
+                },
+                { ...prevSelectedItems }
+            );
         });
     }, []);
 
@@ -130,27 +135,31 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const updateSelectedItemsStartTime = useCallback(
         (newStartTime) => {
-            Object.keys(selectedItems).forEach((itemId) => {
+            const updatedItems = Object.keys(selectedItems).reduce((acc, itemId) => {
                 if (selectedItems[itemId]) {
                     const actualEvent = getEventById(itemId);
+                    const updatedRecording = {
+                        ...selectedItems[itemId],
+                        startTime: actualEvent.startTime + newStartTime
+                    };
 
                     updateRecording({
-                        newStartTime: actualEvent.startTime + newStartTime,
-                        recording: selectedItems[itemId]
+                        newStartTime: updatedRecording.startTime,
+                        recording: updatedRecording
                     });
+
+                    return {
+                        ...acc,
+                        [itemId]: updatedRecording
+                    };
                 }
-            });
+                return acc;
+            }, {});
+
+            setSelectedItems(updatedItems);
         },
         [getEventById, selectedItems, updateRecording]
     );
-
-    const flatValues = Object.keys(selectedItems).reduce((acc, key) => {
-        const recording = flatOverlapGroups[key];
-        if (recording) {
-            acc[key] = recording;
-        }
-        return acc;
-    }, {});
 
     const duplicateSelections = () => {
         const calculatedInstrumentOverlaps = calculateOverlapsForAllInstruments();
@@ -168,25 +177,28 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const deleteSelections = useCallback(
         (selectedEvents) => {
             const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
-
             const processedElements = getProcessedElements();
 
-            processedElements.forEach(({ element, instrumentName }) => {
-                eventsArray.forEach((event) => {
-                    const elementId = element.id().replace('element-', '');
+            const elementsToDelete = processedElements.filter(({ element, instrumentName }) =>
+                eventsArray.some(
+                    (event) =>
+                        event.instrumentName === instrumentName && event.id === element.id().replace('element-', '')
+                )
+            );
 
-                    if (event.instrumentName === instrumentName && event.id === elementId) {
-                        if (event.parentId) {
-                            const parentElement = element.getStage()?.findOne(`#parent-${event.parentId}`);
-
-                            if (parentElement) {
-                                parentElement.destroy();
-                            }
+            elementsToDelete.forEach(({ element, instrumentName }) => {
+                const event = eventsArray.find(
+                    (ev) => ev.instrumentName === instrumentName && ev.id === element.id().replace('element-', '')
+                );
+                if (event) {
+                    if (event.parentId) {
+                        const parentElement = element.getStage()?.findOne(`#parent-${event.parentId}`);
+                        if (parentElement) {
+                            parentElement.destroy();
                         }
-
-                        element.destroy();
                     }
-                });
+                    element.destroy();
+                }
             });
 
             calculateCollisions();
@@ -198,7 +210,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         clearSelection,
         deleteSelections,
         duplicateSelections,
-        flatValues,
         groupEndTime,
         groupStartTime,
         highestYLevel,

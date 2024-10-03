@@ -1,7 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 import PropTypes from 'prop-types';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { createEvent, recreateEvents } from '../globalHelpers/createSound';
+import { recreateEvents } from '../globalHelpers/createSound';
 import { useOverlapCalculator } from '../hooks/useOverlapCalculator/useOverlapCalculator';
 import { PanelContext } from '../hooks/usePanelState';
 
@@ -24,8 +24,6 @@ function findDifferences(obj1, obj2, parentKey = '') {
 }
 
 const InstrumentRecordingsContext = createContext();
-
-const useInstrumentRecordings = () => useContext(InstrumentRecordingsContext);
 
 const InstrumentRecordingsProvider = React.memo(({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
@@ -262,63 +260,9 @@ const InstrumentRecordingsProvider = React.memo(({ children }) => {
         setOverlapGroups(newOverlapGroups);
     }, []);
 
-    const flatOverlapGroups = useMemo(() => {
-        const flattenEvents = (group) => {
-            const flatEvents = {};
-
-            Object.values(group).forEach((value) => {
-                flatEvents[value.id] = value;
-
-                const events = Object.values(value.events);
-                events.forEach((nestedEvent) => {
-                    if (nestedEvent.id && nestedEvent.id !== value.id) {
-                        flatEvents[nestedEvent.id] = nestedEvent;
-                    }
-                });
-            });
-
-            return flatEvents;
-        };
-
-        const allFlatEvents = {};
-
-        Object.values(overlapGroups).forEach((group) => {
-            Object.assign(allFlatEvents, flattenEvents(group));
-        });
-
-        return allFlatEvents;
-    }, [overlapGroups]);
-
     const copyEvents = useCallback((events) => {
         setCopiedEvents(events);
     }, []);
-
-    const insertRecording = useCallback(
-        ({ instrumentName, startTime }) => {
-            // Sort copiedEvents by startTime before doing anything
-            const sortedEvents = [...copiedEvents].sort((a, b) => a.startTime - b.startTime);
-
-            const updatedGroups = { ...overlapGroups };
-
-            const initialStart = startTime;
-            const firstEvent = sortedEvents[0];
-            const offset = initialStart - firstEvent.startTime; // Calculate the offset for the first event
-
-            sortedEvents.forEach((event, index) => {
-                const newStartTime = index === 0 ? initialStart : event.startTime + offset;
-                const newEvent = createEvent(event, instrumentName, null, newStartTime);
-
-                if (!updatedGroups[instrumentName]) {
-                    updatedGroups[instrumentName] = {};
-                }
-                updatedGroups[instrumentName][newEvent.id] = newEvent;
-            });
-
-            pushToHistory(updatedGroups);
-            setOverlapGroups(updatedGroups);
-        },
-        [copiedEvents, overlapGroups, pushToHistory]
-    );
 
     const deleteRecording = useCallback(
         (selectedEvents) => {
@@ -345,10 +289,10 @@ const InstrumentRecordingsProvider = React.memo(({ children }) => {
             copiedEvents,
             copyEvents,
             deleteRecording,
-            flatOverlapGroups,
+
             hasChanged,
             history,
-            insertRecording,
+
             overlapGroups,
             prevOverlapGroupsRef,
             pushToHistory,
@@ -367,10 +311,10 @@ const InstrumentRecordingsProvider = React.memo(({ children }) => {
             calculateOverlapsForAllInstruments,
             copiedEvents,
             copyEvents,
-            flatOverlapGroups,
+
             hasChanged,
             history,
-            insertRecording,
+
             overlapGroups,
             pushToHistory,
             redo,
