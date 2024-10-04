@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import Konva from 'konva';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timelineRefs }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
@@ -118,6 +118,11 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                             const groupId = generateGroupId(group);
                             const prevGroup = prevOverlapGroups[instrumentName]?.[groupId];
 
+                            console.log('GROUP');
+                            console.log(group);
+
+                            const multipleEvents = group.length > 1;
+
                             groupAcc2[groupId] = {
                                 endTime: parseFloat(endTime?.toFixed(2)),
                                 eventInstance: group[0].recording.eventInstance || {},
@@ -171,7 +176,6 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
     return {
         calculateCollisions,
         calculateOverlapsForAllInstruments,
-
         overlapGroups,
         setOverlapGroups
     };

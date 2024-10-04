@@ -42,13 +42,8 @@ export const CollisionsProvider = ({ children }) => {
         timelineRefs
     } = useTimelineRefs({ setHasChanged });
 
-    const {
-        calculateCollisions,
-        calculateOverlapsForAllInstruments,
-
-        overlapGroups,
-        setOverlapGroups
-    } = useOverlapGroups({ getProcessedElements, setHasChanged, timelineRefs });
+    const { calculateCollisions, calculateOverlapsForAllInstruments, overlapGroups, setOverlapGroups } =
+        useOverlapGroups({ getProcessedElements, setHasChanged, timelineRefs });
 
     const { clearLocalStorage, loadFromLocalStorage, saveToLocalStorage } = useLocalStorage({
         overlapGroups,
@@ -70,18 +65,20 @@ export const CollisionsProvider = ({ children }) => {
         if (Object.values(overlapGroups).length === 0) {
             openLoadPanel();
 
-            previousOverlapGroupsRef.current = JSON.stringify({});
+            previousOverlapGroupsRef.current = {};
         }
     }, [openLoadPanel, overlapGroups]);
 
     useEffect(() => {
-        const stringifyOverlapGroups = JSON.stringify(overlapGroups);
+        const stringifyOverlapGroups = JSON.stringify({ ...overlapGroups });
 
         if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
             // findDifferences(overlapGroups, JSON.parse(previousOverlapGroupsRef.current));
             calculateCollisions();
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
         }
+
+        console.log(overlapGroups);
     }, [calculateCollisions, openLoadPanel, overlapGroups, timelineRefs]);
 
     const insertRecording = useCallback(
@@ -130,7 +127,6 @@ export const CollisionsProvider = ({ children }) => {
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
-
             getProcessedElements,
             getSoundEventById,
             hasChanged,
@@ -163,7 +159,6 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             removeTimelineRef,
             overlapGroups,
-
             calculateOverlapsForAllInstruments,
             history,
             redoHistory,

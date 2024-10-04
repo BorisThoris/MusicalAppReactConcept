@@ -7,7 +7,6 @@ import castArray from 'lodash/castArray';
 import cloneDeep from 'lodash/cloneDeep';
 import forEach from 'lodash/forEach';
 import get from 'lodash/get';
-import isEqual from 'lodash/isEqual';
 import round from 'lodash/round';
 import set from 'lodash/set';
 import unset from 'lodash/unset';
@@ -25,15 +24,6 @@ export const useInstrumentRecordingsOperations = () => {
         setOverlapGroups((prevGroups) => {
             const updatedGroups = cloneDeep(prevGroups);
             updateCallback(updatedGroups);
-
-            if (isEqual(prevGroups, updatedGroups)) {
-                console.log('EQUAl');
-
-                console.log(prevGroups);
-                console.log(updatedGroups);
-
-                return prevGroups;
-            }
 
             return updatedGroups;
         });
@@ -158,12 +148,10 @@ export const useInstrumentRecordingsOperations = () => {
                         return;
                     }
 
-                    // Remove the recording from the old instrument if it is being moved
                     if (newInstrumentName && oldInstrumentName !== newInstrumentName) {
                         unset(updatedGroups, [oldInstrumentName, recordingId]);
                     }
 
-                    // If the recording has a parentId, try to remove it from the old parent's events
                     if (parentId) {
                         const oldParent = get(updatedGroups, [oldInstrumentName, parentId]);
                         if (oldParent && oldParent.events) {
@@ -178,9 +166,6 @@ export const useInstrumentRecordingsOperations = () => {
                         startTime: roundedStartTime
                     });
 
-                    console.log('RECORDING');
-                    console.log(recording);
-
                     // Ensure the target instrument exists
                     if (!updatedGroups[targetInstrumentName]) {
                         updatedGroups[targetInstrumentName] = {};
@@ -188,7 +173,6 @@ export const useInstrumentRecordingsOperations = () => {
 
                     // Add or move the recording to the appropriate location in updatedGroups
                     if (!parentId) {
-                        console.log('TEST1');
                         // Recording has no parent, add to the root of the target instrument
                         updatedGroups[targetInstrumentName][recordingId] = recording;
                         set(updatedGroups, [targetInstrumentName, recordingId], recording);
@@ -197,15 +181,7 @@ export const useInstrumentRecordingsOperations = () => {
                         const parent = get(updatedGroups, [targetInstrumentName, parentId]);
 
                         if (parent) {
-                            console.log('TEST2');
                             set(parent, ['events', recordingId], recording);
-                        } else {
-                            console.log('TEST3');
-                            // Parent not found, add the recording to the root of the target instrument
-                            console.warn(
-                                `Parent with id ${parentId} not found in instrument ${targetInstrumentName}. Adding to root.`
-                            );
-                            set(updatedGroups, [targetInstrumentName, recordingId], recording);
                         }
                     }
 
