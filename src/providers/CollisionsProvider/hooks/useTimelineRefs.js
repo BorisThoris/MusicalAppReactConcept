@@ -1,103 +1,86 @@
+import find from 'lodash/find';
+import omit from 'lodash/omit';
+import reduce from 'lodash/reduce';
+import set from 'lodash/set';
 import { useCallback, useState } from 'react';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
-    const [timelineRefs, setTimelineRefs] = useState({}); // Change to an object
+    const [timelineRefs, setTimelineRefs] = useState({});
     const [stageRef, setStageRef] = useState(null);
 
     const updateTimelineRefs = useCallback((updateFn) => {
-        setTimelineRefs((prevRefs) => {
-            const updatedRefs = updateFn(prevRefs);
-            return updatedRefs;
-        });
+        setTimelineRefs((prevRefs) => updateFn(prevRefs));
     }, []);
 
-    const addStageRef = useCallback((ref) => setStageRef(ref), []);
+    const addStageRef = useCallback(setStageRef, [setStageRef]);
 
     const addTimelineRef = useCallback(
         (instrumentName, ref) => {
-            updateTimelineRefs((prevRefs) => ({
-                ...prevRefs,
-                [instrumentName]: ref // Add or update the ref for the instrumentName
-            }));
+            updateTimelineRefs((prevRefs) => set({ ...prevRefs }, instrumentName, ref));
         },
         [updateTimelineRefs]
     );
 
     const removeTimelineRef = useCallback(
         (instrumentName) => {
-            updateTimelineRefs((prevRefs) => {
-                const { [instrumentName]: _, ...rest } = prevRefs; // Remove the ref for the instrumentName
-                return rest;
-            });
+            updateTimelineRefs((prevRefs) => omit(prevRefs, instrumentName));
         },
         [updateTimelineRefs]
     );
 
     const getSoundEventById = useCallback(
         (id) => {
-            if (stageRef && stageRef.current) {
-                const stage = stageRef.current;
-
-                // Find the element with the specific ID
-                const element = stage.findOne((node) => node.id().startsWith('element-'));
+            if (stageRef?.current) {
+                const elements = stageRef.current.find((node) => node.id().startsWith(`element-${id}`));
+                const element = find(elements, (node) => node.id() === `element-${id}`);
 
                 if (element) {
-                    // Extract necessary attributes from the element
                     const { height, width, x, y } = element.getClientRect();
                     const { instrumentName } = element.attrs['data-recording'];
-                    const elementData = {
+                    return {
                         element,
                         height,
                         instrumentName,
                         recording: element.attrs['data-recording'],
-                        timelineY: element.parent.attrs.timelineY, // Assuming timelineY is stored in the parent
+                        timelineY: element.parent.attrs.timelineY,
                         width,
                         x,
                         y
                     };
-
-                    return elementData; // Return the processed element data
                 }
             }
-            return null; // Return null if no element was found with the given ID
+            return null;
         },
         [stageRef]
     );
 
     const getProcessedElements = useCallback(() => {
-        const processedElements = [];
-        const seenElementIds = new Set(); // To track unique element IDs
+        if (!stageRef?.current) return [];
 
-        if (stageRef && stageRef.current) {
-            const stage = stageRef.current;
-            const elements = stage.find((node) => node.id().startsWith('element-'));
-
-            elements.forEach((element) => {
-                const elementId = element.id(); // Get the element ID
-
-                if (!seenElementIds.has(elementId)) {
-                    // Check if the ID is already seen
+        const elements = stageRef.current.find((node) => node.id().startsWith('element-'));
+        const seenElementIds = new Set();
+        return reduce(
+            elements,
+            (acc, element) => {
+                if (!seenElementIds.has(element.id())) {
                     const { height, width, x, y } = element.getClientRect();
                     const { instrumentName } = element.attrs['data-recording'];
-
-                    const elementData = {
+                    acc.push({
                         element,
                         height,
                         instrumentName,
                         recording: element.attrs['data-recording'],
-                        timelineY: element.parent.attrs.timelineY, // Assuming timelineY is stored in the parent
+                        timelineY: element.parent.attrs.timelineY,
                         width,
                         x,
                         y
-                    };
-
-                    processedElements.push(elementData);
-                    seenElementIds.add(elementId); // Mark this ID as seen
+                    });
+                    seenElementIds.add(element.id());
                 }
-            });
-        }
-
-        return processedElements;
+                return acc;
+            },
+            []
+        );
     }, [stageRef]);
 
     const clearElements = useCallback((elements) => {
@@ -111,34 +94,22 @@ export const useTimelineRefs = ({ setHasChanged }) => {
     }, []);
 
     const deleteAllElements = useCallback(() => {
-        const seenElementIds = new Set(); // To track unique element IDs
+        if (!stageRef?.current) return;
 
-        if (stageRef && stageRef.current) {
-            const stage = stageRef.current;
-            const elements = stage.find((node) => node.id().startsWith('element-'));
-
-            elements.forEach((element) => {
-                const elementId = element.id();
-
-                if (!seenElementIds.has(elementId)) {
-                    // Ensure we haven't already processed this element
-                    clearElements([element]); // Clear this specific element
-                    seenElementIds.add(elementId); // Mark this ID as processed
-                }
-            });
-        }
-
-        setTimelineRefs({}); // Clear the timeline references (now an object)
-        setHasChanged(true); // Mark that changes have occurred
-    }, [stageRef, clearElements, setTimelineRefs, setHasChanged]);
+        const elements = stageRef.current.find((node) => node.id().startsWith('element-'));
+        clearElements(elements);
+        setTimelineRefs({});
+        setHasChanged(true);
+    }, [stageRef, clearElements, setHasChanged]);
 
     const deleteAllTimelines = useCallback(() => {
         if (!stageRef?.current) {
             console.warn('Stage reference is not set.');
             return;
         }
+
         clearElements(stageRef.current.find((node) => node.id().startsWith('timeline-')));
-        setTimelineRefs({}); // Clear the timeline references (now an object)
+        setTimelineRefs({});
         setHasChanged(true);
     }, [stageRef, clearElements, setHasChanged]);
 
