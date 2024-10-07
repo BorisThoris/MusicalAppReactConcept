@@ -1,67 +1,123 @@
+import get from 'lodash/get';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { Line } from 'react-konva/es/ReactKonvaCore';
+import { Line } from 'react-konva';
+import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { useRecordingPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
 const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
     const trackerRef = useRef();
-
+    const playedInstancesRef = useRef(new Set()); // Ref to track played instances
+    const animationRef = useRef(null); // Ref to store the current animation frame
+    const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
+        useRecordingPlayerContext();
+    const { getProcessedElements } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
-    const { setTrackerPosition, trackerPosition } = useContext(RecordingsPlayerContext);
+    const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
 
-    const trackerPositionInSec = useMemo(() => trackerPosition / pixelToSecondRatio, [trackerPosition]);
-    const trackerPositionInSecHalf = trackerPositionInSec / 2;
+    const calculatePoints = useMemo(() => [0, 0, 0, window.innerHeight], []);
 
-    const calculatePoints = useMemo(
-        () => [trackerPositionInSecHalf, 0, trackerPositionInSecHalf, window.innerHeight],
-        [trackerPositionInSecHalf]
+    const haveIntersection = useCallback((r1, r2) => {
+        return !(
+            r2.x > r1.x + r1.width ||
+            r2.x + r2.width < r1.x ||
+            r2.y > r1.y + r1.height ||
+            r2.y + r2.height < r1.y
+        );
+    }, []);
+
+    const playCollidedElements = useCallback(() => {
+        // Only process collision detection if playback is active
+        if (!playbackStatus.isPlaying || !trackerRef.current) return;
+
+        const trackerRect = trackerRef.current.getClientRect();
+        const processedElements = getProcessedElements();
+
+        let hasCollided = false;
+
+        processedElements.forEach(({ element, recording }) => {
+            const elementRect = element.getClientRect();
+            const { eventInstance, instrumentName } = recording;
+
+            const shouldPlay =
+                haveIntersection(trackerRect, elementRect) &&
+                !mutedInstruments.includes(instrumentName) &&
+                !playedInstancesRef.current.has(eventInstance);
+
+            const shouldStop =
+                !haveIntersection(trackerRect, elementRect) && playedInstancesRef.current.has(eventInstance);
+
+            console.log(eventInstance);
+
+            if (shouldPlay) {
+                playEventInstance(eventInstance);
+                playedInstancesRef.current.add(eventInstance);
+                hasCollided = true;
+            } else if (shouldStop) {
+                playedInstancesRef.current.delete(eventInstance);
+            }
+        });
+    }, [getProcessedElements, mutedInstruments, haveIntersection, playbackStatus.isPlaying]);
+
+    const moveTracker = useCallback(() => {
+        if (!trackerRef.current) return;
+
+        const startTimestamp = performance.now() - (trackerPosition / pixelToSecondRatio) * 1000;
+
+        const animate = (currentTime) => {
+            if (!trackerRef.current || !playbackStatus.isPlaying) return;
+
+            const elapsedTime = (currentTime - startTimestamp) / 1000;
+            const newTrackerPosition = Math.min(
+                trackerPosition + elapsedTime * pixelToSecondRatio,
+                totalDurationInPixels
+            );
+
+            trackerRef.current.x(newTrackerPosition);
+            playCollidedElements();
+
+            if (newTrackerPosition < totalDurationInPixels) {
+                animationRef.current = requestAnimationFrame(animate);
+            } else {
+                changePlaybackStatus(false);
+            }
+        };
+
+        animationRef.current = requestAnimationFrame(animate);
+    }, [changePlaybackStatus, playCollidedElements, totalDurationInPixels, playbackStatus.isPlaying, trackerPosition]);
+
+    useEffect(() => {
+        if (shouldTrack && playbackStatus.isPlaying) {
+            playedInstancesRef.current.clear();
+            moveTracker();
+        } else {
+            // Stop the animation when tracking should stop
+
+            cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
+        }
+    }, [shouldTrack, playbackStatus.isPlaying, moveTracker]);
+
+    const restrictVerticalMovement = useCallback(
+        (pos) => ({
+            x: Math.max(0, pos.x), // Ensure x is not lower than 0
+            y: get(trackerRef, 'current.getAbsolutePosition().y', 0)
+        }),
+        []
     );
-
-    useEffect(() => {
-        if (shouldTrack && trackerRef?.current) {
-            trackerRef.current.to({
-                duration: furthestEndTime - trackerPositionInSec,
-                scaleY: Math.random() + 0.8,
-                x: furthestEndTime * pixelToSecondRatio
-            });
-        }
-    }, [furthestEndTime, setTrackerPosition, shouldTrack, trackerPositionInSec]);
-
-    useEffect(() => {
-        if (!shouldTrack) {
-            trackerRef.current.to({
-                duration: 0,
-                scaleY: Math.random() + 0.8,
-                x: trackerPosition
-            });
-        }
-    }, [shouldTrack, trackerPosition]);
 
     const handleDragEndCallback = useCallback(
         (e) => {
             const newStartTime = e.target.x();
             const normalizedNewStartTime = newStartTime > 0 ? newStartTime : 0;
 
-            trackerRef.current.to({
-                duration: 0,
-                scaleY: Math.random() + 0.8,
-                x: normalizedNewStartTime
-            });
-
             setTrackerPosition(normalizedNewStartTime);
         },
         [setTrackerPosition]
-    );
-
-    const restrictVerticalMovement = useCallback(
-        (pos) => ({
-            x: pos.x,
-            y: trackerRef.current.getAbsolutePosition().y
-        }),
-        []
     );
 
     return (
@@ -82,9 +138,7 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
 TimelineTracker.propTypes = {
     furthestEndTime: PropTypes.number.isRequired,
     panelCompensationOffset: PropTypes.object,
-    setTrackerPosition: PropTypes.func.isRequired,
-    shouldTrack: PropTypes.bool.isRequired,
-    trackerPosition: PropTypes.number
+    shouldTrack: PropTypes.bool.isRequired
 };
 
 export default TimelineTracker;

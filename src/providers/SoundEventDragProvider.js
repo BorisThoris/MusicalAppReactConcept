@@ -40,6 +40,10 @@ export const SoundEventDragProvider = ({ children }) => {
 
             const newStartTime = element.x() / pixelToSecondRatio;
             const closestTimeline = closestTimelines.get(element.attrs.id);
+
+            console.log('data');
+            console.log(recording);
+
             updateStartTime({ newStartTime, recording }, closestTimeline);
         },
         [updateStartTime, closestTimelines]

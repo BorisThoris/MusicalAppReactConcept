@@ -1,5 +1,10 @@
 /* eslint-disable no-param-reassign */
 import Konva from 'konva';
+import map from 'lodash/map';
+import max from 'lodash/max';
+import merge from 'lodash/merge';
+import min from 'lodash/min';
+import reduce from 'lodash/reduce';
 import { useCallback, useState } from 'react';
 
 export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timelineRefs }) => {
@@ -28,6 +33,7 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
         return Array.from(new Set([...groupA, ...groupB]));
     };
 
+    // Function to calculate collisions
     const calculateCollisions = useCallback(() => {
         if (!timelineRefs || Object.keys(timelineRefs).length === 0) {
             console.log('No timelineRefs provided, skipping collision calculation.');
@@ -35,30 +41,34 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
         }
 
         // Initialize grouped events with empty arrays for each instrument name
-        const groupedEvents = Object.keys(timelineRefs).reduce((acc, instrumentName) => {
-            acc[instrumentName] = [];
-            return acc;
-        }, {});
+        const groupedEvents = reduce(
+            Object.keys(timelineRefs),
+            (acc, instrumentName) => {
+                acc[instrumentName] = [];
+                return acc;
+            },
+            {}
+        );
 
         // Process elements using the getProcessedElements function
         const processedElements = getProcessedElements();
 
-        console.log('hello');
-        console.log(processedElements);
-
         // Group the processed elements by their instrument name
-        const updatedGroupedEvents = processedElements.reduce((acc, elementData) => {
-            const { element, height, instrumentName, recording, width, x, y } = elementData;
+        const updatedGroupedEvents = reduce(
+            processedElements,
+            (acc, elementData) => {
+                const { element, height, instrumentName, recording, width, x, y } = elementData;
 
-            return {
-                ...acc,
-                [instrumentName]: [...(acc[instrumentName] || []), { element, height, recording, width, x, y }]
-            };
-        }, groupedEvents);
+                acc[instrumentName] = [...(acc[instrumentName] || []), { element, height, recording, width, x, y }];
+                return acc;
+            },
+            groupedEvents
+        );
 
         // Update overlap groups state
         setOverlapGroups((prevOverlapGroups) => {
-            const newOverlapGroups = Object.keys(updatedGroupedEvents).reduce(
+            const newOverlapGroups = reduce(
+                Object.keys(updatedGroupedEvents),
                 (groupAcc, instrumentName) => {
                     if (updatedGroupedEvents[instrumentName]) {
                         const events = updatedGroupedEvents[instrumentName];
@@ -67,7 +77,7 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                         events.forEach((event) => {
                             let addedToGroup = false;
 
-                            collisionGroups = collisionGroups.map((group) => {
+                            collisionGroups = map(collisionGroups, (group) => {
                                 if (group.some((e) => doEventsCollide(e, event))) {
                                     addedToGroup = true;
                                     return [...group, event];
@@ -87,10 +97,10 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                             groups.forEach((group) => {
                                 let merged = false;
 
-                                mergedGroups = mergedGroups.map((mg) => {
+                                mergedGroups = map(mergedGroups, (mg) => {
                                     if (mg.some((eventA) => group.some((eventB) => doEventsCollide(eventA, eventB)))) {
                                         merged = true;
-                                        return mergeGroups(mg, group);
+                                        return merge(mg, group);
                                     }
                                     return mg;
                                 });
@@ -111,48 +121,52 @@ export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timeline
                             collisionResult = mergeGroupsSafely(collisionResult.mergedGroups);
                         }
 
-                        const instrumentGroups = collisionResult.mergedGroups.reduce((groupAcc2, group) => {
-                            const startTime = Math.min(...group.map((e) => e.recording.startTime));
-                            const endTime = Math.max(...group.map((e) => e.recording.endTime));
+                        const instrumentGroups = reduce(
+                            collisionResult.mergedGroups,
+                            (groupAcc2, group) => {
+                                const startTime = min(group.map((e) => e.recording.startTime));
+                                const endTime = max(group.map((e) => e.recording.endTime));
 
-                            const groupId = generateGroupId(group);
-                            const prevGroup = prevOverlapGroups[instrumentName]?.[groupId];
+                                const groupId = generateGroupId(group);
+                                const prevGroup = prevOverlapGroups[instrumentName]?.[groupId];
 
-                            console.log('GROUP');
-                            console.log(group);
+                                groupAcc2[groupId] = {
+                                    endTime: parseFloat(endTime?.toFixed(2)),
+                                    eventInstance: group[0].recording.eventInstance || {},
+                                    eventLength: parseFloat((endTime - startTime).toFixed(2)),
+                                    eventPath: group[0].recording.eventPath,
+                                    events: reduce(
+                                        group,
+                                        (eventAcc, event) => {
+                                            const prevRecording = prevGroup?.events?.[event.recording.id];
+                                            eventAcc[event.recording.id] = {
+                                                ...event.recording,
+                                                eventInstance: event.recording.eventInstance || {},
+                                                events: null,
+                                                length: parseFloat(event.recording.length?.toFixed(2)),
+                                                locked: prevRecording?.locked || event.recording.locked || false,
+                                                parentId: groupId,
+                                                startTime: parseFloat(event.recording.startTime?.toFixed(2))
+                                            };
+                                            return eventAcc;
+                                        },
+                                        {}
+                                    ),
+                                    id: groupId,
+                                    instrumentName,
+                                    length: parseFloat((endTime - startTime).toFixed(2)),
+                                    locked: prevGroup?.locked || false,
+                                    name: group[0].recording.name,
+                                    params: group[0].recording.params,
+                                    parentId: null,
+                                    processed: false,
+                                    startTime: parseFloat(startTime.toFixed(2))
+                                };
 
-                            const multipleEvents = group.length > 1;
-
-                            groupAcc2[groupId] = {
-                                endTime: parseFloat(endTime?.toFixed(2)),
-                                eventInstance: group[0].recording.eventInstance || {},
-                                eventLength: parseFloat((endTime - startTime).toFixed(2)),
-                                eventPath: group[0].recording.eventPath,
-                                events: group.reduce((eventAcc, event) => {
-                                    const prevRecording = prevGroup?.events?.[event.recording.id];
-                                    eventAcc[event.recording.id] = {
-                                        ...event.recording,
-                                        events: null,
-                                        length: parseFloat(event.recording.length?.toFixed(2)),
-                                        locked: prevRecording?.locked || event.recording.locked || false,
-                                        parentId: groupId,
-                                        startTime: parseFloat(event.recording.startTime?.toFixed(2))
-                                    };
-                                    return eventAcc;
-                                }, {}),
-                                id: groupId,
-                                instrumentName,
-                                length: parseFloat((endTime - startTime).toFixed(2)),
-                                locked: prevGroup?.locked || false, // Preserve the locked state of the group
-                                name: group[0].recording.name,
-                                params: group[0].recording.params,
-                                parentId: null,
-                                processed: false,
-                                startTime: parseFloat(startTime.toFixed(2))
-                            };
-
-                            return groupAcc2;
-                        }, {});
+                                return groupAcc2;
+                            },
+                            {}
+                        );
 
                         groupAcc[instrumentName] = instrumentGroups;
                     }

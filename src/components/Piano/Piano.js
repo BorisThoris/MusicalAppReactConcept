@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { createAndPlayEventIntance } from '../../fmodLogic/eventInstanceHelpers';
 import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
-import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import { useRecordingPlayerContext } from '../../providers/RecordingsPlayerProvider';
 import PianoKey from './PianoKey';
 
 const PianoContainer = styled.div`
@@ -29,7 +29,7 @@ const pianoKeys = [
 
 const Piano = () => {
     const instrumentName = Instruments.Piano;
-    const { playRecordedSounds } = useRecordingsPlayer();
+    const { playRecordedSounds } = useRecordingPlayerContext();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = (musicalEvent) => {

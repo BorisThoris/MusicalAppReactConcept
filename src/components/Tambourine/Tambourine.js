@@ -2,12 +2,12 @@ import React from 'react';
 import { createAndPlayEventIntance } from '../../fmodLogic/eventInstanceHelpers';
 import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
-import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import { useRecordingPlayerContext } from '../../providers/RecordingsPlayerProvider';
 import useTambourine from './useTambourine';
 
 const Tambourine = () => {
     const instrumentName = Instruments.Tambourine;
-    const { playRecordedSounds } = useRecordingsPlayer();
+    const { playRecordedSounds } = useRecordingPlayerContext();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     const playEvent = () => {

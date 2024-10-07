@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Instruments from '../../globalConstants/instrumentNames';
 import useRecorder from '../../hooks/useRecorder';
-import useRecordingsPlayer from '../../hooks/useRecordingsPlayer';
+import { useRecordingPlayerContext } from '../../providers/RecordingsPlayerProvider';
 import Drum from './Drum';
 
 const DrumSetContainer = styled.div`
@@ -16,7 +16,7 @@ const drums = ['CrashCymbal', 'FloorTom', 'RideCymbal', 'Snare', 'SnareDrum', 'T
 
 const Drums = () => {
     const instrumentName = Instruments.Drum;
-    const { playRecordedSounds } = useRecordingsPlayer(instrumentName);
+    const { playRecordedSounds } = useRecordingPlayerContext();
     const { recordEvent, toggleRecording } = useRecorder({ instrumentName });
 
     return (

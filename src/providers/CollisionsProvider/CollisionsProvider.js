@@ -73,12 +73,11 @@ export const CollisionsProvider = ({ children }) => {
         const stringifyOverlapGroups = JSON.stringify({ ...overlapGroups });
 
         if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
-            // findDifferences(overlapGroups, JSON.parse(previousOverlapGroupsRef.current));
             calculateCollisions();
+            console.log('calculating');
             previousOverlapGroupsRef.current = stringifyOverlapGroups;
+            console.log(overlapGroups);
         }
-
-        console.log(overlapGroups);
     }, [calculateCollisions, openLoadPanel, overlapGroups, timelineRefs]);
 
     const insertRecording = useCallback(
