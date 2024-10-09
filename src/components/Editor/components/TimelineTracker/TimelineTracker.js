@@ -1,6 +1,6 @@
 import get from 'lodash/get';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Line } from 'react-konva';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -8,14 +8,17 @@ import { CollisionsContext } from '../../../../providers/CollisionsProvider/Coll
 import { useRecordingPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
+const TimelineTracker = ({ shouldTrack }) => {
     const trackerRef = useRef();
-    const playedInstancesRef = useRef(new Set()); // Ref to track played instances
-    const animationRef = useRef(null); // Ref to store the current animation frame
+    const playedInstancesRef = useRef(new Set());
+    const animationRef = useRef(null);
     const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
         useRecordingPlayerContext();
-    const { getProcessedElements } = useContext(CollisionsContext);
+    const { findAllSoundEventElements, getProcessedElements } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
+
+    // New state to hold the dynamically calculated furthest end time
+    const [furthestEndTime, setFurthestEndTime] = useState(0);
 
     const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
 
@@ -50,8 +53,6 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
 
             const shouldStop =
                 !haveIntersection(trackerRect, elementRect) && playedInstancesRef.current.has(eventInstance);
-
-            console.log(eventInstance);
 
             if (shouldPlay) {
                 playEventInstance(eventInstance);
@@ -90,13 +91,35 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
         animationRef.current = requestAnimationFrame(animate);
     }, [changePlaybackStatus, playCollidedElements, totalDurationInPixels, playbackStatus.isPlaying, trackerPosition]);
 
+    // Function to calculate the furthest end time by finding elements in the Konva stage
+    const calculateFurthestEndTime = () => {
+        const soundEventElements = findAllSoundEventElements();
+        let maxEndX = 0;
+
+        soundEventElements.forEach((element) => {
+            const elementRect = element.getClientRect();
+            const elementEndX = elementRect.x + elementRect.width;
+
+            if (elementEndX > maxEndX) {
+                maxEndX = elementEndX;
+            }
+        });
+
+        // Convert the maximum X position back into seconds based on the pixelToSecondRatio
+        return maxEndX / pixelToSecondRatio;
+    };
+
+    const newFurthestEndTime = calculateFurthestEndTime();
+
+    useEffect(() => {
+        setFurthestEndTime(newFurthestEndTime);
+    }, [newFurthestEndTime]);
+
     useEffect(() => {
         if (shouldTrack && playbackStatus.isPlaying) {
             playedInstancesRef.current.clear();
             moveTracker();
         } else {
-            // Stop the animation when tracking should stop
-
             cancelAnimationFrame(animationRef.current);
             animationRef.current = null;
         }
@@ -136,8 +159,6 @@ const TimelineTracker = ({ furthestEndTime, shouldTrack }) => {
 };
 
 TimelineTracker.propTypes = {
-    furthestEndTime: PropTypes.number.isRequired,
-    panelCompensationOffset: PropTypes.object,
     shouldTrack: PropTypes.bool.isRequired
 };
 

@@ -35,6 +35,7 @@ export const CollisionsProvider = ({ children }) => {
         addTimelineRef,
         deleteAllElements,
         deleteAllTimelines,
+        findAllSoundEventElements,
         getProcessedElements,
         getSoundEventById,
         removeTimelineRef,
@@ -68,17 +69,6 @@ export const CollisionsProvider = ({ children }) => {
             previousOverlapGroupsRef.current = {};
         }
     }, [openLoadPanel, overlapGroups]);
-
-    useEffect(() => {
-        const stringifyOverlapGroups = JSON.stringify({ ...overlapGroups });
-
-        if (previousOverlapGroupsRef.current !== stringifyOverlapGroups) {
-            calculateCollisions();
-            console.log('calculating');
-            previousOverlapGroupsRef.current = stringifyOverlapGroups;
-            console.log(overlapGroups);
-        }
-    }, [calculateCollisions, openLoadPanel, overlapGroups, timelineRefs]);
 
     const insertRecording = useCallback(
         ({ instrumentName, startTime }) => {
@@ -126,6 +116,7 @@ export const CollisionsProvider = ({ children }) => {
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
+            findAllSoundEventElements,
             getProcessedElements,
             getSoundEventById,
             hasChanged,
@@ -149,36 +140,35 @@ export const CollisionsProvider = ({ children }) => {
             updateCurrentBeat
         }),
         [
-            getSoundEventById,
-            calculateCollisions,
             addStageRef,
-            deleteAllTimelines,
             addTimelineRef,
-            timelineRefs,
-            deleteAllElements,
-            removeTimelineRef,
-            overlapGroups,
+            calculateCollisions,
             calculateOverlapsForAllInstruments,
-            history,
-            redoHistory,
-            getProcessedElements,
-            setOverlapGroups,
-            saveToLocalStorage,
-            loadFromLocalStorage,
             clearLocalStorage,
-            pushToHistory,
-            undo,
-            redo,
-            stageRef,
-            selectedBeat,
-            setSelectedBeat,
-            updateCurrentBeat,
-            setHasChanged,
-            hasChanged,
-            insertRecording,
-            copyEvents,
             copiedEvents,
-            setCopiedEvents
+            copyEvents,
+            deleteAllElements,
+            deleteAllTimelines,
+            findAllSoundEventElements,
+            getProcessedElements,
+            getSoundEventById,
+            hasChanged,
+            history,
+            insertRecording,
+            loadFromLocalStorage,
+            overlapGroups,
+            pushToHistory,
+            redo,
+            redoHistory,
+            removeTimelineRef,
+            saveToLocalStorage,
+            selectedBeat,
+            setOverlapGroups,
+            setSelectedBeat,
+            stageRef,
+            timelineRefs,
+            undo,
+            updateCurrentBeat
         ]
     );
 

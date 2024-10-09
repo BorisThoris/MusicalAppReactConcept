@@ -1,189 +1,95 @@
-/* eslint-disable no-param-reassign */
-import Konva from 'konva';
-import map from 'lodash/map';
-import max from 'lodash/max';
-import merge from 'lodash/merge';
-import min from 'lodash/min';
-import reduce from 'lodash/reduce';
+import cloneDeep from 'lodash/cloneDeep';
+import forEach from 'lodash/forEach';
+import isEmpty from 'lodash/isEmpty';
 import { useCallback, useState } from 'react';
 
 export const useOverlapGroups = ({ getProcessedElements, setHasChanged, timelineRefs }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
 
-    const doEventsCollide = useCallback((eventA, eventB) => {
-        // If either event is locked, they should not be considered as colliding
-        if (eventA.recording.locked || eventB.recording.locked) {
-            return false;
-        }
-
-        const rectA = eventA.element.getClientRect();
-        const rectB = eventB.element.getClientRect();
-        return Konva.Util.haveIntersection(rectA, rectB);
-    }, []);
-
-    const generateGroupId = (group) => {
-        const ids = group
-            .map((event) => event.recording.id)
-            .sort()
-            .join('-');
-        return `${ids}`;
-    };
-
-    const mergeGroups = (groupA, groupB) => {
-        return Array.from(new Set([...groupA, ...groupB]));
-    };
-
-    // Function to calculate collisions
+    // Refactored calculateCollisions to check overlaps based on bounding boxes
     const calculateCollisions = useCallback(() => {
-        if (!timelineRefs || Object.keys(timelineRefs).length === 0) {
+        if (isEmpty(timelineRefs)) {
             console.log('No timelineRefs provided, skipping collision calculation.');
             return;
         }
 
-        // Initialize grouped events with empty arrays for each instrument name
-        const groupedEvents = reduce(
-            Object.keys(timelineRefs),
-            (acc, instrumentName) => {
-                acc[instrumentName] = [];
-                return acc;
-            },
-            {}
-        );
+        // Retrieve all elements from the stage that represent sound events
+        const allElements = getProcessedElements();
 
-        // Process elements using the getProcessedElements function
-        const processedElements = getProcessedElements();
+        const overlappingElements = new Set();
 
-        // Group the processed elements by their instrument name
-        const updatedGroupedEvents = reduce(
-            processedElements,
-            (acc, elementData) => {
-                const { element, height, instrumentName, recording, width, x, y } = elementData;
-
-                acc[instrumentName] = [...(acc[instrumentName] || []), { element, height, recording, width, x, y }];
-                return acc;
-            },
-            groupedEvents
-        );
-
-        // Update overlap groups state
-        setOverlapGroups((prevOverlapGroups) => {
-            const newOverlapGroups = reduce(
-                Object.keys(updatedGroupedEvents),
-                (groupAcc, instrumentName) => {
-                    if (updatedGroupedEvents[instrumentName]) {
-                        const events = updatedGroupedEvents[instrumentName];
-                        let collisionGroups = [];
-
-                        events.forEach((event) => {
-                            let addedToGroup = false;
-
-                            collisionGroups = map(collisionGroups, (group) => {
-                                if (group.some((e) => doEventsCollide(e, event))) {
-                                    addedToGroup = true;
-                                    return [...group, event];
-                                }
-                                return group;
-                            });
-
-                            if (!addedToGroup) {
-                                collisionGroups = [...collisionGroups, [event]];
-                            }
-                        });
-
-                        const mergeGroupsSafely = (groups) => {
-                            let hasMerged = false;
-                            let mergedGroups = [];
-
-                            groups.forEach((group) => {
-                                let merged = false;
-
-                                mergedGroups = map(mergedGroups, (mg) => {
-                                    if (mg.some((eventA) => group.some((eventB) => doEventsCollide(eventA, eventB)))) {
-                                        merged = true;
-                                        return merge(mg, group);
-                                    }
-                                    return mg;
-                                });
-
-                                if (!merged) {
-                                    mergedGroups.push(group);
-                                }
-
-                                hasMerged = hasMerged || merged;
-                            });
-
-                            return { hasMerged, mergedGroups };
-                        };
-
-                        let collisionResult = { hasMerged: true, mergedGroups: collisionGroups };
-
-                        while (collisionResult.hasMerged) {
-                            collisionResult = mergeGroupsSafely(collisionResult.mergedGroups);
-                        }
-
-                        const instrumentGroups = reduce(
-                            collisionResult.mergedGroups,
-                            (groupAcc2, group) => {
-                                const startTime = min(group.map((e) => e.recording.startTime));
-                                const endTime = max(group.map((e) => e.recording.endTime));
-
-                                const groupId = generateGroupId(group);
-                                const prevGroup = prevOverlapGroups[instrumentName]?.[groupId];
-
-                                groupAcc2[groupId] = {
-                                    endTime: parseFloat(endTime?.toFixed(2)),
-                                    eventInstance: group[0].recording.eventInstance || {},
-                                    eventLength: parseFloat((endTime - startTime).toFixed(2)),
-                                    eventPath: group[0].recording.eventPath,
-                                    events: reduce(
-                                        group,
-                                        (eventAcc, event) => {
-                                            const prevRecording = prevGroup?.events?.[event.recording.id];
-                                            eventAcc[event.recording.id] = {
-                                                ...event.recording,
-                                                eventInstance: event.recording.eventInstance || {},
-                                                events: null,
-                                                length: parseFloat(event.recording.length?.toFixed(2)),
-                                                locked: prevRecording?.locked || event.recording.locked || false,
-                                                parentId: groupId,
-                                                startTime: parseFloat(event.recording.startTime?.toFixed(2))
-                                            };
-                                            return eventAcc;
-                                        },
-                                        {}
-                                    ),
-                                    id: groupId,
-                                    instrumentName,
-                                    length: parseFloat((endTime - startTime).toFixed(2)),
-                                    locked: prevGroup?.locked || false,
-                                    name: group[0].recording.name,
-                                    params: group[0].recording.params,
-                                    parentId: null,
-                                    processed: false,
-                                    startTime: parseFloat(startTime.toFixed(2))
-                                };
-
-                                return groupAcc2;
-                            },
-                            {}
-                        );
-
-                        groupAcc[instrumentName] = instrumentGroups;
-                    }
-
-                    return groupAcc;
-                },
-                { ...prevOverlapGroups }
+        // Helper function to check if two bounding boxes overlap
+        const checkBoundingBoxOverlap = (box1, box2) => {
+            return !(
+                box1.x > box2.x + box2.width ||
+                box1.x + box1.width < box2.x ||
+                box1.y > box2.y + box2.height ||
+                box1.y + box1.height < box2.y
             );
+        };
 
-            return newOverlapGroups;
+        console.log('ALL ELEMENTS');
+        console.log(allElements);
+
+        // Iterate over all elements and check for overlaps
+        forEach(allElements, (element, i) => {
+            const elementBox = element.element.getClientRect(); // Get the bounding box of the element
+
+            // Compare each element's bounding box with every other element's bounding box
+            forEach(allElements, (otherElement, j) => {
+                if (i !== j) {
+                    const otherBox = otherElement.element.getClientRect(); // Get the bounding box of the other element
+
+                    // Check if the two bounding boxes overlap
+                    if (checkBoundingBoxOverlap(elementBox, otherBox)) {
+                        console.log('true');
+                        overlappingElements.add(element.element);
+                        overlappingElements.add(otherElement.element);
+                    }
+                }
+            });
         });
 
+        // Apply styles to overlapping elements
+        const styleOverlappingElements = (overlappingShapes) => {
+            forEach(overlappingShapes, (shape) => {
+                shape.to({
+                    duration: 0.2,
+                    fill: 'yellow', // Example fill for visual debugging
+                    opacity: 1,
+                    scaleX: 1.2,
+                    scaleY: 1.2,
+                    shadowBlur: 30,
+                    shadowColor: 'blue',
+                    stroke: 'limegreen',
+                    strokeWidth: 6
+                });
+            });
+        };
+
+        const resetElementStyle = (shape) => {
+            shape.to({
+                duration: 0.2,
+                shadowColor: 'black',
+                stroke: 'black'
+            });
+        };
+
+        // Apply styles to all overlapping elements or reset if no overlap
+        if (overlappingElements.size > 0) {
+            styleOverlappingElements([...overlappingElements]);
+        } else {
+            // If no overlaps are found, reset styles for all elements
+            forEach(allElements, (element) => {
+                resetElementStyle(element.element);
+            });
+        }
+
         setHasChanged(true);
-    }, [timelineRefs, getProcessedElements, setHasChanged, doEventsCollide]);
+    }, [timelineRefs, getProcessedElements, setHasChanged]);
 
     const calculateOverlapsForAllInstruments = useCallback((newOverlapGroups) => {
-        const recalculatedGroups = { ...newOverlapGroups };
+        const recalculatedGroups = cloneDeep(newOverlapGroups);
         return recalculatedGroups;
     }, []);
 

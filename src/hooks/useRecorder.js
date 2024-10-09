@@ -34,15 +34,6 @@ const useRecorder = ({ instrumentName } = { instrumentName: '' }) => {
         [isRecording, addRecording, instrumentLayer, startTime, x]
     );
 
-    const recordEventNoVerify = useCallback(
-        // eslint-disable-next-line no-shadow
-        ({ event, instrumentName, x }) => {
-            const elapsedTime = x / pixelToSecondRatio;
-            addRecording(event, instrumentLayer || instrumentName, elapsedTime, null);
-        },
-        [addRecording, instrumentLayer]
-    );
-
     useEffect(() => {
         const checkRecordingTimeout = () => {
             if (isRecording) {
@@ -61,7 +52,6 @@ const useRecorder = ({ instrumentName } = { instrumentName: '' }) => {
     return {
         isRecording,
         recordEvent,
-        recordEventNoVerify,
         toggleRecording
     };
 };

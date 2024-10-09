@@ -1,10 +1,13 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { createAndPlayEventIntance } from '../fmodLogic/eventInstanceHelpers';
+import { createAndPlayEventIntance, getEventPath } from '../fmodLogic/eventInstanceHelpers';
+import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import { createSound } from '../globalHelpers/createSound';
+import getElapsedTime from '../globalHelpers/getElapsedTime';
 import useRecorder from '../hooks/useRecorder';
 
 // Create the Context
 const PaintingContext = createContext({
-    paintEvent: ({ target, x }) => {},
+    paintEvent: ({ renderEvent, target, x }) => {},
     paintingTarget: '',
     selectedEvent: null
 });
@@ -12,15 +15,27 @@ const PaintingContext = createContext({
 // Create the Provider component
 const PaintingProviderComponent = ({ children }) => {
     const [paintingTarget, setPaintingTarget] = useState(null);
-    const { recordEventNoVerify } = useRecorder();
 
     const paintEvent = useCallback(
-        ({ target, x }) => {
+        ({ renderEvent, target, x }) => {
             const eventInstance = createAndPlayEventIntance(`${paintingTarget.instrument}/${paintingTarget.event}`);
 
-            recordEventNoVerify({ event: eventInstance, instrumentName: target, x });
+            const startTime = x / pixelToSecondRatio;
+            const startOffset = null;
+
+            const elapsedTime = getElapsedTime(startTime, null);
+            const eventPath = getEventPath(eventInstance);
+
+            const event = createSound({
+                eventInstance,
+                eventPath,
+                instrumentName: target,
+                startTime: startOffset || startOffset === 0 ? elapsedTime : startTime
+            });
+
+            renderEvent(event);
         },
-        [paintingTarget, recordEventNoVerify]
+        [paintingTarget]
     );
 
     const value = useMemo(() => {

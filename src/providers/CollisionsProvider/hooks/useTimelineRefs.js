@@ -113,11 +113,18 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         setHasChanged(true);
     }, [stageRef, clearElements, setHasChanged]);
 
+    // Utility function to find all elements with IDs starting with "element-"
+    const findAllSoundEventElements = useCallback(() => {
+        if (!stageRef?.current) return [];
+        return stageRef.current.find((node) => node.id().startsWith('element-'));
+    }, [stageRef]);
+
     return {
         addStageRef,
         addTimelineRef,
         deleteAllElements,
         deleteAllTimelines,
+        findAllSoundEventElements,
         getProcessedElements,
         getSoundEventById,
         removeTimelineRef,

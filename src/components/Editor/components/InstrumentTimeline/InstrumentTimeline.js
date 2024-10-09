@@ -28,10 +28,9 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     const timelineWidth = threeMinuteMs / pixelToSecondRatio;
     const fillColor = currentPlayingInstrument === instrumentName ? 'green' : 'transparent';
 
-    const { cursorPos, handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
-    const cursorX = cursorPos.screenX;
+    const { handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
 
-    const { onMouseMove, onPointerDown, onPointerUp, removeRipple, ripples } = useTimelinePointerEffects({
+    const { onMouseMove, onPointerUp, removeRipple, ripples } = useTimelinePointerEffects({
         index,
         instrumentName
     });
@@ -48,16 +47,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
         }
     }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const onTimelinePointerDown = useCallback(
-        (e) => {
-            if (paintingTarget) {
-                paintEvent({ target: instrumentName, x: cursorX });
-            }
-
-            onPointerDown(e);
-        },
-        [paintingTarget, onPointerDown, paintEvent, instrumentName, cursorX]
-    );
+    const onTimelinePointerDown = useCallback((e) => {}, []);
 
     return (
         <Group

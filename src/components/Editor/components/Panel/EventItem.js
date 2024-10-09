@@ -37,6 +37,8 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { duplicateOverlapGroup } = instrumentRecordingOperationsHook();
     const { isItemSelected, toggleItem } = useContext(SelectionContext);
 
+    console.log('yoooooo');
+
     const { endTime, eventInstance, id, locked, params, parentId, startTime } = event;
     const isSelected = isItemSelected(id);
     const parent = getEventById(parentId);

@@ -17,8 +17,6 @@ const usePanelControls = () => {
 
 export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
     const { eventInstance } = recording;
-    const { paintEvent, paintingTarget } = usePaintings();
-    const { cursorPos } = useCustomCursorContext();
     const { openSelectionsPanel, selectElement, timelineState } = usePanelControls();
 
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
@@ -54,20 +52,8 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
             if (isParentPresent && handleClickOverlapGroup && parent.locked) {
                 handleClickOverlapGroup();
             }
-
-            if (paintingTarget) {
-                paintEvent({ instrumentName: recording.instrumentName, x: cursorPos.screenX });
-            }
         },
-        [
-            parent,
-            handleClickOverlapGroup,
-            cursorPos,
-            paintingTarget,
-            openSelectionPanel,
-            paintEvent,
-            recording.instrumentName
-        ]
+        [parent, handleClickOverlapGroup, openSelectionPanel]
     );
 
     const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
