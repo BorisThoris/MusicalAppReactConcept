@@ -119,21 +119,8 @@ export const recreateEvents = (passedGroups) => {
 
         Object.values(passedGroups[instrumentName]).forEach((recording) => {
             const group = createEvent({ instrumentName, recording });
-            const events = recording.events ? Object.values(recording.events) : [];
 
-            console.log('recreated Group');
-            console.log(group);
-
-            group.events =
-                events.length > 1
-                    ? events.reduce((acc, subEvent) => {
-                          const subGroup = createEvent({ instrumentName, parentId: group.id, recording: subEvent });
-                          acc[subGroup.id] = subGroup;
-                          return acc;
-                      }, {})
-                    : { [group.id]: { ...group, parentId: group.id } };
-
-            newRecordings[instrumentName][group.id] = { ...group, events: group.events };
+            newRecordings[instrumentName][group.id] = { ...group };
         });
     });
 

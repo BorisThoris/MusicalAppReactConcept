@@ -1,7 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
-import { useOverlapCalculator } from './useOverlapCalculator/useOverlapCalculator';
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
@@ -12,7 +11,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const [selectedItems, setSelectedItems] = useState({});
     const [filteredSelectedItems, setFilteredSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
-    const { calculateOverlapsForAllInstruments } = useOverlapCalculator(filteredSelectedItems, filteredSelectedItems);
 
     const prevSelectedItemsRef = useRef({});
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
@@ -160,18 +158,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         [getEventById, selectedItems, updateRecording]
     );
 
-    const duplicateSelections = () => {
-        const calculatedInstrumentOverlaps = calculateOverlapsForAllInstruments();
-
-        const groupsToDuplicate = Object.values(calculatedInstrumentOverlaps).flatMap((events) =>
-            Object.values(events).map((ev) => ({
-                overlapGroup: { ...ev },
-                startTimeOffset: groupEndTime - groupStartTime
-            }))
-        );
-
-        duplicateMultipleOverlapGroups(groupsToDuplicate);
-    };
+    const duplicateSelections = () => {};
 
     const deleteSelections = useCallback(
         (selectedEvents) => {
