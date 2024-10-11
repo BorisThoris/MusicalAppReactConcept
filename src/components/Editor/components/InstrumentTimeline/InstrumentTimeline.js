@@ -5,7 +5,6 @@ import { Group, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
-import { usePaintings } from '../../../../providers/PaintingProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Ripples } from '../Ripples/Ripples';
@@ -18,10 +17,6 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     const { calculatedStageWidth, timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
 
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
-
-    const { paintEvent, paintingTarget } = usePaintings();
-
-    const isInstrumentSelected = paintingTarget?.instrument ? instrumentName.includes(paintingTarget.instrument) : true;
 
     const timelineY = TimelineHeight * index + markersAndTrackerOffset;
     const isMuted = mutedInstruments.includes(instrumentName);
@@ -73,7 +68,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 height={TimelineHeight}
                 width={calculatedStageWidth}
                 // eslint-disable-next-line no-nested-ternary
-                fill={isInstrumentSelected ? (isMuted ? 'darkred' : 'lightgray') : isMuted ? 'red' : fillColor}
+                fill={isMuted ? 'red' : fillColor}
                 onPointerUp={onPointerUp}
                 id={`Timeline-${timelineY}`}
                 onMouseMove={onMouseMove}

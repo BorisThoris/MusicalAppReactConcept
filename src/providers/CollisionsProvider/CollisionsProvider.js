@@ -3,7 +3,6 @@ import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useOverlapGroups } from './hooks/useOverlapGroups';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
 
@@ -26,6 +25,7 @@ function findDifferences(obj1, obj2, parentKey = '') {
 }
 
 export const CollisionsProvider = ({ children }) => {
+    const [overlapGroups, setOverlapGroups] = useState({});
     const [hasChanged, setHasChanged] = useState(false);
     const [copiedEvents, setCopiedEvents] = useState([]);
     const { openLoadPanel } = useContext(PanelContext);
@@ -43,24 +43,46 @@ export const CollisionsProvider = ({ children }) => {
         timelineRefs
     } = useTimelineRefs({ setHasChanged });
 
-    const { calculateCollisions, calculateOverlapsForAllInstruments, overlapGroups, setOverlapGroups } =
-        useOverlapGroups({ getProcessedElements, setHasChanged, timelineRefs });
-
     const { clearLocalStorage, loadFromLocalStorage, saveToLocalStorage } = useLocalStorage({
         overlapGroups,
         setHasChanged,
         setOverlapGroups
     });
 
+    // Function to group recordings by instrumentName
+    const processBeat = useCallback(() => {
+        const processedElements = getProcessedElements();
+
+        // Create the object to save
+        const objToSave = processedElements.reduce((acc, { recording }) => {
+            const { id, instrumentName } = recording;
+
+            // Initialize instrumentName if it doesn't exist
+            if (!acc[instrumentName]) {
+                acc[instrumentName] = {};
+            }
+
+            // Add recording under the relevant instrumentName
+            acc[instrumentName][id] = recording;
+
+            return acc;
+        }, {});
+
+        return objToSave;
+    }, [getProcessedElements]);
+
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
-        calculateOverlapsForAllInstruments,
         overlapGroups,
-        setOverlapGroups
+        processBeat,
+        setOverlapGroups,
+        stageRef
     });
 
     const { selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({ overlapGroups, setHasChanged });
 
     const previousOverlapGroupsRef = useRef({});
+
+    console.log(overlapGroups);
 
     useEffect(() => {
         if (Object.values(overlapGroups).length === 0) {
@@ -109,8 +131,6 @@ export const CollisionsProvider = ({ children }) => {
         () => ({
             addStageRef,
             addTimelineRef,
-            calculateCollisions,
-            calculateOverlapsForAllInstruments,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
@@ -124,6 +144,7 @@ export const CollisionsProvider = ({ children }) => {
             insertRecording,
             loadFromLocalStorage,
             overlapGroups,
+            processBeat,
             pushToHistory,
             redo,
             redoHistory,
@@ -142,8 +163,7 @@ export const CollisionsProvider = ({ children }) => {
         [
             addStageRef,
             addTimelineRef,
-            calculateCollisions,
-            calculateOverlapsForAllInstruments,
+            processBeat,
             clearLocalStorage,
             copiedEvents,
             copyEvents,

@@ -2,7 +2,8 @@ import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
-import { INSTRUMENT_NAMES } from '../../../../providers/InstrumentsProvider';
+
+export const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '�', Piano: '🎹', Tambourine: '🎵' };
 
 const ParentWrapper = styled.div`
     position: relative;

@@ -8,7 +8,6 @@ import { useDynamicStyles } from '../../../../hooks/useDynamicStyles';
 import { useEventFocus } from '../../../../hooks/useEventFocus';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
-import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { useClickHandlers } from './useEventClickHandlers';
@@ -60,7 +59,7 @@ const SoundEventElement = React.memo(
 
         // Contexts
         const { isItemSelected } = useContext(SelectionContext);
-        const { calculateCollisions } = useContext(CollisionsContext);
+
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
         const { getEventById, lockOverlapGroup } = useInstrumentRecordingsOperations();
@@ -94,9 +93,8 @@ const SoundEventElement = React.memo(
         const handleDelete = useCallback(() => {
             if (groupRef.current) {
                 groupRef.current.destroy();
-                calculateCollisions();
             }
-        }, [calculateCollisions]);
+        }, []);
 
         useEffect(() => {
             setElementXPosition(startTime * pixelToSecondRatio);

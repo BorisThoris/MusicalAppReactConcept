@@ -25,10 +25,10 @@ const SaveButton = styled.button`
     border-radius: 3px;
 `;
 
-export const SavePanel = ({ onClose }) => {
+export const SavePanel = () => {
     const [beatName, setBeatName] = useState('');
     const { closeSavePanel } = useContext(PanelContext);
-    const { overlapGroups } = useContext(CollisionsContext);
+    const { processBeat } = useContext(CollisionsContext);
 
     const handleSave = useCallback(() => {
         if (!beatName.trim()) {
@@ -36,8 +36,10 @@ export const SavePanel = ({ onClose }) => {
             return;
         }
 
+        const objToSave = processBeat();
+
         const newBeat = {
-            data: overlapGroups,
+            data: objToSave,
             date: new Date().toLocaleString(),
             name: beatName.trim()
         };
@@ -46,9 +48,8 @@ export const SavePanel = ({ onClose }) => {
         savedBeats.push(newBeat);
         localStorage.setItem('beats', JSON.stringify(savedBeats));
 
-        alert('Beat saved successfully.');
-        onClose();
-    }, [beatName, overlapGroups, onClose]);
+        closeSavePanel();
+    }, [beatName, closeSavePanel, processBeat]);
 
     const handleSaveBeat = useCallback((e) => {
         setBeatName(e.target.value);

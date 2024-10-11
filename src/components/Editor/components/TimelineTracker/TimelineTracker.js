@@ -17,8 +17,25 @@ const TimelineTracker = ({ shouldTrack }) => {
     const { findAllSoundEventElements, getProcessedElements } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
-    // New state to hold the dynamically calculated furthest end time
-    const [furthestEndTime, setFurthestEndTime] = useState(0);
+    // Function to calculate the furthest end time by finding elements in the Konva stage
+    const calculateFurthestEndTime = () => {
+        const soundEventElements = findAllSoundEventElements();
+        let maxEndX = 0;
+
+        soundEventElements.forEach((element) => {
+            const elementRect = element.getClientRect();
+            const elementEndX = elementRect.x + elementRect.width;
+
+            if (elementEndX > maxEndX) {
+                maxEndX = elementEndX;
+            }
+        });
+
+        // Convert the maximum X position back into seconds based on the pixelToSecondRatio
+        return maxEndX / pixelToSecondRatio;
+    };
+
+    const furthestEndTime = calculateFurthestEndTime();
 
     const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
 
@@ -90,30 +107,6 @@ const TimelineTracker = ({ shouldTrack }) => {
 
         animationRef.current = requestAnimationFrame(animate);
     }, [changePlaybackStatus, playCollidedElements, totalDurationInPixels, playbackStatus.isPlaying, trackerPosition]);
-
-    // Function to calculate the furthest end time by finding elements in the Konva stage
-    const calculateFurthestEndTime = () => {
-        const soundEventElements = findAllSoundEventElements();
-        let maxEndX = 0;
-
-        soundEventElements.forEach((element) => {
-            const elementRect = element.getClientRect();
-            const elementEndX = elementRect.x + elementRect.width;
-
-            if (elementEndX > maxEndX) {
-                maxEndX = elementEndX;
-            }
-        });
-
-        // Convert the maximum X position back into seconds based on the pixelToSecondRatio
-        return maxEndX / pixelToSecondRatio;
-    };
-
-    const newFurthestEndTime = calculateFurthestEndTime();
-
-    useEffect(() => {
-        setFurthestEndTime(newFurthestEndTime);
-    }, [newFurthestEndTime]);
 
     useEffect(() => {
         if (shouldTrack && playbackStatus.isPlaying) {

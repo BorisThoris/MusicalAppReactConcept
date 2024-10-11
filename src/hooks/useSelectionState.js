@@ -5,8 +5,7 @@ import { useOverlapCalculator } from './useOverlapCalculator/useOverlapCalculato
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { calculateCollisions, getProcessedElements, getSoundEventById, overlapGroups } =
-        useContext(CollisionsContext);
+    const { getProcessedElements, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
     const { duplicateMultipleOverlapGroups } = useInstrumentRecordingsOperations();
     const { getEventById, updateRecording } = useInstrumentRecordingsOperations();
 
@@ -200,10 +199,8 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                     element.destroy();
                 }
             });
-
-            calculateCollisions();
         },
-        [calculateCollisions, getProcessedElements]
+        [getProcessedElements]
     );
 
     return {

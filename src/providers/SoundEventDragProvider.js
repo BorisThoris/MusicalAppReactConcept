@@ -30,13 +30,36 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const updateStartTimeForElement = useCallback(({ element }) => {
         if (!element) return;
+
+        // Get the recording from the element's attributes
         const recording = element.attrs['data-recording'];
         if (!recording) return;
 
+        // Calculate the new start time and end time
         const newStartTime = element.x() / pixelToSecondRatio;
-        console.log(`Updating start time for element: ${element.attrs.id}, new start time: ${newStartTime}`);
+        const newEndTime = newStartTime + recording.eventLength;
 
-        element.getLayer().batchDraw();
+        // Update the recording object with new times
+        const updatedRecording = {
+            ...recording,
+            endTime: newEndTime,
+            startTime: newStartTime
+        };
+
+        console.log(updatedRecording);
+        // Update the element's 'data-recording' attribute
+        element.setAttr('data-recording', updatedRecording);
+
+        // If you have any text nodes or other attributes that depend on startTime/endTime, update them here
+        // For example, if you have a Text node displaying the start time:
+        const textNode = element.findOne('Text'); // Adjust selector as needed
+        if (textNode) {
+            textNode.setAttr('text', `Start: ${newStartTime.toFixed(2)}s`);
+        }
+
+        console.log(
+            `Updated element: ${element.attrs.id}, new start time: ${newStartTime}, new end time: ${newEndTime}`
+        );
     }, []);
 
     const handleDragStart = useCallback(
@@ -62,14 +85,12 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             setIsDragging((prevDragging) => ({ ...prevDragging, ...newDragging }));
-            console.log('Drag started for element:', el.target.attrs.id);
         },
         [clearSelection, isItemSelected, selectedItems]
     );
 
     const applyHighlightToTimeline = (timeline) => {
         if (timeline) {
-            console.log('Highlighting timeline:', timeline.attrs.id);
             timeline.fill('yellow');
             timeline.getLayer().batchDraw(); // Redraw the timeline layer after highlighting
         }
@@ -77,7 +98,6 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const removeHighlightFromTimeline = (timeline) => {
         if (timeline) {
-            console.log('Removing highlight from timeline:', timeline.attrs.id);
             timeline.fill('white');
             timeline.getLayer().batchDraw(); // Redraw the timeline layer after removing highlight
         }
@@ -198,23 +218,17 @@ export const SoundEventDragProvider = ({ children }) => {
                     const timelineBox = timelineElement.parent.getAbsolutePosition();
                     const distance = Math.abs(elementBox.y - timelineBox.y);
 
-                    console.log('   ');
-                    console.log('elementBox.y');
-                    console.log(elementBox.y);
-                    console.log('timelineBox.y');
-                    console.log(timelineBox.y);
-
                     if (distance < minDistance) {
                         minDistance = distance;
                         closestTimeline = timelineElement;
                     }
                 });
 
-                console.log('ClosestTimeline');
-                console.log(closestTimeline.attrs.id);
-
                 if (closestTimeline) {
                     insertElementIntoTimeline({ closestTimeline, element });
+                    updateStartTimeForElement({
+                        element
+                    });
                 }
             };
 
@@ -237,7 +251,7 @@ export const SoundEventDragProvider = ({ children }) => {
             previousXRef.current = null;
             setIsDragging({});
         },
-        [insertElementIntoTimeline, selectedItems, stageRef]
+        [insertElementIntoTimeline, selectedItems, stageRef, updateStartTimeForElement]
     );
 
     const isElementBeingDragged = useCallback(
