@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -92,37 +91,6 @@ export const CollisionsProvider = ({ children }) => {
         }
     }, [openLoadPanel, overlapGroups]);
 
-    const insertRecording = useCallback(
-        ({ instrumentName, startTime }) => {
-            const sortedEvents = [...copiedEvents].sort((a, b) => a.startTime - b.startTime);
-
-            const updatedGroups = { ...overlapGroups };
-
-            const initialStart = startTime;
-            const firstEvent = sortedEvents[0];
-            const offset = initialStart - firstEvent.startTime;
-
-            sortedEvents.forEach((event, index) => {
-                const newStartTime = index === 0 ? initialStart : event.startTime + offset;
-                const newEvent = createEvent({
-                    instrumentName: event.instrumentName,
-                    parentId: null,
-                    passedStartTime: newStartTime,
-                    recording: event
-                });
-
-                if (!updatedGroups[newEvent.instrumentName]) {
-                    updatedGroups[newEvent.instrumentName] = {};
-                }
-                updatedGroups[newEvent.instrumentName][newEvent.id] = newEvent;
-            });
-
-            pushToHistory(updatedGroups);
-            setOverlapGroups(updatedGroups);
-        },
-        [copiedEvents, overlapGroups, pushToHistory, setOverlapGroups]
-    );
-
     const copyEvents = useCallback((events) => {
         setCopiedEvents(events);
     }, []);
@@ -141,7 +109,6 @@ export const CollisionsProvider = ({ children }) => {
             getSoundEventById,
             hasChanged,
             history,
-            insertRecording,
             loadFromLocalStorage,
             overlapGroups,
             processBeat,
@@ -174,7 +141,6 @@ export const CollisionsProvider = ({ children }) => {
             getSoundEventById,
             hasChanged,
             history,
-            insertRecording,
             loadFromLocalStorage,
             overlapGroups,
             pushToHistory,

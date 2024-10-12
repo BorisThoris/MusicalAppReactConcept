@@ -29,8 +29,6 @@ const withValidation =
     };
 
 const useParameter = ({ event, paramData }) => {
-    const { updateRecordingParams } = useInstrumentRecordingsOperations();
-
     const { param, value } = paramData;
     const { maximum: max, minimum: min } = param;
 
@@ -49,13 +47,8 @@ const useParameter = ({ event, paramData }) => {
                 ...prevDetails,
                 paramValue: newValue
             }));
-
-            updateRecordingParams({
-                event,
-                updatedParam: { ...paramData, value: newValue }
-            });
         },
-        [min, max, updateRecordingParams, event, paramData]
+        [min, max]
     );
 
     return [paramDetails, handleParamChange];

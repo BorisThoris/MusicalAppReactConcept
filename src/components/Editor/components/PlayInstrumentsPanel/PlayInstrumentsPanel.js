@@ -38,9 +38,9 @@ export const PlayInstrumentsPanel = () => {
 
     const handlePaste = useCallback(() => {
         if (instrumentName) {
-            insertRecording({ instrumentName: instrumentLayer, startTime: x / pixelToSecondRatio });
+            // sad
         }
-    }, [instrumentName, insertRecording, instrumentLayer, x]);
+    }, [instrumentName]);
 
     if (!instrumentName) {
         return null;

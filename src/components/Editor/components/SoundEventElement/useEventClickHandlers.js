@@ -22,26 +22,9 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
 
     const openSelectionPanel = useCallback(() => {
-        if (parent?.locked) {
-            const parentEvents = parent.events;
-            const target = parentEvents;
-
-            selectElement(target);
-            openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
-        } else {
-            selectElement(recording);
-            openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
-        }
-    }, [
-        parent?.locked,
-        parent?.events,
-        selectElement,
-        openSelectionsPanel,
-        timelineY,
-        canvasOffsetY,
-        elementRef,
-        recording
-    ]);
+        selectElement(recording);
+        openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
+    }, [selectElement, openSelectionsPanel, timelineY, canvasOffsetY, elementRef, recording]);
 
     const handleClick = useCallback(
         (evt) => {

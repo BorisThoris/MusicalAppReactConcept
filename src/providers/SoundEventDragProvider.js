@@ -47,12 +47,10 @@ export const SoundEventDragProvider = ({ children }) => {
         };
 
         console.log(updatedRecording);
-        // Update the element's 'data-recording' attribute
+
         element.setAttr('data-recording', updatedRecording);
 
-        // If you have any text nodes or other attributes that depend on startTime/endTime, update them here
-        // For example, if you have a Text node displaying the start time:
-        const textNode = element.findOne('Text'); // Adjust selector as needed
+        const textNode = element.findOne('Text');
         if (textNode) {
             textNode.setAttr('text', `Start: ${newStartTime.toFixed(2)}s`);
         }

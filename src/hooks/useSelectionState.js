@@ -6,7 +6,7 @@ import { useTimeRange } from './useTimeRange';
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { getProcessedElements, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
     const { duplicateMultipleOverlapGroups } = useInstrumentRecordingsOperations();
-    const { getEventById, updateRecording } = useInstrumentRecordingsOperations();
+    const { getEventById } = useInstrumentRecordingsOperations();
 
     const [selectedItems, setSelectedItems] = useState({});
     const [filteredSelectedItems, setFilteredSelectedItems] = useState({});
@@ -130,33 +130,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
 
-    const updateSelectedItemsStartTime = useCallback(
-        (newStartTime) => {
-            const updatedItems = Object.keys(selectedItems).reduce((acc, itemId) => {
-                if (selectedItems[itemId]) {
-                    const actualEvent = getEventById(itemId);
-                    const updatedRecording = {
-                        ...selectedItems[itemId],
-                        startTime: actualEvent.startTime + newStartTime
-                    };
-
-                    updateRecording({
-                        newStartTime: updatedRecording.startTime,
-                        recording: updatedRecording
-                    });
-
-                    return {
-                        ...acc,
-                        [itemId]: updatedRecording
-                    };
-                }
-                return acc;
-            }, {});
-
-            setSelectedItems(updatedItems);
-        },
-        [getEventById, selectedItems, updateRecording]
-    );
+    const updateSelectedItemsStartTime = useCallback((newStartTime) => {}, []);
 
     const duplicateSelections = () => {};
 
@@ -177,12 +151,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                     (ev) => ev.instrumentName === instrumentName && ev.id === element.id().replace('element-', '')
                 );
                 if (event) {
-                    if (event.parentId) {
-                        const parentElement = element.getStage()?.findOne(`#parent-${event.parentId}`);
-                        if (parentElement) {
-                            parentElement.destroy();
-                        }
-                    }
                     element.destroy();
                 }
             });

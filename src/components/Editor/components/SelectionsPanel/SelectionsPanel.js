@@ -22,13 +22,6 @@ const organizeEventsByParentId = (events) => {
         } else {
             eventMap[event.id] = { ...eventMap[event.id], ...event };
         }
-
-        if (event.parentId) {
-            if (!eventMap[event.parentId]) {
-                eventMap[event.parentId] = { children: [] };
-            }
-            eventMap[event.parentId].children.push(eventMap[event.id]);
-        }
     });
 
     return Object.values(eventMap).filter((event) => !event.parentId);
@@ -44,15 +37,8 @@ const EventsContainer = styled(FlexContainer)`
 export const SelectionsPanel = () => {
     const { closePanel, panels } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const {
-        clearSelection,
-        duplicateSelections,
-        endTime,
-        highestYLevel,
-        selectedValues,
-        startTime,
-        updateSelectedItemsStartTime
-    } = useContext(SelectionContext);
+    const { clearSelection, duplicateSelections, endTime, highestYLevel, selectedValues, startTime } =
+        useContext(SelectionContext);
 
     const { copyEvents } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
@@ -123,11 +109,8 @@ export const SelectionsPanel = () => {
                 </FlexContainer>
 
                 {selectedValues.length > 1 && (
-                    <TimeControl
-                        endTime={endTime}
-                        startTime={startTime}
-                        onModifyStartTime={updateSelectedItemsStartTime}
-                    />
+                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                    <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={() => {}} />
                 )}
 
                 <EventsContainer>

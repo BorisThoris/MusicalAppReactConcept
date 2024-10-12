@@ -33,7 +33,7 @@ const UnselectButton = styled.button`
 
 export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
-    const { getEventById, updateRecording: updateStartTime } = useInstrumentRecordingsOperations();
+    const { getEventById } = useInstrumentRecordingsOperations();
     const { duplicateOverlapGroup } = instrumentRecordingOperationsHook();
     const { isItemSelected, toggleItem } = useContext(SelectionContext);
 
@@ -48,10 +48,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     );
     const handlePlay = useCallback(() => onPlay(eventInstance), [onPlay, eventInstance]);
     const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
-    const modifyStartTime = useCallback(
-        (delta) => updateStartTime({ newStartTime: startTime + delta, recording: event }),
-        [event, startTime, updateStartTime]
-    );
+    const modifyStartTime = useCallback((delta) => {}, []);
     const onItemSelect = useCallback(() => toggleItem(event), [event, toggleItem]);
 
     const isGroupNotLocked = (parent && !parent.locked) || (!parentId && !locked);
