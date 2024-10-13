@@ -1,11 +1,13 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useContext, useLayoutEffect, useState } from 'react';
 import { Group, Rect } from 'react-konva';
+// Import the painting context
+import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePaintings } from '../../../../providers/PaintingProvider';
 import { SoundEventDragContext } from '../../../../providers/SoundEventDragProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
-import SoundEventElement from '../SoundEventElement/SoundEventElement'; // Import the painting context
+import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
     const { timelineState } = useContext(TimelineContext);
@@ -74,14 +76,14 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
     return (
         <Group offset={timelineState.panelCompensationOffset} id={`${instrumentName}-events`} ref={timelineRef}>
             {/* Background rect to capture click events for painting */}
-            {/* <Rect
+            <Rect
                 x={0}
                 y={0}
-                width={timelineState.stageWidth}
+                width={180 * pixelToSecondRatio}
                 height={timelineHeight}
                 fill="green"
                 onClick={handleTimelineClick}
-            /> */}
+            />
 
             {/* Paint existing SoundEventElements (from original eventGroups) */}
             {Object.values(eventGroups).map((groupData, index) => {

@@ -5,7 +5,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
-import { createSound } from '../globalHelpers/createSound';
+import { createEvent, createSound } from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 
@@ -111,7 +111,39 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
-    const duplicateInstrument = useCallback(() => {}, []);
+    const duplicateInstrument = useCallback(
+        (instrumentName) => {
+            const newInstrumentName = `${instrumentName} Copy`;
+
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                const originalInstrumentRecordings = updatedGroups[instrumentName];
+
+                if (!originalInstrumentRecordings) {
+                    console.warn(`Instrument "${newInstrumentName}" does not exist.`);
+                    return;
+                }
+
+                const newInstrumentRecordings = {};
+
+                // Recreate all events using createEvent
+                Object.values(originalInstrumentRecordings).forEach((recording) => {
+                    // Recreate the event using createEvent
+                    const newEvent = createEvent({
+                        instrumentName: newInstrumentName,
+                        passedStartTime: recording.startTime,
+                        recording
+                    });
+
+                    // Add the new event to the new instrument recordings
+                    newInstrumentRecordings[newEvent.id] = newEvent;
+                });
+
+                // Add the new instrument and its recordings to the updated groups
+                updatedGroups[newInstrumentName] = newInstrumentRecordings;
+            });
+        },
+        [setOverlapGroups]
+    );
 
     const resetRecordings = useCallback(
         (instrumentName) => {
@@ -124,29 +156,6 @@ export const useInstrumentRecordingsOperations = () => {
         [resetRecordingsForInstrument, setOverlapGroups]
     );
 
-    const insertNewInstrument = useCallback(
-        (instrumentName) => {
-            const nameRegex = /^(.*?)(?:\s+(\d+))?$/;
-            const match = instrumentName.match(nameRegex);
-
-            const baseName = match ? match[1] : instrumentName;
-            let number = match && match[2] ? parseInt(match[2], 10) : 1;
-            let newInstrumentName = `${baseName} ${number}`;
-
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                while (Object.prototype.hasOwnProperty.call(updatedGroups, newInstrumentName)) {
-                    number += 1;
-                    newInstrumentName = `${baseName} ${number}`;
-                }
-
-                updatedGroups[newInstrumentName] = {};
-            });
-
-            return newInstrumentName;
-        },
-        [setOverlapGroups]
-    );
-
     return {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
@@ -155,7 +164,6 @@ export const useInstrumentRecordingsOperations = () => {
         duplicateMultipleOverlapGroups,
         duplicateOverlapGroup,
         getEventById,
-        insertNewInstrument,
         lockOverlapGroup,
         resetRecordings,
         updateOverlapGroupTimes,

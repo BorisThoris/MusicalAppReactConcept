@@ -39,9 +39,8 @@ const Input = styled.input`
 `;
 
 export const BeatManagementControls = () => {
-    const { onAddLayer } = useAddInstrumentLayer();
     const { openLoadPanel, openSavePanel } = useContext(PanelContext);
-    const { changeBeatName, hasChanged, selectedBeat, updateCurrentBeat } = useContext(CollisionsContext);
+    const { addTimeline, changeBeatName, hasChanged, selectedBeat, updateCurrentBeat } = useContext(CollisionsContext);
 
     const [isEditingName, setIsEditingName] = useState(false);
     const [newBeatName, setNewBeatName] = useState(selectedBeat?.name || '');
@@ -76,6 +75,10 @@ export const BeatManagementControls = () => {
             inputRef.current.focus();
         }
     }, [isEditingName]);
+
+    const onAddLayer = useCallback(() => {
+        addTimeline();
+    }, [addTimeline]);
 
     return (
         <Container>

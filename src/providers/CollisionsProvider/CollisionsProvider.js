@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -70,6 +71,28 @@ export const CollisionsProvider = ({ children }) => {
         return objToSave;
     }, [getProcessedElements]);
 
+    // Function to calculate the furthest end time by finding elements in the Konva stage
+    const calculateFurthestEndTime = () => {
+        const soundEventElements = findAllSoundEventElements();
+        let maxEndX = 0;
+
+        soundEventElements.forEach((element) => {
+            const elementRect = element.getClientRect();
+            const elementEndX = elementRect.x + elementRect.width;
+
+            if (elementEndX > maxEndX) {
+                maxEndX = elementEndX;
+            }
+        });
+
+        // Convert the maximum X position back into seconds based on the pixelToSecondRatio
+        return maxEndX / pixelToSecondRatio;
+    };
+
+    const furthestEndTime = calculateFurthestEndTime();
+
+    const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
+
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
         overlapGroups,
         processBeat,
@@ -95,9 +118,23 @@ export const CollisionsProvider = ({ children }) => {
         setCopiedEvents(events);
     }, []);
 
+    // Function to add a new timeline (with name generation logic)
+    const addTimeline = useCallback(
+        ({ passedName }) => {
+            const newTimelineName = passedName || `Additional Timeline ${Object.keys(overlapGroups).length + 1}`;
+
+            setOverlapGroups((prevGroups) => ({
+                ...prevGroups,
+                [newTimelineName]: {}
+            }));
+        },
+        [overlapGroups]
+    );
+
     const contextValue = useMemo(
         () => ({
             addStageRef,
+            addTimeline,
             addTimelineRef,
             clearLocalStorage,
             copiedEvents,
@@ -105,6 +142,7 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             deleteAllTimelines,
             findAllSoundEventElements,
+            furthestEndTime,
             getProcessedElements,
             getSoundEventById,
             hasChanged,
@@ -124,10 +162,12 @@ export const CollisionsProvider = ({ children }) => {
             setSelectedBeat,
             stageRef,
             timelineRefs,
+            totalDurationInPixels,
             undo,
             updateCurrentBeat
         }),
         [
+            addTimeline,
             addStageRef,
             addTimelineRef,
             processBeat,
@@ -143,6 +183,8 @@ export const CollisionsProvider = ({ children }) => {
             history,
             loadFromLocalStorage,
             overlapGroups,
+            furthestEndTime,
+            totalDurationInPixels,
             pushToHistory,
             redo,
             redoHistory,

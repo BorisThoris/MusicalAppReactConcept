@@ -46,6 +46,8 @@ export const SavePanel = () => {
 
         const savedBeats = JSON.parse(localStorage.getItem('beats')) || [];
         savedBeats.push(newBeat);
+        console.log('beat to save');
+        console.log(newBeat);
         localStorage.setItem('beats', JSON.stringify(savedBeats));
 
         closeSavePanel();

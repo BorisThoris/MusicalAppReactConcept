@@ -56,7 +56,6 @@ const TimeMarker = ({ duration, height, pixelToSecond }) => {
 
 TimeMarker.propTypes = {
     duration: PropTypes.number.isRequired,
-    furthestEndTime: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     pixelToSecond: PropTypes.number.isRequired
 };

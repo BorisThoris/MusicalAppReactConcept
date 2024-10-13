@@ -183,18 +183,23 @@ export const SoundEventDragProvider = ({ children }) => {
         [currentY, selectedItems, stageRef, updateElementPosition]
     );
 
-    const insertElementIntoTimeline = useCallback(
-        ({ closestTimeline, element }) => {
-            const timeline = stageRef.current.findOne((node) => node.attrs?.id?.includes('-events'));
-            if (!timeline) return;
+    const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
+        // Move the element to the closest timeline
+        element.moveTo(closestTimeline);
 
-            element.moveTo(closestTimeline);
+        // Get the closest timeline's instrument name
+        const closestTimelineInstrumentName = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown Timeline';
 
-            // Redraw the timeline layer after inserting the element
-            closestTimeline.getLayer().batchDraw();
-        },
-        [stageRef]
-    );
+        // Update the element's 'data-recording.instrumentName'
+        const recording = element.attrs['data-recording'];
+        if (recording) {
+            recording.instrumentName = closestTimelineInstrumentName;
+            element.setAttr('data-recording', recording); // Update element with new recording data
+        }
+
+        // Redraw the timeline layer after inserting the element
+        closestTimeline.getLayer().batchDraw();
+    }, []);
 
     const handleDragEnd = useCallback(
         (e) => {
