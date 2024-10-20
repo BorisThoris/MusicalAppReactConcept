@@ -118,10 +118,9 @@ export const CollisionsProvider = ({ children }) => {
         setCopiedEvents(events);
     }, []);
 
-    // Function to add a new timeline (with name generation logic)
     const addTimeline = useCallback(
-        ({ passedName }) => {
-            const newTimelineName = passedName || `Additional Timeline ${Object.keys(overlapGroups).length + 1}`;
+        (passedName) => {
+            const newTimelineName = passedName ?? `Additional Timeline ${Object.keys(overlapGroups).length + 1}`;
 
             setOverlapGroups((prevGroups) => ({
                 ...prevGroups,

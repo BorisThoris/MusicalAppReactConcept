@@ -1,6 +1,6 @@
 import get from 'lodash/get';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { Line } from 'react-konva';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';

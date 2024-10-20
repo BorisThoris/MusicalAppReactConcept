@@ -12,6 +12,15 @@ const PaintingContext = createContext({
     selectedEvent: null
 });
 
+// Custom hook to use the PaintingContext
+export const usePaintings = () => {
+    const context = useContext(PaintingContext);
+    if (!context) {
+        throw new Error('usePaintings must be used within a PaintingProvider');
+    }
+    return context;
+};
+
 // Create the Provider component
 const PaintingProviderComponent = ({ children }) => {
     const [paintingTarget, setPaintingTarget] = useState(null);
@@ -47,12 +56,3 @@ const PaintingProviderComponent = ({ children }) => {
 
 // Wrap the component with React.memo
 export const PaintingProvider = React.memo(PaintingProviderComponent);
-
-// Custom hook to use the PaintingContext
-export const usePaintings = () => {
-    const context = useContext(PaintingContext);
-    if (!context) {
-        throw new Error('usePaintings must be used within a PaintingProvider');
-    }
-    return context;
-};

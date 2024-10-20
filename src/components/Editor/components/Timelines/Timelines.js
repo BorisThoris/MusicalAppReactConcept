@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
@@ -7,6 +7,7 @@ import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerP
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
+import { useOverlaps } from '../InstrumentTimeline/useOverlaps';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
@@ -14,6 +15,7 @@ import TimelineTracker from '../TimelineTracker/TimelineTracker';
 const Timelines = React.memo(() => {
     const stageRef = useRef(null);
     const { addStageRef, overlapGroups } = useContext(CollisionsContext);
+
     const { playbackStatus } = useContext(RecordingsPlayerContext);
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
@@ -25,6 +27,8 @@ const Timelines = React.memo(() => {
     useEffect(() => {
         addStageRef(stageRef);
     }, [addStageRef]);
+
+    const { overlappingIds, resetOverlaps } = useOverlaps({ eventGroups: recordingsArr });
 
     return (
         <>
@@ -39,6 +43,8 @@ const Timelines = React.memo(() => {
                             events={events}
                             index={index}
                             markersHeight={markersHeight}
+                            overlappingIds={overlappingIds}
+                            resetOverlaps={resetOverlaps}
                         />
                     ))}
                 </Layer>
