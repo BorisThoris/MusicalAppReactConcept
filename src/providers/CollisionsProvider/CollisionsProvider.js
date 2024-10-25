@@ -104,8 +104,6 @@ export const CollisionsProvider = ({ children }) => {
 
     const previousOverlapGroupsRef = useRef({});
 
-    console.log(overlapGroups);
-
     useEffect(() => {
         if (Object.values(overlapGroups).length === 0) {
             openLoadPanel();
@@ -129,6 +127,27 @@ export const CollisionsProvider = ({ children }) => {
         },
         [overlapGroups]
     );
+
+    const elements = getProcessedElements();
+
+    // Memoize element rects to avoid recalculating on each render
+    const elementRects = useMemo(() => {
+        return elements.map((el) => ({
+            id: el.element.attrs['data-recording'].id,
+            rect: el.element.getClientRect()
+        }));
+    }, [elements]);
+
+    const previousBeat = useRef(overlapGroups);
+
+    useEffect(() => {
+        const currentBeat = processBeat();
+
+        if (JSON.stringify(previousBeat.current) !== JSON.stringify(currentBeat)) {
+            setOverlapGroups(processBeat());
+            previousBeat.current = currentBeat;
+        }
+    }, [elementRects, processBeat]);
 
     const contextValue = useMemo(
         () => ({

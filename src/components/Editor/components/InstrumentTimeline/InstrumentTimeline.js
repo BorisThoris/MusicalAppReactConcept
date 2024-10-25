@@ -6,6 +6,7 @@ import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
@@ -17,6 +18,7 @@ const InstrumentTimeline = React.memo(
         const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } =
             useContext(RecordingsPlayerContext);
         const { calculatedStageWidth, timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+        const { handleCloseSelectionsPanel } = useContext(SelectionContext);
 
         const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
@@ -57,12 +59,10 @@ const InstrumentTimeline = React.memo(
                 id={`timeline-${instrumentName}`}
             >
                 <InstrumentTimelinePanelComponent
-                    timelineHeight={TimelineHeight}
                     parentGroupName={instrumentName}
                     replayInstrumentRecordings={replayInstrumentRecordings}
                     toggleMute={toggleMute}
-                    toggleLocked={toggleLock}
-                    isLocked={isLocked}
+                    instrumentName={instrumentName}
                 />
 
                 <Rect
@@ -76,6 +76,8 @@ const InstrumentTimeline = React.memo(
                     onPointerDown={onTimelinePointerDown}
                     stroke="black"
                     strokeWidth={2}
+                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                    onClick={handleCloseSelectionsPanel}
                 />
 
                 <TimelineEvents

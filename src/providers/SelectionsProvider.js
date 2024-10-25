@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { useBoxMove } from '../hooks/useBoxMove';
-import { usePanelControl } from '../hooks/usePanelControl';
-import { PanelContext } from '../hooks/usePanelState';
+import { PanelContext, SELECTIONS_PANEL_ID } from '../hooks/usePanelState';
 import { useSelectionState } from '../hooks/useSelectionState';
 import { TimelineContext } from './TimelineProvider';
 
@@ -18,7 +17,7 @@ export const SelectionContext = createContext({
 
 export const SelectionProvider = ({ children }) => {
     const { timelineState } = useContext(TimelineContext);
-    const { closePanel, openSelectionsPanel, panels } = useContext(PanelContext);
+    const { closeSelectionsPanel, openSelectionsPanel, panels } = useContext(PanelContext);
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
@@ -37,9 +36,21 @@ export const SelectionProvider = ({ children }) => {
 
     const { handleSelectionBoxMove } = useBoxMove({ selectedItems });
 
-    usePanelControl(selectedItems, panels, openSelectionsPanel, closePanel);
+    useEffect(() => {
+        const isSelectedItemsNotEmpty = Object.keys(selectedItems).length > 0;
+        const panelNotOpen = !panels[SELECTIONS_PANEL_ID];
+
+        if (isSelectedItemsNotEmpty && panelNotOpen) {
+            openSelectionsPanel();
+        }
+    }, [openSelectionsPanel, panels, selectedItems]);
 
     const selectedValues = Object.values(selectedItems);
+
+    const handleCloseSelectionsPanel = useCallback(() => {
+        closeSelectionsPanel();
+        clearSelection();
+    }, [clearSelection, closeSelectionsPanel]);
 
     const value = useMemo(() => {
         return {
@@ -47,6 +58,7 @@ export const SelectionProvider = ({ children }) => {
             deleteSelections,
             duplicateSelections,
             endTime: groupEndTime,
+            handleCloseSelectionsPanel,
             handleSelectionBoxMove,
             highestYLevel,
             isItemSelected,
@@ -68,7 +80,8 @@ export const SelectionProvider = ({ children }) => {
         selectedValues,
         setSelectionBasedOnCoordinates,
         groupStartTime,
-        toggleItem
+        toggleItem,
+        handleCloseSelectionsPanel
     ]);
 
     return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;

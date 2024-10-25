@@ -157,6 +157,7 @@ const SoundEventElement = React.memo(
                 onDblClick={handleDoubleClick}
                 listening={listening}
                 id={`element-${id}`}
+                name="sound-event"
             >
                 <Rect
                     onMouseEnter={handleMouseEnter}

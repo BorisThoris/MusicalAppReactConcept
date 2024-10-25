@@ -31,8 +31,6 @@ export const useOverlaps = ({ eventGroups }) => {
     const findOverlaps = useCallback(() => {
         const overlaps = new Set();
 
-        console.log('Find');
-
         elementRects.forEach((elementA, idxA) => {
             const rectA = elementA.rect;
 

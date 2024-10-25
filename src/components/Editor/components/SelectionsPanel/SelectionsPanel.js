@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';

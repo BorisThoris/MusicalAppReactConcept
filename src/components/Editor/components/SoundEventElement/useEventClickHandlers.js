@@ -1,23 +1,14 @@
 import { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../../../hooks/usePanelState';
-import { useCustomCursorContext } from '../../../../providers/CursorProvider';
-import { usePaintings } from '../../../../providers/PaintingProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-const usePanelControls = () => {
-    const { openSelectionsPanel } = useContext(PanelContext);
-    const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, toggleItem: selectElement } = useContext(SelectionContext);
-
-    return { clearSelection, openSelectionsPanel, selectElement, timelineState };
-};
-
 export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
     const { eventInstance } = recording;
-    const { openSelectionsPanel, selectElement, timelineState } = usePanelControls();
+    const { openSelectionsPanel } = useContext(PanelContext);
+    const { timelineState } = useContext(TimelineContext);
+    const { toggleItem: selectElement } = useContext(SelectionContext);
 
     const canvasOffsetY = timelineState.canvasOffsetY || undefined;
 
@@ -28,6 +19,7 @@ export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, 
 
     const handleClick = useCallback(
         (evt) => {
+            evt.evt.preventDefault();
             const isParentPresent = !!parent;
 
             openSelectionPanel();

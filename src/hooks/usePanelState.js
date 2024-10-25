@@ -73,6 +73,13 @@ export const PanelProvider = ({ children }) => {
         [openPanel]
     );
 
+    const closeSelectionsPanel = useCallback(
+        (payload) => {
+            closePanel(SELECTIONS_PANEL_ID);
+        },
+        [closePanel]
+    );
+
     const openLoadPanel = useCallback(
         (payload) => {
             openPanel({ id: LOAD_PANEL_ID, ...payload });
@@ -101,6 +108,7 @@ export const PanelProvider = ({ children }) => {
             closeLoadPanel,
             closePanel,
             closeSavePanel,
+            closeSelectionsPanel,
             focusedEvent,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
@@ -120,6 +128,7 @@ export const PanelProvider = ({ children }) => {
             closeLoadPanel,
             closeSavePanel,
             focusedEvent,
+            closeSelectionsPanel,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openPanel,

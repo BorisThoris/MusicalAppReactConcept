@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Text } from 'react-konva/';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 
-const InstrumentTimelinePanel = ({ parentGroupName, replayInstrumentRecordings, toggleMute }) => {
+const InstrumentTimelinePanel = ({ instrumentName, parentGroupName, replayInstrumentRecordings, toggleMute }) => {
     const { deleteAllRecordingsForInstrument, duplicateInstrument } = useInstrumentRecordingsOperations();
 
     const onPlay = useCallback(() => {
@@ -69,6 +69,7 @@ const InstrumentTimelinePanel = ({ parentGroupName, replayInstrumentRecordings, 
 
     return (
         <Group scale={groupScale}>
+            <Text text={instrumentName} />
             {icons.map((icon, index) => (
                 <Text
                     key={icon.icon}
