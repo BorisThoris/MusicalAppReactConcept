@@ -31,7 +31,8 @@ export const SelectionProvider = ({ children }) => {
         isItemSelected,
         selectedItems,
         setSelectionBasedOnCoordinates,
-        toggleItem
+        toggleItem,
+        updateSelectedItemById
     } = useSelectionState({ markersAndTrackerOffset });
 
     const { handleSelectionBoxMove } = useBoxMove({ selectedItems });
@@ -64,15 +65,19 @@ export const SelectionProvider = ({ children }) => {
             isItemSelected,
             selectedItems,
             selectedValues,
+
             setSelectionBasedOnCoordinates,
             startTime: groupStartTime,
-            toggleItem
+            toggleItem,
+            updateSelectedItemById
         };
     }, [
+        updateSelectedItemById,
         clearSelection,
         deleteSelections,
         duplicateSelections,
         groupEndTime,
+        handleCloseSelectionsPanel,
         handleSelectionBoxMove,
         highestYLevel,
         isItemSelected,
@@ -80,8 +85,7 @@ export const SelectionProvider = ({ children }) => {
         selectedValues,
         setSelectionBasedOnCoordinates,
         groupStartTime,
-        toggleItem,
-        handleCloseSelectionsPanel
+        toggleItem
     ]);
 
     return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;

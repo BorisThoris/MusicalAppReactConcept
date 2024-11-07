@@ -26,6 +26,10 @@ const panelReducer = (state, action) => {
             // eslint-disable-next-line no-case-declarations
             const { [action.payload.id]: omitted, ...remainingPanels } = state;
             return remainingPanels;
+        case 'SHOW_RIGHT_CLICK_MENU':
+            return { ...state, rightClickMenuPosition: action.payload.position, rightClickMenuVisible: true };
+        case 'HIDE_RIGHT_CLICK_MENU':
+            return { ...state, rightClickMenuVisible: false };
         default:
             return state;
     }
@@ -36,13 +40,19 @@ export const PanelProvider = ({ children }) => {
     const [panels, dispatch] = useReducer(panelReducer, initialState);
 
     const openPanel = useCallback((payload) => {
-        // @ts-ignore
         dispatch({ payload, type: 'OPEN_PANEL' });
     }, []);
 
     const closePanel = useCallback((id) => {
-        // @ts-ignore
         dispatch({ payload: { id }, type: 'CLOSE_PANEL' });
+    }, []);
+
+    const showRightClickMenu = useCallback((position) => {
+        dispatch({ payload: { position }, type: 'SHOW_RIGHT_CLICK_MENU' });
+    }, []);
+
+    const hideRightClickMenu = useCallback(() => {
+        dispatch({ type: 'HIDE_RIGHT_CLICK_MENU' });
     }, []);
 
     const openInstrumentsPanel = useCallback(
@@ -52,12 +62,9 @@ export const PanelProvider = ({ children }) => {
         [openPanel]
     );
 
-    const closeInstrumentLayerPanel = useCallback(
-        (payload) => {
-            closePanel(INSTRUMENT_LAYER_PANEL_ID);
-        },
-        [closePanel]
-    );
+    const closeInstrumentLayerPanel = useCallback(() => {
+        closePanel(INSTRUMENT_LAYER_PANEL_ID);
+    }, [closePanel]);
 
     const openInstrumentLayerPanel = useCallback(
         (payload) => {
@@ -73,12 +80,9 @@ export const PanelProvider = ({ children }) => {
         [openPanel]
     );
 
-    const closeSelectionsPanel = useCallback(
-        (payload) => {
-            closePanel(SELECTIONS_PANEL_ID);
-        },
-        [closePanel]
-    );
+    const closeSelectionsPanel = useCallback(() => {
+        closePanel(SELECTIONS_PANEL_ID);
+    }, [closePanel]);
 
     const openLoadPanel = useCallback(
         (payload) => {
@@ -110,6 +114,7 @@ export const PanelProvider = ({ children }) => {
             closeSavePanel,
             closeSelectionsPanel,
             focusedEvent,
+            hideRightClickMenu,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openLoadPanel,
@@ -119,7 +124,10 @@ export const PanelProvider = ({ children }) => {
             panels,
             panelsArr: Object.values(panels),
             panelsObj: panels,
-            setFocusedEvent
+            rightClickMenuPosition: panels.rightClickMenuPosition,
+            rightClickMenuVisible: panels.rightClickMenuVisible,
+            setFocusedEvent,
+            showRightClickMenu
         }),
         [
             closeInstrumentLayerPanel,
@@ -134,7 +142,9 @@ export const PanelProvider = ({ children }) => {
             openPanel,
             openSelectionsPanel,
             openSavePanel,
-            panels
+            panels,
+            showRightClickMenu,
+            hideRightClickMenu
         ]
     );
 

@@ -2,20 +2,17 @@ import { useCallback, useContext } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
-import { TimelineContext } from '../../../../providers/TimelineProvider';
 
-export const useClickHandlers = ({ elementRef, handleClickOverlapGroup, parent, recording, timelineY }) => {
+export const useClickHandlers = ({ handleClickOverlapGroup, parent, recording }) => {
     const { eventInstance } = recording;
     const { openSelectionsPanel } = useContext(PanelContext);
-    const { timelineState } = useContext(TimelineContext);
-    const { toggleItem: selectElement } = useContext(SelectionContext);
 
-    const canvasOffsetY = timelineState.canvasOffsetY || undefined;
+    const { toggleItem: selectElement } = useContext(SelectionContext);
 
     const openSelectionPanel = useCallback(() => {
         selectElement(recording);
-        openSelectionsPanel({ y: timelineY + canvasOffsetY + elementRef.current.attrs.height });
-    }, [selectElement, openSelectionsPanel, timelineY, canvasOffsetY, elementRef, recording]);
+        openSelectionsPanel();
+    }, [selectElement, openSelectionsPanel, recording]);
 
     const handleClick = useCallback(
         (evt) => {

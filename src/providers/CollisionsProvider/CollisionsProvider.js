@@ -49,12 +49,22 @@ export const CollisionsProvider = ({ children }) => {
         setOverlapGroups
     });
 
-    // Function to group recordings by instrumentName
+    // Assuming timelineRefs is accessible in this scope or passed as an argument
     const processBeat = useCallback(() => {
         const processedElements = getProcessedElements();
 
-        // Create the object to save
-        const objToSave = processedElements.reduce((acc, { recording }) => {
+        // Sort processedElements alphabetically by instrumentName and numerically by id within each instrumentName
+        const sortedElements = processedElements.sort((a, b) => {
+            // First, compare by instrumentName alphabetically
+            if (a.recording.instrumentName < b.recording.instrumentName) return -1;
+            if (a.recording.instrumentName > b.recording.instrumentName) return 1;
+
+            // If instrumentNames are the same, compare by id numerically
+            return a.recording.id - b.recording.id;
+        });
+
+        // Create the object to save with ordered instrument names
+        const objToSave = sortedElements.reduce((acc, { recording }) => {
             const { id, instrumentName } = recording;
 
             // Initialize instrumentName if it doesn't exist
@@ -68,8 +78,33 @@ export const CollisionsProvider = ({ children }) => {
             return acc;
         }, {});
 
-        return objToSave;
-    }, [getProcessedElements]);
+        // Get all timeline names from timelineRefs, sorted alphabetically
+        const timelineNames = Object.keys(timelineRefs).sort();
+
+        // Ensure each timelineName is included in objToSave with an empty object if not already present
+        timelineNames.forEach((timelineName) => {
+            if (!objToSave[timelineName]) {
+                objToSave[timelineName] = {};
+            }
+        });
+
+        // Sort objToSave to keep timelines in alphabetical order, and each timeline's ids in numerical order
+        const orderedObjToSave = Object.keys(objToSave)
+            .sort()
+            .reduce((acc, timelineName) => {
+                // Sort each timeline's recordings by numeric id
+                acc[timelineName] = Object.keys(objToSave[timelineName])
+                    .sort((a, b) => Number(a) - Number(b))
+                    .reduce((recordAcc, id) => {
+                        // eslint-disable-next-line no-param-reassign
+                        recordAcc[id] = objToSave[timelineName][id];
+                        return recordAcc;
+                    }, {});
+                return acc;
+            }, {});
+
+        return orderedObjToSave;
+    }, [getProcessedElements, timelineRefs]);
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
     const calculateFurthestEndTime = () => {
@@ -113,6 +148,12 @@ export const CollisionsProvider = ({ children }) => {
     }, [openLoadPanel, overlapGroups]);
 
     const copyEvents = useCallback((events) => {
+        console.log(events);
+
+        const sortedEvents = events.sort((ev1, ev2) => ev1.startTime - ev2.startTime);
+
+        console.log(sortedEvents);
+
         setCopiedEvents(events);
     }, []);
 

@@ -31,7 +31,7 @@ const UnselectButton = styled.button`
     }
 `;
 
-export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
+export const EventItem = ({ event, onDelete, onModifyStartTime, onPlay, overlapGroup }) => {
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
     const { getEventById } = useInstrumentRecordingsOperations();
     const { duplicateOverlapGroup } = instrumentRecordingOperationsHook();
@@ -48,7 +48,13 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
     );
     const handlePlay = useCallback(() => onPlay(eventInstance), [onPlay, eventInstance]);
     const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
-    const modifyStartTime = useCallback((delta) => {}, []);
+
+    const onmModifyStartTime = useCallback(
+        (value) => {
+            onModifyStartTime({ ...value, id: event.id });
+        },
+        [event.id, onModifyStartTime]
+    );
     const onItemSelect = useCallback(() => toggleItem(event), [event, toggleItem]);
 
     const isGroupNotLocked = (parent && !parent.locked) || (!parentId && !locked);
@@ -65,7 +71,7 @@ export const EventItem = ({ event, onDelete, onPlay, overlapGroup }) => {
             />
 
             {isGroupNotLocked && (
-                <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
+                <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={onmModifyStartTime} />
             )}
 
             {params.map((param) => (

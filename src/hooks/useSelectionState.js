@@ -5,7 +5,7 @@ import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { getProcessedElements, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
-    const { duplicateMultipleOverlapGroups } = useInstrumentRecordingsOperations();
+    const { duplicateEventsToInstrument } = useInstrumentRecordingsOperations();
     const { getEventById } = useInstrumentRecordingsOperations();
 
     const [selectedItems, setSelectedItems] = useState({});
@@ -63,12 +63,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 return {
                     ...acc,
                     [element.id]: {
-                        ...element,
-                        endX: element.endX,
-                        endY: element.endY,
-                        startX: element.startX,
-                        startY: element.startY,
-                        timelineY: element.timelineY
+                        ...element
                     }
                 };
             }, {});
@@ -103,7 +98,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                         if (elementData) {
                             return {
                                 ...newSelectedItems,
-                                [id]: { ...elementData.recording }
+                                [id]: { ...elementData.recording, element: elementData.element }
                             };
                         }
                         return newSelectedItems;
@@ -132,8 +127,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const updateSelectedItemsStartTime = useCallback((newStartTime) => {}, []);
 
-    const duplicateSelections = () => {};
-
     const deleteSelections = useCallback(
         (selectedEvents) => {
             const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
@@ -158,18 +151,37 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         [getProcessedElements]
     );
 
+    // Helper function to update a selected item by id
+    const updateSelectedItemById = (id, updates) => {
+        setSelectedItems((prevSelectedValues) => {
+            // Create a new copy of selectedValues to avoid direct mutation
+            const updatedValues = { ...prevSelectedValues };
+
+            // Find the item by id and apply updates
+            if (updatedValues[id]) {
+                updatedValues[id] = {
+                    ...updatedValues[id],
+                    ...updates // Apply new startTime and endTime values
+                };
+            }
+
+            return updatedValues;
+        });
+    };
+
     return {
         clearSelection,
         deleteSelections,
-        duplicateSelections,
         groupEndTime,
         groupStartTime,
         highestYLevel,
         isItemSelected,
         selectedItems,
+        setSelectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
         unSelectItem,
+        updateSelectedItemById,
         updateSelectedItemsStartTime
     };
 };

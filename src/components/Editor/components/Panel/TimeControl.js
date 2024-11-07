@@ -18,7 +18,7 @@ const TimeControl = ({ endTime, onModifyStartTime, startTime }) => {
                 setTempStartTime(value);
                 const numericValue = parseFloat(value);
                 if (!isNaN(numericValue)) {
-                    onModifyStartTime(numericValue - startTime);
+                    onModifyStartTime({ delta: numericValue - startTime });
                 }
             }
         },
@@ -26,15 +26,23 @@ const TimeControl = ({ endTime, onModifyStartTime, startTime }) => {
     );
 
     const incrementStartTime = useCallback(() => {
-        const newValue = parseFloat(tempStartTime) + 0.01;
-        setTempStartTime(newValue.toFixed(2));
-        onModifyStartTime(0.01);
+        const value = parseFloat(tempStartTime) + 0.01;
+        setTempStartTime(value.toFixed(2));
+
+        const delta = 0.01;
+
+        onModifyStartTime({ delta });
     }, [onModifyStartTime, tempStartTime]);
 
     const decrementStartTime = useCallback(() => {
-        const newValue = parseFloat(tempStartTime) - 0.01;
-        setTempStartTime(newValue.toFixed(2));
-        onModifyStartTime(-0.01);
+        const value = parseFloat(tempStartTime) - 0.01;
+        setTempStartTime(value.toFixed(2));
+
+        console.log('INPUT VALUE');
+        console.log(value);
+
+        const delta = -0.01;
+        onModifyStartTime({ delta });
     }, [onModifyStartTime, tempStartTime]);
 
     return (

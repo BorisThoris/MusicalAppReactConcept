@@ -2,10 +2,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
-import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
-import { EventHeader } from '../Panel/EventHeader';
 import { EventItem } from '../Panel/EventItem';
-import TimeControl from '../Panel/TimeControl';
 
 // Styled components
 const EventContainer = styled.div`
@@ -18,24 +15,11 @@ const EventContainer = styled.div`
 `;
 
 // Recursive function to render event items
-const renderEventItems = ({
-    deleteOverlapGroup,
-    duplicateMultipleOverlapGroups,
-    duplicateOverlapGroup,
-    onClose,
-    onDeleteRecording,
-    onPlayEvent,
-    selectedValues,
-    updateOverlapGroupTimes
-}) => {
-    return selectedValues.map((event, index) => {
-        const { children, endTime, eventInstance, id, startTime } = event;
-        const isGroup = children.length > 0;
-        const onlyChildren = !id;
 
-        const modifyStartTime = (delta) => updateOverlapGroupTimes({ groupId: id, newStartTime: startTime + delta });
-        const onDeleteGroup = () => deleteOverlapGroup(event);
-        const onDuplicateGroup = () => duplicateOverlapGroup({ overlapGroup: event });
+// Component to display selected events list
+export const SelectedEventsList = ({ onClose, onDeleteRecording, onModifyStartTime, onPlayEvent, selectedValues }) => {
+    return selectedValues.map((event, index) => {
+        const { endTime, eventInstance, id, startTime } = event;
 
         const onDelete = () => onDeleteRecording(event);
         const onPlay = () => onPlayEvent(eventInstance);
@@ -45,61 +29,22 @@ const renderEventItems = ({
 
         return (
             <EventContainer key={uniqueKey}>
-                {isGroup && !onlyChildren && <button>unselected group</button>}
-
-                {isGroup && !onlyChildren && (
-                    <>
-                        <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={modifyStartTime} />
-                        <EventHeader
-                            onPlay={() => {}}
-                            onDelete={onDeleteGroup}
-                            onDuplicate={onDuplicateGroup}
-                            isSelected={() => {}}
-                        />
-                    </>
-                )}
-
-                {!onlyChildren && <EventItem event={event} onDelete={onDelete} onPlay={onPlay} onClose={onClose} />}
-                {isGroup &&
-                    renderEventItems({
-                        deleteOverlapGroup,
-                        duplicateMultipleOverlapGroups,
-                        duplicateOverlapGroup,
-                        onClose,
-                        onDeleteRecording,
-                        onPlayEvent,
-                        selectedValues: children,
-                        updateOverlapGroupTimes
-                    })}
+                <EventItem
+                    event={event}
+                    onDelete={onDelete}
+                    onPlay={onPlay}
+                    onClose={onClose}
+                    onModifyStartTime={onModifyStartTime}
+                />
             </EventContainer>
         );
     });
 };
 
-// Component to display selected events list
-export const SelectedEventsList = ({ onClose, onDeleteRecording, onPlayEvent, selectedValues }) => {
-    const { deleteOverlapGroup, duplicateMultipleOverlapGroups, duplicateOverlapGroup, updateOverlapGroupTimes } =
-        useInstrumentRecordingsOperations();
-
-    return (
-        <>
-            {renderEventItems({
-                deleteOverlapGroup,
-                duplicateMultipleOverlapGroups,
-                duplicateOverlapGroup,
-                onClose,
-                onDeleteRecording,
-                onPlayEvent,
-                selectedValues,
-                updateOverlapGroupTimes
-            })}
-        </>
-    );
-};
-
 SelectedEventsList.propTypes = {
     onClose: PropTypes.func.isRequired,
     onDeleteRecording: PropTypes.func.isRequired,
+    onModifyStartTime: PropTypes.func.isRequired,
     onPlayEvent: PropTypes.func.isRequired,
     selectedValues: PropTypes.arrayOf(
         PropTypes.shape({

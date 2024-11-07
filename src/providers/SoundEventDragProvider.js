@@ -22,18 +22,6 @@ export const SoundEventDragProvider = ({ children }) => {
         element.getLayer().batchDraw(); // Force re-render
     }, []);
 
-    const dragBoundFunc = useCallback((pos) => {
-        const minY = 0;
-        const maxY = 500;
-
-        const newPosition = {
-            x: pos.x,
-            y: Math.max(minY, Math.min(pos.y, maxY))
-        };
-
-        return newPosition;
-    }, []);
-
     const updateStartTimeForElement = useCallback(({ element }) => {
         if (!element) return;
 
@@ -231,7 +219,6 @@ export const SoundEventDragProvider = ({ children }) => {
                 }
 
                 element.clearCache(); // Clear cache to avoid stale position
-                forceUpdatePosition(element); // Ensure final update of position
             };
 
             if (Object.keys(selectedItems).length > 0) {
@@ -253,7 +240,7 @@ export const SoundEventDragProvider = ({ children }) => {
             previousXRef.current = null;
             setIsDragging({});
         },
-        [insertElementIntoTimeline, selectedItems, updateStartTimeForElement, forceUpdatePosition]
+        [insertElementIntoTimeline, selectedItems, updateStartTimeForElement]
     );
 
     const isElementBeingDragged = useCallback(

@@ -64,10 +64,6 @@ export const useInstrumentRecordingsOperations = () => {
         [setOverlapGroups]
     );
 
-    const duplicateMultipleOverlapGroups = useCallback(() => {}, []);
-
-    const duplicateOverlapGroup = useCallback(() => {}, []);
-
     const lockOverlapGroup = useCallback(() => {}, []);
 
     const updateOverlapGroupTimes = useCallback(() => {}, [], []);
@@ -106,6 +102,45 @@ export const useInstrumentRecordingsOperations = () => {
                     updatedGroups[instrumentName] = {};
                 }
                 updatedGroups[instrumentName][event.id] = newGroup;
+            });
+        },
+        [setOverlapGroups]
+    );
+
+    const duplicateEventsToInstrument = useCallback(
+        ({ events, newInstrumentName = null, newStartTime = null }) => {
+            console.log('EVENTS');
+            console.log(events);
+
+            updateGroups(setOverlapGroups, (updatedGroups) => {
+                // Determine the instrument to which the events will be added
+                const targetInstrumentName = newInstrumentName || events[0]?.instrumentName || 'defaultInstrument';
+
+                // Initialize target instrument if it doesn't exist in updatedGroups
+                if (!updatedGroups[targetInstrumentName]) {
+                    updatedGroups[targetInstrumentName] = {};
+                }
+
+                // Calculate the time offset if a new start time is provided
+                const baseStartTime = events[0]?.startTime || 0;
+                const startOffset = newStartTime !== null ? newStartTime - baseStartTime : 0;
+
+                events.forEach((event) => {
+                    const newEvent = { ...event, locked: true };
+
+                    // Calculate the new start time for each event, maintaining relative order
+                    const adjustedStartTime = newStartTime !== null ? event.startTime + startOffset : event.startTime;
+
+                    // Recreate each event using createEvent to ensure deep cloning and unique IDs
+                    const duplicatedEvent = createEvent({
+                        instrumentName: targetInstrumentName,
+                        passedStartTime: adjustedStartTime,
+                        recording: newEvent
+                    });
+
+                    // Add the duplicated event to the target instrument in updatedGroups
+                    updatedGroups[targetInstrumentName][duplicatedEvent.id] = duplicatedEvent;
+                });
             });
         },
         [setOverlapGroups]
@@ -160,14 +195,13 @@ export const useInstrumentRecordingsOperations = () => {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
         deleteOverlapGroup,
+        duplicateEventsToInstrument,
         duplicateInstrument,
-        duplicateMultipleOverlapGroups,
-        duplicateOverlapGroup,
+
         getEventById,
         lockOverlapGroup,
         resetRecordings,
         updateOverlapGroupTimes,
-
         updateRecordingParams
     };
 };

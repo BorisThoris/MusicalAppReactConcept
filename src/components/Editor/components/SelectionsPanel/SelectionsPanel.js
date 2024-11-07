@@ -35,10 +35,9 @@ const EventsContainer = styled(FlexContainer)`
 `;
 
 export const SelectionsPanel = () => {
-    const { closePanel, panels } = useContext(PanelContext);
+    const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, duplicateSelections, endTime, highestYLevel, selectedValues, startTime } =
-        useContext(SelectionContext);
+    const { clearSelection, endTime, selectedValues, startTime, updateSelectedItemById } = useContext(SelectionContext);
 
     const { copyEvents } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
@@ -50,19 +49,50 @@ export const SelectionsPanel = () => {
 
     const { unSelectItem } = useSelectionState({ markersAndTrackerOffset });
 
-    const { y } = panels[SELECTIONS_PANEL_ID];
     const startTimeCorrected = selectedValues[0]?.startTime;
-    const calculatedYLevel = highestYLevel + timelineState.canvasOffsetY;
-    const panelYPosition =
-        y > calculatedYLevel
-            ? y + timelineState.canvasOffsetY + TimelineHeight * 2
-            : calculatedYLevel + TimelineHeight * 1.5;
 
     const useReplayEvents = useCallback(() => {
         selectedValues.forEach((event) => {
             setNewTimeout(() => playEventInstance(event.eventInstance), event.startTime - startTimeCorrected);
         });
     }, [selectedValues, setNewTimeout, startTimeCorrected]);
+
+    const calculatePanelYPosition = () => {
+        // Check if selectedValues is available and not empty
+        if (!selectedValues || selectedValues.length === 0) {
+            return 0; // Default Y position if there are no selected values
+        }
+
+        // Extract Y positions directly using Konva's getAbsolutePosition and DOM offset
+        const parsedElements = selectedValues.map((item) => {
+            const { element } = item;
+            const elementAbsolutePos = element?.getAbsolutePosition() || { x: 0, y: 0 };
+
+            // Get the Konva stage container's DOM offset in the page
+            const stageContainer = element.getStage().container();
+            const containerRect = stageContainer.getBoundingClientRect();
+
+            // Calculate global Y position
+            const globalYPosition = containerRect.top + elementAbsolutePos.y;
+
+            return {
+                ...item,
+                konvaElement: element,
+                yPosition: globalYPosition
+            };
+        });
+
+        // Sort parsed elements by Y position
+        const sortedByYPosition = parsedElements.sort((a, b) => a.yPosition - b.yPosition);
+        const lastElementYPosition = sortedByYPosition[sortedByYPosition.length - 1]?.yPosition || 0;
+
+        const panelYPosition = lastElementYPosition + Y_OFFSET + TimelineHeight;
+
+        return panelYPosition;
+    };
+
+    // Example usage
+    const panelYPosition = calculatePanelYPosition();
 
     const handleClose = useCallback(() => {
         closePanel(SELECTIONS_PANEL_ID);
@@ -89,8 +119,47 @@ export const SelectionsPanel = () => {
     }, [selectedValues, deleteSelections]);
 
     const onCopyClick = useCallback(() => {
-        copyEvents(selectedValues);
+        copyEvents(Object.values(selectedValues));
     }, [selectedValues, copyEvents]);
+
+    const onModifyStartTime = useCallback(
+        ({ delta, id }) => {
+            if (selectedValues && typeof selectedValues === 'object') {
+                const updatedValues = { ...selectedValues };
+
+                Object.entries(updatedValues).forEach(([key, { element }]) => {
+                    const oldRecording = element.attrs['data-recording'];
+
+                    if (id && oldRecording.id !== id) {
+                        return;
+                    }
+
+                    if (element) {
+                        element.move({ x: delta * pixelToSecondRatio, y: 0 });
+
+                        const newRecording = {
+                            ...oldRecording,
+                            endTime: oldRecording.endTime + delta,
+                            startTime: oldRecording.startTime + delta
+                        };
+
+                        element.setAttr('data-recording', newRecording);
+
+                        updateSelectedItemById(oldRecording.id, {
+                            endTime: newRecording.endTime,
+                            startTime: newRecording.startTime
+                        });
+
+                        const layer = element.getLayer();
+                        if (layer) {
+                            layer.draw();
+                        }
+                    }
+                });
+            }
+        },
+        [selectedValues, updateSelectedItemById]
+    );
 
     if (selectedValues.length > 0) {
         // Sort the selected values by start time
@@ -99,19 +168,14 @@ export const SelectionsPanel = () => {
 
         return (
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
-                <button onClick={duplicateSelections}>DupTest</button>
                 <button onClick={onCopyClick}>Copy</button>
-
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
                 <FlexContainer>
                     <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
                     <TrashIcon onClick={onTrashClick}>🗑️</TrashIcon>
                 </FlexContainer>
 
-                {selectedValues.length > 1 && (
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                    <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={() => {}} />
-                )}
+                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={onModifyStartTime} />
 
                 <EventsContainer>
                     <SelectedEventsList
@@ -119,6 +183,7 @@ export const SelectionsPanel = () => {
                         onDeleteRecording={onDeleteChildRecording}
                         onPlayEvent={onPlayEvent}
                         onClose={handleClose}
+                        onModifyStartTime={onModifyStartTime}
                     />
                 </EventsContainer>
             </PanelWrapper>

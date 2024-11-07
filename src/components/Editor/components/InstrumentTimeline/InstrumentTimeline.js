@@ -4,6 +4,7 @@ import React, { useCallback, useContext, useEffect } from 'react';
 import { Group, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
+import useContextMenu from '../../../../hooks/useContextMenu';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -17,9 +18,9 @@ const InstrumentTimeline = React.memo(
     ({ events, index, instrumentName, markersHeight, overlappingIds, resetOverlaps }) => {
         const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } =
             useContext(RecordingsPlayerContext);
-        const { calculatedStageWidth, timelineState, toggleLock, updateTimelineState } = useContext(TimelineContext);
+        const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
         const { handleCloseSelectionsPanel } = useContext(SelectionContext);
-
+        const { handleContextMenu } = useContextMenu();
         const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
         const timelineY = TimelineHeight * index + markersAndTrackerOffset;
@@ -28,7 +29,6 @@ const InstrumentTimeline = React.memo(
         const fillColor = currentPlayingInstrument === instrumentName ? 'green' : 'transparent';
 
         const { handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
-
         const { onMouseMove, onPointerUp, removeRipple, ripples } = useTimelinePointerEffects({
             index,
             instrumentName
@@ -39,7 +39,6 @@ const InstrumentTimeline = React.memo(
         useEffect(() => {
             if (timelineRef.current) {
                 const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
-
                 if (timelineState.canvasOffsetY !== canvasOffsetY) {
                     updateTimelineState({ canvasOffsetY, timelineY });
                 }
@@ -76,8 +75,8 @@ const InstrumentTimeline = React.memo(
                     onPointerDown={onTimelinePointerDown}
                     stroke="black"
                     strokeWidth={2}
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                     onClick={handleCloseSelectionsPanel}
+                    onContextMenu={handleContextMenu}
                 />
 
                 <TimelineEvents

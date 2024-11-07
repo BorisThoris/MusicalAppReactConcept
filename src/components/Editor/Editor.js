@@ -8,6 +8,7 @@ import {
     SAVE_PANEL_ID,
     SELECTIONS_PANEL_ID
 } from '../../hooks/usePanelState';
+import ActionsMenu from './components/ActionsMenu/ActionsMenu';
 import FPSMonitor from './components/FpsMonitor/FpsMonitor';
 import { InstrumentLayerPanel } from './components/InstrumentLayerPanel/InstrumentLayerPanel';
 import { LoadPanel } from './components/LoadPanel/LoadPanel';
@@ -26,29 +27,25 @@ const StyledTimeline = styled.div`
     overflow-y: scroll;
 `;
 
+const renderPanel = (panel) => {
+    switch (panel.id) {
+        case INSTRUMENTS_PANEL_ID:
+            return <PlayInstrumentsPanel />;
+        case SELECTIONS_PANEL_ID:
+            return <SelectionsPanel />;
+        case INSTRUMENT_LAYER_PANEL_ID:
+            return <InstrumentLayerPanel />;
+        case LOAD_PANEL_ID:
+            return <LoadPanel />;
+        case SAVE_PANEL_ID:
+            return <SavePanel />;
+        default:
+            return null;
+    }
+};
+
 const Editor = () => {
-    const { panelsArr } = useContext(PanelContext);
-
-    const renderPanel = (panel) => {
-        switch (panel.id) {
-            case INSTRUMENTS_PANEL_ID:
-                return <PlayInstrumentsPanel />;
-
-            case SELECTIONS_PANEL_ID:
-                return <SelectionsPanel />;
-
-            case INSTRUMENT_LAYER_PANEL_ID:
-                return <InstrumentLayerPanel />;
-
-            case LOAD_PANEL_ID:
-                return <LoadPanel />;
-            case SAVE_PANEL_ID:
-                return <SavePanel />;
-
-            default:
-                return null;
-        }
-    };
+    const { hideRightClickMenu, panelsArr, rightClickMenuPosition, rightClickMenuVisible } = useContext(PanelContext);
 
     return (
         <div>
@@ -61,6 +58,14 @@ const Editor = () => {
             </StyledEditorWrapper>
 
             {panelsArr.map(renderPanel)}
+
+            {rightClickMenuVisible && (
+                <ActionsMenu
+                    menuPosition={rightClickMenuPosition}
+                    menuVisible={rightClickMenuVisible}
+                    handleHideMenu={hideRightClickMenu}
+                />
+            )}
         </div>
     );
 };
