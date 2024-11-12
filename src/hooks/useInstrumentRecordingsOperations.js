@@ -109,9 +109,6 @@ export const useInstrumentRecordingsOperations = () => {
 
     const duplicateEventsToInstrument = useCallback(
         ({ eventsToDuplicate, newStartTime = null }) => {
-            console.log('EVENTS');
-            console.log(eventsToDuplicate);
-
             updateGroups(setOverlapGroups, (updatedGroups) => {
                 // Determine the instrument to which the events will be added
 

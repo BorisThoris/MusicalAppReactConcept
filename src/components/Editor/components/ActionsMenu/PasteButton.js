@@ -48,7 +48,7 @@ const PasteButton = ({ copiedEvents, menuPosition }) => {
         const duplicationMap = copiedEvents.map((event) => {
             const closestTimelineName = closestTimelines[event.id].parent.attrs['data-instrument-name'];
 
-            return { ...event };
+            return { ...event, targetInstrumentName: closestTimelineName };
         });
 
         duplicateEventsToInstrument({
@@ -56,7 +56,6 @@ const PasteButton = ({ copiedEvents, menuPosition }) => {
             newStartTime: menuPosition.x / pixelToSecondRatio
         });
 
-        // duplicateEventsToInstrument({ events: copiedEvents, newStartTime: menuPosition.x / pixelToSecondRatio });
         hideActionsMenu();
     }, [closestTimelines, copiedEvents, duplicateEventsToInstrument, hideActionsMenu, menuPosition.x]);
 
