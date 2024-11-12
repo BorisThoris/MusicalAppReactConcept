@@ -1,9 +1,7 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import styled from 'styled-components';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
-import PasteOverview from './PastePreview';
+import PasteButton from './PasteButton';
 
 const MenuContainer = styled.div`
     background: #c3c7cb;
@@ -35,50 +33,23 @@ const MenuItem = styled.div`
     }
 `;
 
-const ActionsMenu = ({ handleHideMenu, menuPosition }) => {
-    const { duplicateEventsToInstrument } = useInstrumentRecordingsOperations();
+const ActionsMenu = ({ actionsMenuState }) => {
     const { copiedEvents } = useContext(CollisionsContext);
-    const [isHovering, setIsHovering] = useState(false);
-
-    const handlePaste = useCallback(() => {
-        duplicateEventsToInstrument({ events: copiedEvents, newStartTime: menuPosition.x / pixelToSecondRatio });
-        handleHideMenu();
-    }, [copiedEvents, duplicateEventsToInstrument, handleHideMenu, menuPosition.x]);
-
-    const handleKeyDown = useCallback(
-        (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                handleHideMenu();
-            }
-        },
-        [handleHideMenu]
-    );
-
-    const onHover = useCallback(() => setIsHovering(true), []);
-    const onBlur = useCallback(() => setIsHovering(false), []);
+    const { element: recording, position: menuPosition } = actionsMenuState;
 
     return (
-        <>
-            <MenuContainer position={menuPosition}>
-                <MenuList>
-                    {copiedEvents.length > 0 && (
-                        <>
-                            <MenuItem
-                                onClick={handlePaste}
-                                onKeyDown={handleKeyDown}
-                                onMouseEnter={onHover}
-                                onMouseLeave={onBlur}
-                                role="button"
-                                tabIndex={0}
-                            >
-                                Paste
-                            </MenuItem>
-                            <PasteOverview menuPosition={menuPosition} isHovering={isHovering} />
-                        </>
-                    )}
-                </MenuList>
-            </MenuContainer>
-        </>
+        <MenuContainer position={menuPosition}>
+            <MenuList>
+                {copiedEvents.length > 0 && <PasteButton menuPosition={menuPosition} copiedEvents={copiedEvents} />}
+                {recording && (
+                    <>
+                        <MenuItem role="button">Delete</MenuItem>
+                        <MenuItem role="button">Copy</MenuItem>
+                        <MenuItem role="button">Cut</MenuItem>
+                    </>
+                )}
+            </MenuList>
+        </MenuContainer>
     );
 };
 

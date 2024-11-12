@@ -56,6 +56,7 @@ const InstrumentTimeline = React.memo(
                 draggable={false}
                 ref={timelineRef}
                 id={`timeline-${instrumentName}`}
+                data-instrument-name={instrumentName}
             >
                 <InstrumentTimelinePanelComponent
                     parentGroupName={instrumentName}
@@ -70,7 +71,7 @@ const InstrumentTimeline = React.memo(
                     width={calculatedStageWidth}
                     fill={isMuted ? 'red' : fillColor}
                     onPointerUp={onPointerUp}
-                    id={`Timeline-${timelineY}`}
+                    id={`timelineRect-${timelineY}`}
                     onMouseMove={onMouseMove}
                     onPointerDown={onTimelinePointerDown}
                     stroke="black"

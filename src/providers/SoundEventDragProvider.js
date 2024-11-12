@@ -113,7 +113,7 @@ export const SoundEventDragProvider = ({ children }) => {
                     let closestTimeline = null;
                     let minDistance = Infinity;
 
-                    const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('Timeline-'));
+                    const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('timelineRect'));
 
                     allTimelineElements.forEach((timelineElement) => {
                         const timelineBox = timelineElement.getClientRect();

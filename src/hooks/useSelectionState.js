@@ -1,12 +1,9 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
-import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { getProcessedElements, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
-    const { duplicateEventsToInstrument } = useInstrumentRecordingsOperations();
-    const { getEventById } = useInstrumentRecordingsOperations();
 
     const [selectedItems, setSelectedItems] = useState({});
     const [filteredSelectedItems, setFilteredSelectedItems] = useState({});
@@ -146,6 +143,15 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 if (event) {
                     element.destroy();
                 }
+            });
+
+            // Remove deleted items from selectedItems
+            setSelectedItems((prevSelectedItems) => {
+                const updatedSelectedItems = { ...prevSelectedItems };
+                eventsArray.forEach(({ id }) => {
+                    delete updatedSelectedItems[id];
+                });
+                return updatedSelectedItems;
             });
         },
         [getProcessedElements]

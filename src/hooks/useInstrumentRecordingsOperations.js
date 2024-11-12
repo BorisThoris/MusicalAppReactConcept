@@ -108,24 +108,25 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const duplicateEventsToInstrument = useCallback(
-        ({ events, newInstrumentName = null, newStartTime = null }) => {
+        ({ eventsToDuplicate, newStartTime = null }) => {
             console.log('EVENTS');
-            console.log(events);
+            console.log(eventsToDuplicate);
 
             updateGroups(setOverlapGroups, (updatedGroups) => {
                 // Determine the instrument to which the events will be added
-                const targetInstrumentName = newInstrumentName || events[0]?.instrumentName || 'defaultInstrument';
-
-                // Initialize target instrument if it doesn't exist in updatedGroups
-                if (!updatedGroups[targetInstrumentName]) {
-                    updatedGroups[targetInstrumentName] = {};
-                }
 
                 // Calculate the time offset if a new start time is provided
-                const baseStartTime = events[0]?.startTime || 0;
+                const baseStartTime = eventsToDuplicate[0]?.startTime || 0;
                 const startOffset = newStartTime !== null ? newStartTime - baseStartTime : 0;
 
-                events.forEach((event) => {
+                eventsToDuplicate.forEach((event) => {
+                    const targetInstrumentName = event.targetInstrumentName;
+
+                    // Initialize target instrument if it doesn't exist in updatedGroups
+                    if (!updatedGroups[targetInstrumentName]) {
+                        updatedGroups[targetInstrumentName] = {};
+                    }
+
                     const newEvent = { ...event, locked: true };
 
                     // Calculate the new start time for each event, maintaining relative order

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { createContext, useCallback, useMemo, useReducer, useState } from 'react';
 
 // @ts-ignore
@@ -27,9 +28,14 @@ const panelReducer = (state, action) => {
             const { [action.payload.id]: omitted, ...remainingPanels } = state;
             return remainingPanels;
         case 'SHOW_RIGHT_CLICK_MENU':
-            return { ...state, rightClickMenuPosition: action.payload.position, rightClickMenuVisible: true };
-        case 'HIDE_RIGHT_CLICK_MENU':
-            return { ...state, rightClickMenuVisible: false };
+            return {
+                ...state,
+                actionsMenuState: { rightClickMenuVisible: true, ...action.payload }
+            };
+        case 'HIDE_RIGHT_CLICK_MENU': {
+            const { actionsMenuState, ...newState } = state;
+            return newState;
+        }
         default:
             return state;
     }
@@ -47,11 +53,14 @@ export const PanelProvider = ({ children }) => {
         dispatch({ payload: { id }, type: 'CLOSE_PANEL' });
     }, []);
 
-    const showRightClickMenu = useCallback((position) => {
-        dispatch({ payload: { position }, type: 'SHOW_RIGHT_CLICK_MENU' });
+    const showActionsMenu = useCallback((payload) => {
+        console.log('LOG');
+        console.log(payload);
+
+        dispatch({ payload, type: 'SHOW_RIGHT_CLICK_MENU' });
     }, []);
 
-    const hideRightClickMenu = useCallback(() => {
+    const hideActionsMenu = useCallback(() => {
         dispatch({ type: 'HIDE_RIGHT_CLICK_MENU' });
     }, []);
 
@@ -108,13 +117,14 @@ export const PanelProvider = ({ children }) => {
 
     const value = useMemo(
         () => ({
+            actionsMenuState: panels.actionsMenuState,
             closeInstrumentLayerPanel,
             closeLoadPanel,
             closePanel,
             closeSavePanel,
             closeSelectionsPanel,
             focusedEvent,
-            hideRightClickMenu,
+            hideActionsMenu,
             openInstrumentLayerPanel,
             openInstrumentsPanel,
             openLoadPanel,
@@ -124,10 +134,9 @@ export const PanelProvider = ({ children }) => {
             panels,
             panelsArr: Object.values(panels),
             panelsObj: panels,
-            rightClickMenuPosition: panels.rightClickMenuPosition,
-            rightClickMenuVisible: panels.rightClickMenuVisible,
+
             setFocusedEvent,
-            showRightClickMenu
+            showActionsMenu
         }),
         [
             closeInstrumentLayerPanel,
@@ -143,8 +152,8 @@ export const PanelProvider = ({ children }) => {
             openSelectionsPanel,
             openSavePanel,
             panels,
-            showRightClickMenu,
-            hideRightClickMenu
+            showActionsMenu,
+            hideActionsMenu
         ]
     );
 

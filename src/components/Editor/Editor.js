@@ -45,11 +45,12 @@ const renderPanel = (panel) => {
 };
 
 const Editor = () => {
-    const { hideRightClickMenu, panelsArr, rightClickMenuPosition, rightClickMenuVisible } = useContext(PanelContext);
+    const { actionsMenuState, panelsArr } = useContext(PanelContext);
 
     return (
         <div>
             <FPSMonitor />
+
             <StyledEditorWrapper>
                 <StyledTimeline>
                     <TimelinesHeader />
@@ -59,13 +60,7 @@ const Editor = () => {
 
             {panelsArr.map(renderPanel)}
 
-            {rightClickMenuVisible && (
-                <ActionsMenu
-                    menuPosition={rightClickMenuPosition}
-                    menuVisible={rightClickMenuVisible}
-                    handleHideMenu={hideRightClickMenu}
-                />
-            )}
+            {actionsMenuState && <ActionsMenu actionsMenuState={actionsMenuState} />}
         </div>
     );
 };

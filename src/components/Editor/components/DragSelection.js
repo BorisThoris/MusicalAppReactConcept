@@ -1,6 +1,7 @@
 import Konva from 'konva';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Layer, Rect } from 'react-konva';
+import useContextMenu from '../../../hooks/useContextMenu';
 import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
 
@@ -12,6 +13,8 @@ export const DragSelection = ({ stageRef }) => {
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
     const { getProcessedElements } = useContext(CollisionsContext);
+
+    const { handleCloseMenu } = useContextMenu();
     const processedElements = getProcessedElements();
 
     const hasMoved = useCallback(() => {
@@ -100,8 +103,9 @@ export const DragSelection = ({ stageRef }) => {
 
         // Handlers
         const mouseDownHandler = (e) => {
-            if (e.target?.attrs?.id?.includes('Timeline')) {
+            if (e.target?.attrs?.id?.includes('timelineRect')) {
                 handleDrag(e, true);
+                handleCloseMenu(e);
             }
         };
 
@@ -130,7 +134,7 @@ export const DragSelection = ({ stageRef }) => {
             stage.off('mousemove touchmove', mouseMoveHandler);
             stage.off('mouseup touchend', mouseUpHandler);
         };
-    }, [handleDrag, hasMoved, dragPos, isDragging, updateSelection, stageRef]);
+    }, [handleDrag, hasMoved, dragPos, isDragging, updateSelection, stageRef, handleCloseMenu]);
 
     const rectProps =
         isDragging && hasMoved()

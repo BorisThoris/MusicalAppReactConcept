@@ -1,13 +1,9 @@
-/* eslint-disable react-perf/jsx-no-new-function-as-prop */
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useCallback, useContext, useEffect, useRef } from 'react';
-import { Group, Layer, Rect, Stage, Text } from 'react-konva';
+import React, { useContext, useEffect, useRef } from 'react';
+import { Layer, Stage } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
-import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
@@ -21,7 +17,7 @@ const Timelines = React.memo(() => {
     const stageRef = useRef(null);
     const { addStageRef, overlapGroups } = useContext(CollisionsContext);
     const { playbackStatus } = useContext(RecordingsPlayerContext);
-    const { hideRightClickMenu } = useContext(PanelContext);
+    const { hideActionsMenu } = useContext(PanelContext);
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
@@ -37,7 +33,7 @@ const Timelines = React.memo(() => {
 
     return (
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-        <div onClick={hideRightClickMenu}>
+        <div onClick={hideActionsMenu}>
             <PaintingTopBar />
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>

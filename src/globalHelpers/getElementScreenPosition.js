@@ -6,9 +6,9 @@ export const getElementScreenPosition = (shape) => {
     const stageContainer = shape.getStage().container();
     const canvasRect = stageContainer.getBoundingClientRect();
 
-    // Calculate the screen position of the shape
-    const screenX = canvasRect.x + shapeRect.x;
-    const screenY = canvasRect.y + shapeRect.y;
+    // Calculate the screen position of the shape and add the page scroll offset
+    const screenX = canvasRect.x + shapeRect.x + window.scrollX;
+    const screenY = canvasRect.y + shapeRect.y + window.scrollY;
 
     return { x: screenX, y: screenY };
 };
