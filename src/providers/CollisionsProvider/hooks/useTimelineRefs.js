@@ -39,17 +39,27 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         (id) => {
             if (stageRef?.current) {
                 const elements = stageRef.current.find((node) => node.id().startsWith(`element-${id}`));
-                const element = find(elements, (node) => node.id() === `element-${id}`);
+                const element = elements ? find(elements, (node) => node.id() === `element-${id}`) : null;
 
                 if (element) {
-                    const { height, width, x, y } = element.getClientRect();
-                    const { instrumentName } = element.attrs['data-recording'];
+                    const clientRect = element.getClientRect ? element.getClientRect() : {};
+                    const { height, width, x, y } = clientRect;
+
+                    const recordingData = element.attrs ? element.attrs['data-recording'] : {};
+                    const instrumentName = recordingData ? recordingData.instrumentName : null;
+
+                    const parentAttrs = element.parent ? element.parent.attrs : {};
+                    const timelineY = parentAttrs ? parentAttrs.timelineY : null;
+
+                    console.log('eiii yo');
+                    console.log(element);
+
                     return {
                         element,
                         height,
                         instrumentName,
-                        recording: element.attrs['data-recording'],
-                        timelineY: element.parent.attrs.timelineY,
+                        recording: recordingData,
+                        timelineY,
                         width,
                         x,
                         y
@@ -98,11 +108,16 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const clearElements = useCallback((elements) => {
         elements.forEach((element) => {
-            element
-                .getStage()
-                ?.findOne(`#parent-${element.id().replace('element-', '')}`)
-                ?.destroy();
-            element.destroy();
+            if (element) {
+                const stage = element.getStage();
+                if (stage) {
+                    const parentElement = stage.findOne(`#parent-${element.id().replace('element-', '')}`);
+                    if (parentElement) {
+                        parentElement.destroy();
+                    }
+                }
+                element.destroy();
+            }
         });
     }, []);
 

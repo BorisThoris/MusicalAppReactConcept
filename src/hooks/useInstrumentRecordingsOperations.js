@@ -3,6 +3,8 @@
 /* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
 import cloneDeep from 'lodash/cloneDeep';
+import find from 'lodash/find';
+import set from 'lodash/set';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
 import { createEvent, createSound } from '../globalHelpers/createSound';
@@ -40,28 +42,29 @@ export const useInstrumentRecordingsOperations = () => {
 
     const updateRecordingParams = useCallback(
         ({ event, updatedParam }) => {
-            const { id: eventId, instrumentName } = event;
+            const { id: eventId } = event;
 
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                const updateParamsInEvent = (event) => {
-                    if (event.id === eventId) {
-                        return {
-                            ...event,
-                            params: event.params.map((param) =>
-                                param.name === updatedParam.name ? updatedParam : param
-                            )
-                        };
+            const soundEvent = getSoundEventById(eventId);
+
+            if (soundEvent && soundEvent.element) {
+                const recordingData = soundEvent.element.attrs['data-recording'];
+
+                if (recordingData && recordingData.params) {
+                    // Find and update the specific param using Lodash
+                    const paramToUpdate = find(recordingData.params, { name: updatedParam.name });
+                    if (paramToUpdate) {
+                        Object.assign(paramToUpdate, updatedParam); // Update with new values
                     }
 
-                    return event;
-                };
+                    // Re-assign the updated data-recording back to the element's attributes
+                    set(soundEvent.element, 'attrs.data-recording', recordingData);
 
-                const instrumentRecordings = updatedGroups[instrumentName];
-
-                instrumentRecordings[eventId] = updateParamsInEvent(event);
-            });
+                    // Trigger a redraw by Konva
+                    soundEvent.element.getLayer().batchDraw();
+                }
+            }
         },
-        [setOverlapGroups]
+        [getSoundEventById]
     );
 
     const lockOverlapGroup = useCallback(() => {}, []);
@@ -195,7 +198,6 @@ export const useInstrumentRecordingsOperations = () => {
         deleteOverlapGroup,
         duplicateEventsToInstrument,
         duplicateInstrument,
-
         getEventById,
         lockOverlapGroup,
         resetRecordings,

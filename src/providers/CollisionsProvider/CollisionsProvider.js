@@ -148,13 +148,8 @@ export const CollisionsProvider = ({ children }) => {
     }, [openLoadPanel, overlapGroups]);
 
     const copyEvents = useCallback((events) => {
-        console.log(events);
-
         const sortedEvents = events.sort((ev1, ev2) => ev1.startTime - ev2.startTime);
-
-        console.log(sortedEvents);
-
-        setCopiedEvents(events);
+        setCopiedEvents(sortedEvents);
     }, []);
 
     const addTimeline = useCallback(
