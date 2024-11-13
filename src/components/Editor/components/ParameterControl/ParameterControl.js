@@ -28,23 +28,15 @@ const ParameterControl = React.memo(({ event, param }) => {
     }, []);
 
     useEffect(() => {
-        try {
-            // Check if `eventInstance` exists and has the `setParameterByName` method
-            if (event?.eventInstance?.setParameterByName) {
-                event.eventInstance.setParameterByName(name, paramValue, false);
+        if (event?.eventInstance?.setParameterByName) {
+            event.eventInstance.setParameterByName(name, paramValue, false);
 
-                console.log('LELELELE');
-                console.log(event.eventInstance);
-                // // Update recording parameters with the new value
-                updateRecordingParams({
-                    event,
-                    updatedParam: { ...param, value: paramValue }
-                });
-            } else {
-                console.warn('Invalid eventInstance object:', event.eventInstance);
-            }
-        } catch (error) {
-            console.error('Error setting parameter by name:', error);
+            updateRecordingParams({
+                event,
+                updatedParam: { ...param, value: paramValue }
+            });
+        } else {
+            alert('Invalid eventInstance object:', event.eventInstance);
         }
     }, [event, name, paramValue, param, updateRecordingParams]);
 
