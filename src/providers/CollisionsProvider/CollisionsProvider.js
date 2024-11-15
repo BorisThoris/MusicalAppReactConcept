@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
+import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -65,6 +66,8 @@ export const CollisionsProvider = ({ children }) => {
 
         // Create the object to save with ordered instrument names
         const objToSave = sortedElements.reduce((acc, { recording }) => {
+            const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
+
             const { id, instrumentName } = recording;
 
             // Initialize instrumentName if it doesn't exist
@@ -73,7 +76,7 @@ export const CollisionsProvider = ({ children }) => {
             }
 
             // Add recording under the relevant instrumentName
-            acc[instrumentName][id] = recording;
+            acc[instrumentName][id] = newRec;
 
             return acc;
         }, {});

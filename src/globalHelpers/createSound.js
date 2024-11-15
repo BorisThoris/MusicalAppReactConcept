@@ -55,9 +55,15 @@ export const createSound = ({ eventInstance, eventPath, instrumentName, passedPa
 
 // Helper function to create a main event or sub-event
 export const createEvent = ({ instrumentName, parentId = null, passedStartTime = null, recording }) => {
-    const eventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+    const newEventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+
+    const oldEventInstance =
+        recording.eventInstance && recording.eventInstance.$$ && recording.eventInstance.$$.ptr
+            ? recording.eventInstance
+            : false;
+
     const mainEvent = createSound({
-        eventInstance,
+        eventInstance: oldEventInstance || newEventInstance,
         eventPath: recording.eventPath || 'Drum/Snare',
         instrumentName,
         passedParams: recording.params,
@@ -79,6 +85,17 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
         parentId,
         startTime: parseFloat(startTime.toFixed(2))
     };
+};
+
+export const copyEvent = (event, targetInstrumentName, startOffset) => {
+    const newEvent = { ...event, eventInstance: null, locked: true };
+    const adjustedStartTime = event.startTime + startOffset;
+
+    return createEvent({
+        instrumentName: targetInstrumentName,
+        passedStartTime: adjustedStartTime,
+        recording: newEvent
+    });
 };
 
 export const recreateEvents = (passedGroups) => {

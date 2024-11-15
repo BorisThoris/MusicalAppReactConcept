@@ -7,7 +7,7 @@ import find from 'lodash/find';
 import set from 'lodash/set';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
-import { createEvent, createSound } from '../globalHelpers/createSound';
+import { copyEvent, createEvent, createSound } from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 
@@ -113,33 +113,18 @@ export const useInstrumentRecordingsOperations = () => {
     const duplicateEventsToInstrument = useCallback(
         ({ eventsToDuplicate, newStartTime = null }) => {
             updateGroups(setOverlapGroups, (updatedGroups) => {
-                // Determine the instrument to which the events will be added
-
-                // Calculate the time offset if a new start time is provided
                 const baseStartTime = eventsToDuplicate[0]?.startTime || 0;
                 const startOffset = newStartTime !== null ? newStartTime - baseStartTime : 0;
 
                 eventsToDuplicate.forEach((event) => {
                     const targetInstrumentName = event.targetInstrumentName;
 
-                    // Initialize target instrument if it doesn't exist in updatedGroups
                     if (!updatedGroups[targetInstrumentName]) {
                         updatedGroups[targetInstrumentName] = {};
                     }
 
-                    const newEvent = { ...event, locked: true };
+                    const duplicatedEvent = copyEvent(event, targetInstrumentName, startOffset);
 
-                    // Calculate the new start time for each event, maintaining relative order
-                    const adjustedStartTime = newStartTime !== null ? event.startTime + startOffset : event.startTime;
-
-                    // Recreate each event using createEvent to ensure deep cloning and unique IDs
-                    const duplicatedEvent = createEvent({
-                        instrumentName: targetInstrumentName,
-                        passedStartTime: adjustedStartTime,
-                        recording: newEvent
-                    });
-
-                    // Add the duplicated event to the target instrument in updatedGroups
                     updatedGroups[targetInstrumentName][duplicatedEvent.id] = duplicatedEvent;
                 });
             });
