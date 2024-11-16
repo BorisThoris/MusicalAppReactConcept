@@ -52,10 +52,7 @@ const Timelines = React.memo(() => {
                 </Layer>
 
                 <Layer>
-                    <TimelineTracker
-                        furthestEndTime={playbackStatus.currentInstrument || 0}
-                        shouldTrack={playbackStatus.isPlaying}
-                    />
+                    <TimelineTracker furthestEndTime={playbackStatus.currentInstrument || 0} />
                 </Layer>
 
                 <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
