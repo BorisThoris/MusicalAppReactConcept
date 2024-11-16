@@ -51,9 +51,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                     const parentAttrs = element.parent ? element.parent.attrs : {};
                     const timelineY = parentAttrs ? parentAttrs.timelineY : null;
 
-                    console.log('eiii yo');
-                    console.log(element);
-
                     return {
                         element,
                         height,

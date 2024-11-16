@@ -116,9 +116,6 @@ export const DragSelection = ({ stageRef }) => {
         };
 
         const mouseUpHandler = () => {
-            if (hasMoved()) {
-                updateSelection(dragPos);
-            }
             setIsDragging(false);
             setDragPos({ end: null, start: null });
         };

@@ -54,9 +54,6 @@ export const PanelProvider = ({ children }) => {
     }, []);
 
     const showActionsMenu = useCallback((payload) => {
-        console.log('LOG');
-        console.log(payload);
-
         dispatch({ payload, type: 'SHOW_RIGHT_CLICK_MENU' });
     }, []);
 

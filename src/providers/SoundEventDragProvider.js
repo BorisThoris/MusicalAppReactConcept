@@ -209,9 +209,6 @@ export const SoundEventDragProvider = ({ children }) => {
                 });
 
                 if (closestTimeline) {
-                    console.log('closestTimeline');
-                    console.log(closestTimeline);
-
                     insertElementIntoTimeline({ closestTimeline, element });
                     updateStartTimeForElement({ element });
                 } else {

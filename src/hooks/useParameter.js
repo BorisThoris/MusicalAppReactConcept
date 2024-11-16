@@ -5,9 +5,6 @@ const useParameter = ({ event, paramData }) => {
     const { param, value } = paramData;
     const { maximum: max, minimum: min } = param;
 
-    console.log('EVENT');
-    console.log(event);
-
     const [paramDetails, setParamDetails] = useState({
         paramMax: max,
         paramMin: min,

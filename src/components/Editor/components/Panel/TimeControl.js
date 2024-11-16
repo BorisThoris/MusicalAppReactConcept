@@ -38,9 +38,6 @@ const TimeControl = ({ endTime, onModifyStartTime, startTime }) => {
         const value = parseFloat(tempStartTime) - 0.01;
         setTempStartTime(value.toFixed(2));
 
-        console.log('INPUT VALUE');
-        console.log(value);
-
         const delta = -0.01;
         onModifyStartTime({ delta });
     }, [onModifyStartTime, tempStartTime]);
