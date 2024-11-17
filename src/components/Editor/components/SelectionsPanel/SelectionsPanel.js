@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -12,20 +12,6 @@ import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.st
 import { PanelWrapper } from '../Panel/PanelWrapper';
 import TimeControl from '../Panel/TimeControl';
 import { SelectedEventsList } from './SelectedEventsList';
-
-const organizeEventsByParentId = (events) => {
-    const eventMap = {};
-
-    events.forEach((event) => {
-        if (!eventMap[event.id]) {
-            eventMap[event.id] = { ...event, children: [] };
-        } else {
-            eventMap[event.id] = { ...eventMap[event.id], ...event };
-        }
-    });
-
-    return Object.values(eventMap).filter((event) => !event.parentId);
-};
 
 const EventsContainer = styled(FlexContainer)`
     display: flex;
@@ -162,10 +148,6 @@ export const SelectionsPanel = () => {
     );
 
     if (selectedValues.length > 0) {
-        // Sort the selected values by start time
-        const sortedSelectedValues = selectedValues.slice().sort((a, b) => a.startTime - b.startTime);
-        const organizedEvents = organizeEventsByParentId(sortedSelectedValues);
-
         return (
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
                 <button onClick={onCopyClick}>Copy</button>
@@ -179,7 +161,7 @@ export const SelectionsPanel = () => {
 
                 <EventsContainer>
                     <SelectedEventsList
-                        selectedValues={organizedEvents}
+                        selectedValues={selectedValues}
                         onDeleteRecording={onDeleteChildRecording}
                         onPlayEvent={onPlayEvent}
                         onClose={handleClose}
