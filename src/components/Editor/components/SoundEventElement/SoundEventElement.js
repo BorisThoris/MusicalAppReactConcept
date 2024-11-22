@@ -1,10 +1,10 @@
+// @ts-nocheck
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
-import useContextMenu from '../../../../hooks/useContextMenu';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -37,13 +37,14 @@ const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 const SoundEventElement = React.memo(
     ({
         dragBoundFunc,
+        groupChild,
+
         handleClickOverlapGroup,
         handleDragEnd,
         handleDragMove,
         handleDragStart,
         index,
         isElementBeingDragged,
-        isOverlapping,
         listening,
         recording,
         timelineHeight,
@@ -64,7 +65,7 @@ const SoundEventElement = React.memo(
 
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-        const { getEventById, lockOverlapGroup } = useInstrumentRecordingsOperations();
+        const { getEventById } = useInstrumentRecordingsOperations();
 
         // Derived values
         const isSelected = isItemSelected(id);
@@ -77,7 +78,6 @@ const SoundEventElement = React.memo(
             parent,
             recording
         });
-        const { handleContextMenu } = useContextMenu();
 
         const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
             isFocused,
@@ -86,10 +86,14 @@ const SoundEventElement = React.memo(
             COLORS[index % COLORS.length]
         );
 
-        const onLockSoundEventElement = useCallback(
-            () => lockOverlapGroup({ group: recording }),
-            [lockOverlapGroup, recording]
-        );
+        const onLockSoundEventElement = useCallback(() => {
+            const prevData = groupRef.current.attrs['data-recording'];
+            const updatedState = { ...prevData, locked: !prevData.locked };
+
+            groupRef.current.setAttrs({
+                'data-recording': updatedState
+            });
+        }, []);
 
         const handleDelete = useCallback(() => {
             if (groupRef.current) {
@@ -120,10 +124,18 @@ const SoundEventElement = React.memo(
         }, [isFocused]);
 
         const dynamicStyle = useMemo(() => {
-            return isOverlapping
-                ? { shadowBlur: 10, shadowColor: 'red' }
-                : { shadowBlur: CONSTANTS.SHADOW.BLUR, shadowColor: 'black' };
-        }, [isOverlapping]);
+            if (!groupChild) {
+                return { stroke: 'black', strokeWidth: 2 };
+            }
+
+            const calculatedHeight = timelineHeight * groupChild.scale;
+
+            return {
+                height: calculatedHeight,
+                stroke: 'blue',
+                strokeWidth: 4
+            };
+        }, [groupChild, timelineHeight]);
 
         // Component Render
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
@@ -134,18 +146,18 @@ const SoundEventElement = React.memo(
 
         const handleMouseEnterWithCursor = useCallback(
             (e) => {
-                handleMouseEnter(e); // Existing functionality
+                handleMouseEnter(e);
                 const container = e.target.getStage().container();
-                container.style.cursor = 'pointer'; // Change cursor to pointer
+                container.style.cursor = 'pointer';
             },
             [handleMouseEnter]
         );
 
         const handleMouseLeaveWithCursor = useCallback(
             (e) => {
-                restoreZIndex(e); // Existing functionality
+                restoreZIndex(e);
                 const container = e.target.getStage().container();
-                container.style.cursor = 'default'; // Reset cursor to default
+                container.style.cursor = 'default';
             },
             [restoreZIndex]
         );
@@ -153,8 +165,8 @@ const SoundEventElement = React.memo(
         const handleDragStartWithCursor = useCallback(
             (e) => {
                 const container = e.target.getStage().container();
-                container.style.cursor = 'grabbing'; // Change cursor to grabbing when dragging starts
-                handleDragStart(e); // Call the original drag start handler if any additional functionality is needed
+                container.style.cursor = 'grabbing';
+                handleDragStart(e);
             },
             [handleDragStart]
         );
@@ -162,11 +174,17 @@ const SoundEventElement = React.memo(
         const handleDragEndWithCursor = useCallback(
             (e) => {
                 const container = e.target.getStage().container();
-                container.style.cursor = 'grab'; // Set cursor to grab after dragging ends
-                handleDragEnd(e); // Call the original drag end handler
+                container.style.cursor = 'grab';
+                handleDragEnd(e);
             },
             [handleDragEnd]
         );
+
+        const isFirstInGroup = groupChild?.index === 0;
+        const isNotInGroup = !groupChild;
+        if (isFirstInGroup) {
+            console.log('FIRST IN GROUP');
+        }
 
         return (
             <Portal selector=".top-layer" enabled={isDragging}>
@@ -209,10 +227,11 @@ const SoundEventElement = React.memo(
                         shadowBlur={dynamicShadowBlur}
                         shadowOpacity={CONSTANTS.SHADOW.OPACITY}
                         opacity={CONSTANTS.TRANSPARENCY_VALUE}
-                        {...dynamicStyle} // Use
+                        {...dynamicStyle}
                     />
                     <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
-                    {!parent && (
+
+                    {((groupChild && isFirstInGroup) || isNotInGroup) && (
                         <Text
                             onClick={onLockSoundEventElement}
                             x={-10}
@@ -222,6 +241,7 @@ const SoundEventElement = React.memo(
                             fill="white"
                         />
                     )}
+
                     <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
                 </Group>
             </Portal>
@@ -233,9 +253,9 @@ const SoundEventElement = React.memo(
 // Prop Types and Default Props
 SoundEventElement.propTypes = {
     canvasOffsetY: PropTypes.number.isRequired,
+    groupChild: PropTypes.bool,
     index: PropTypes.number.isRequired,
     isFocused: PropTypes.bool,
-    isOverlapping: PropTypes.bool,
     isTargeted: PropTypes.bool,
     parent: PropTypes.object,
     recording: PropTypes.shape({
@@ -254,8 +274,8 @@ SoundEventElement.propTypes = {
 };
 
 SoundEventElement.defaultProps = {
+    groupChild: false,
     isFocused: false,
-    isOverlapping: false,
     isTargeted: false
 };
 

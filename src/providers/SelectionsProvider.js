@@ -47,18 +47,10 @@ export const SelectionProvider = ({ children }) => {
     }, [openSelectionsPanel, panels, selectedItems]);
 
     const selectedValues = Object.values(selectedItems).sort((a, b) => {
-        console.log(selectedItems);
-
-        console.log('A');
-        console.log(a);
-        console.log(a.startTime);
-
-        if (!a.startTime) return 1; // Move items without startTime to the end
+        if (!a.startTime) return 1;
         if (!b.startTime) return -1;
         return a.startTime - b.startTime;
     });
-
-    console.log(selectedValues);
 
     const handleCloseSelectionsPanel = useCallback(() => {
         closeSelectionsPanel();

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useOverlaps } from '../../components/Editor/components/InstrumentTimeline/useOverlaps';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
 import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
@@ -37,6 +38,7 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getElementsForTimeline,
         getProcessedElements,
         getSoundEventById,
         removeTimelineRef,
@@ -49,6 +51,18 @@ export const CollisionsProvider = ({ children }) => {
         setHasChanged,
         setOverlapGroups
     });
+
+    const previousBeat = useRef(overlapGroups);
+
+    const { findGroupForEvent, findOverlaps } = useOverlaps({
+        getProcessedElements,
+        overlapGroups,
+        previousBeat,
+        setOverlapGroups
+    });
+
+    console.log('OverlapGroups');
+    console.log(overlapGroups);
 
     // Assuming timelineRefs is accessible in this scope or passed as an argument
     const processBeat = useCallback(() => {
@@ -177,16 +191,14 @@ export const CollisionsProvider = ({ children }) => {
         }));
     }, [elements]);
 
-    const previousBeat = useRef(overlapGroups);
-
     useEffect(() => {
         const currentBeat = processBeat();
 
         if (JSON.stringify(previousBeat.current) !== JSON.stringify(currentBeat)) {
-            setOverlapGroups(processBeat());
-            previousBeat.current = currentBeat;
+            findOverlaps();
+            console.log('yooooooooo');
         }
-    }, [elementRects, processBeat]);
+    }, [elementRects, findOverlaps, processBeat]);
 
     const contextValue = useMemo(
         () => ({
@@ -199,7 +211,9 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             deleteAllTimelines,
             findAllSoundEventElements,
+            findGroupForEvent,
             furthestEndTime,
+            getElementsForTimeline,
             getProcessedElements,
             getSoundEventById,
             hasChanged,
@@ -224,6 +238,7 @@ export const CollisionsProvider = ({ children }) => {
             updateCurrentBeat
         }),
         [
+            findGroupForEvent,
             addTimeline,
             addStageRef,
             addTimelineRef,
@@ -239,6 +254,7 @@ export const CollisionsProvider = ({ children }) => {
             hasChanged,
             history,
             loadFromLocalStorage,
+            getElementsForTimeline,
             overlapGroups,
             furthestEndTime,
             totalDurationInPixels,

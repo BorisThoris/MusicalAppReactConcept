@@ -29,7 +29,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [updateTimelineRefs]
     );
 
-    // Utility function to find all elements with IDs starting with "element-"
     const findAllSoundEventElements = useCallback(() => {
         if (!stageRef?.current) return [];
         return stageRef.current.find((node) => node.id().startsWith('element-'));
@@ -79,7 +78,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             (acc, element) => {
                 if (!seenElementIds.has(element.id())) {
                     const { height, width, x, y } = element.getClientRect();
-                    // Using lodash.get to safely access nested properties
                     const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
                     const recording = get(element, "attrs['data-recording']", {});
                     const timelineY = get(element, 'parent.attrs.timelineY', 0);
@@ -102,6 +100,14 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             []
         );
     }, [findAllSoundEventElements, stageRef]);
+
+    // New method to get all elements for a specific timeline (by instrumentName)
+    const getElementsForTimeline = useCallback(
+        (instrumentName) => {
+            return getProcessedElements().filter((el) => el.instrumentName === instrumentName);
+        },
+        [getProcessedElements]
+    );
 
     const clearElements = useCallback((elements) => {
         elements.forEach((element) => {
@@ -144,6 +150,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getElementsForTimeline,
         getProcessedElements,
         getSoundEventById,
         removeTimelineRef,

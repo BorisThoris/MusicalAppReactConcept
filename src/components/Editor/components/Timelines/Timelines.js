@@ -8,7 +8,6 @@ import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerP
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
-import { useOverlaps } from '../InstrumentTimeline/useOverlaps';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
@@ -29,8 +28,6 @@ const Timelines = React.memo(() => {
         addStageRef(stageRef);
     }, [addStageRef]);
 
-    const { overlappingIds, resetOverlaps } = useOverlaps({ eventGroups: recordingsArr });
-
     return (
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
         <div onClick={hideActionsMenu}>
@@ -45,8 +42,6 @@ const Timelines = React.memo(() => {
                             events={events}
                             index={index}
                             markersHeight={markersHeight}
-                            overlappingIds={overlappingIds}
-                            resetOverlaps={resetOverlaps}
                         />
                     ))}
                 </Layer>
