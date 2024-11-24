@@ -40,6 +40,7 @@ export const CollisionsProvider = ({ children }) => {
         findAllSoundEventElements,
         getElementsForTimeline,
         getProcessedElements,
+        getProcessedGroups,
         getSoundEventById,
         removeTimelineRef,
         stageRef,
@@ -54,74 +55,19 @@ export const CollisionsProvider = ({ children }) => {
 
     const previousBeat = useRef(overlapGroups);
 
-    const { findGroupForEvent, findOverlaps } = useOverlaps({
+    const { findGroupForEvent, findOverlaps, processBeat } = useOverlaps({
         getProcessedElements,
+        getProcessedGroups,
         overlapGroups,
         previousBeat,
-        setOverlapGroups
+        setOverlapGroups,
+        timelineRefs
     });
 
     console.log('OverlapGroups');
     console.log(overlapGroups);
 
     // Assuming timelineRefs is accessible in this scope or passed as an argument
-    const processBeat = useCallback(() => {
-        const processedElements = getProcessedElements();
-
-        // Sort processedElements alphabetically by instrumentName and numerically by id within each instrumentName
-        const sortedElements = processedElements.sort((a, b) => {
-            // First, compare by instrumentName alphabetically
-            if (a.recording.instrumentName < b.recording.instrumentName) return -1;
-            if (a.recording.instrumentName > b.recording.instrumentName) return 1;
-
-            // If instrumentNames are the same, compare by id numerically
-            return a.recording.id - b.recording.id;
-        });
-
-        // Create the object to save with ordered instrument names
-        const objToSave = sortedElements.reduce((acc, { recording }) => {
-            const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
-
-            const { id, instrumentName } = recording;
-
-            // Initialize instrumentName if it doesn't exist
-            if (!acc[instrumentName]) {
-                acc[instrumentName] = {};
-            }
-
-            // Add recording under the relevant instrumentName
-            acc[instrumentName][id] = newRec;
-
-            return acc;
-        }, {});
-
-        // Get all timeline names from timelineRefs, sorted alphabetically
-        const timelineNames = Object.keys(timelineRefs).sort();
-
-        // Ensure each timelineName is included in objToSave with an empty object if not already present
-        timelineNames.forEach((timelineName) => {
-            if (!objToSave[timelineName]) {
-                objToSave[timelineName] = {};
-            }
-        });
-
-        // Sort objToSave to keep timelines in alphabetical order, and each timeline's ids in numerical order
-        const orderedObjToSave = Object.keys(objToSave)
-            .sort()
-            .reduce((acc, timelineName) => {
-                // Sort each timeline's recordings by numeric id
-                acc[timelineName] = Object.keys(objToSave[timelineName])
-                    .sort((a, b) => Number(a) - Number(b))
-                    .reduce((recordAcc, id) => {
-                        // eslint-disable-next-line no-param-reassign
-                        recordAcc[id] = objToSave[timelineName][id];
-                        return recordAcc;
-                    }, {});
-                return acc;
-            }, {});
-
-        return orderedObjToSave;
-    }, [getProcessedElements, timelineRefs]);
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
     const calculateFurthestEndTime = () => {
@@ -192,12 +138,7 @@ export const CollisionsProvider = ({ children }) => {
     }, [elements]);
 
     useEffect(() => {
-        const currentBeat = processBeat();
-
-        if (JSON.stringify(previousBeat.current) !== JSON.stringify(currentBeat)) {
-            findOverlaps();
-            console.log('yooooooooo');
-        }
+        findOverlaps();
     }, [elementRects, findOverlaps, processBeat]);
 
     const contextValue = useMemo(

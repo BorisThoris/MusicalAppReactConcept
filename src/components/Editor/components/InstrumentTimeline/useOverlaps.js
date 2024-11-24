@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-param-reassign */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback } from 'react';
+import { createEvent } from '../../../../globalHelpers/createSound';
 
 // Utility function for detecting overlaps
 const isOverlapping = (rectA, rectB) =>
@@ -12,16 +13,28 @@ const isOverlapping = (rectA, rectB) =>
     );
 
 // Union-Find helper functions
+const initializeUnionFind = (elements) => {
+    const parent = {};
+    const rank = {};
+
+    elements.forEach(({ id }) => {
+        parent[id] = id;
+        rank[id] = 0;
+    });
+
+    return { parent, rank };
+};
+
 const find = (parent, id, visited = new Set()) => {
     if (visited.has(id)) {
         console.warn(`Infinite recursion detected for id: ${id}`);
-        return id; // Break the cycle and return the current ID
+        return id; // Break the cycle
     }
 
     visited.add(id);
 
     if (parent[id] !== id) {
-        parent[id] = find(parent, parent[id], visited); // Path compression with recursion protection
+        parent[id] = find(parent, parent[id], visited); // Path compression
     }
     return parent[id];
 };
@@ -42,176 +55,153 @@ const union = (parent, rank, idA, idB) => {
     }
 };
 
-export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat, setOverlapGroups }) => {
-    const elements = getProcessedElements();
+export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat, setOverlapGroups, timelineRefs }) => {
+    const processBeat = useCallback(() => {
+        const processedElements = getProcessedElements();
 
-    const [overlapsCalculated, setOverlapsCalculated] = useState(false);
+        if (!processedElements || processedElements.length === 0) return {};
 
-    const previousElementsRef = useRef([]);
+        // Sort processedElements
+        const sortedElements = processedElements.sort((a, b) => {
+            if (a.recording.instrumentName < b.recording.instrumentName) return -1;
+            if (a.recording.instrumentName > b.recording.instrumentName) return 1;
+            return a.recording.id - b.recording.id;
+        });
 
-    const elementRects = useMemo(() => {
-        return elements.map((el) => ({
-            event: el,
-            id: el.element.attrs['data-recording'].id,
-            instrumentName: el.element.attrs['data-recording'].instrumentName,
-            rect: el.element.getClientRect()
-        }));
-    }, [elements]);
+        // Build the structured object to save
+        const objToSave = sortedElements.reduce((acc, { element, recording }) => {
+            const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
+
+            if (!acc[recording.instrumentName]) acc[recording.instrumentName] = {};
+            acc[recording.instrumentName][recording.id] = {
+                ...newRec,
+                rect: element.getClientRect()
+            };
+            return acc;
+        }, {});
+
+        // Include all timelines from timelineRefs
+        Object.keys(timelineRefs).forEach((timelineName) => {
+            if (!objToSave[timelineName]) {
+                objToSave[timelineName] = {};
+            }
+        });
+
+        return objToSave;
+    }, [getProcessedElements, timelineRefs]);
 
     const findOverlaps = useCallback(() => {
-        const parent = {};
-        const rank = {};
+        const processedData = processBeat();
 
-        // Initialize Union-Find
-        elementRects.forEach(({ id }) => {
-            parent[id] = id;
-            rank[id] = 0;
-        });
+        if (!processedData) return;
 
-        // Build overlapping relationships
-        elementRects.forEach((elementA, idxA) => {
-            const rectA = elementA.rect;
-            const idA = elementA.id;
+        const allElements = Object.entries(processedData).flatMap(([timeline, events]) =>
+            Object.values(events).map((event) => ({
+                endTime: event.endTime,
+                id: event.id,
+                locked: event.locked,
+                rect: event.rect,
+                startTime: event.startTime,
+                timeline
+            }))
+        );
 
-            for (let idxB = idxA + 1; idxB < elementRects.length; idxB += 1) {
-                const elementB = elementRects[idxB];
-                const rectB = elementB.rect;
+        const { parent, rank } = initializeUnionFind(allElements);
 
-                if (isOverlapping(rectA, rectB)) {
-                    union(parent, rank, idA, elementB.id);
+        // Detect overlaps and union groups
+        allElements.forEach((elementA, idxA) => {
+            for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {
+                const elementB = allElements[idxB];
+
+                if (!elementA.locked && !elementB.locked && isOverlapping(elementA.rect, elementB.rect)) {
+                    union(parent, rank, elementA.id, elementB.id);
                 }
             }
         });
 
-        const tempGroups = {};
+        // Organize overlap groups
+        const tempGroups = allElements.reduce((groups, { id, timeline }) => {
+            const rootId = find(parent, id);
 
-        elementRects.forEach(({ event, id, instrumentName }) => {
-            const elementData = event.element.attrs['data-recording'];
-            const rootId = find(parent, id); // Find the root ID for this element
+            if (!processedData[timeline] || !processedData[timeline][id]) return groups;
 
-            if (!tempGroups[instrumentName]) {
-                tempGroups[instrumentName] = {};
-            }
+            const group = groups[timeline]?.[rootId] || { elements: {}, ids: new Set() };
+            const { element, rect, ...filteredEvent } = processedData[timeline][id];
 
-            // Add to group or as a singular event
-            if (!tempGroups[instrumentName][rootId]) {
-                tempGroups[instrumentName][rootId] = {
-                    elements: {}, // To store element data
-                    ids: new Set() // To collect unique element IDs
-                };
-            }
+            return {
+                ...groups,
+                [timeline]: {
+                    ...groups[timeline],
+                    [rootId]: {
+                        ...group,
+                        elements: { ...group.elements, [id]: filteredEvent },
+                        ids: new Set([...group.ids, id])
+                    }
+                }
+            };
+        }, {});
 
-            tempGroups[instrumentName][rootId].elements[elementData.id] = { ...elementData };
-            tempGroups[instrumentName][rootId].ids.add(elementData.id);
-        });
-
-        // Separate singular events from overlap groups
-        const finalGroups = {};
-        Object.keys(tempGroups).forEach((instrumentName) => {
-            if (!finalGroups[instrumentName]) {
-                finalGroups[instrumentName] = {};
-            }
-
-            Object.keys(tempGroups[instrumentName]).forEach((rootId) => {
-                const group = tempGroups[instrumentName][rootId];
-                const concatenatedId = Array.from(group.ids).sort().join('-'); // Concatenate sorted IDs
-
+        // Finalize groups and calculate timings
+        const finalGroups = Object.entries(tempGroups).reduce((result, [timeline, groups]) => {
+            const timelineResult = Object.entries(groups).reduce((acc, [rootId, group]) => {
                 if (group.ids.size === 1) {
-                    // If it's a singular event, use the individual ID as the key
                     const [singleId] = Array.from(group.ids);
-                    finalGroups[instrumentName][singleId] = group.elements[singleId];
-                } else {
-                    // Otherwise, add it as an overlap group
-                    finalGroups[instrumentName][concatenatedId] = { overlapGroup: group.elements };
+                    return { ...acc, [singleId]: group.elements[singleId] };
                 }
-            });
-        });
 
+                // Calculate startTime, endTime, and length for overlap groups
+                const times = Array.from(group.ids).map((id) => ({
+                    endTime: group.elements[id].endTime,
+                    startTime: group.elements[id].startTime
+                }));
+                const startTime = Math.min(...times.map((t) => t.startTime));
+                const endTime = Math.max(...times.map((t) => t.endTime));
+                const length = endTime - startTime;
+
+                return {
+                    ...acc,
+                    [rootId]: {
+                        endTime,
+                        length,
+                        locked: false,
+                        overlapGroup: group.elements,
+                        startTime
+                    }
+                };
+            }, {});
+
+            return { ...result, [timeline]: timelineResult };
+        }, {});
+
+        // Update overlap groups immutably
         setOverlapGroups((prevGroups) => {
-            const mergedGroups = { ...prevGroups }; // Start with a copy of the previous groups
+            const mergedGroups = { ...prevGroups, ...finalGroups };
 
-            // Add new groups from finalGroups
-            Object.keys(finalGroups).forEach((instrumentName) => {
-                if (!mergedGroups[instrumentName]) {
-                    mergedGroups[instrumentName] = {};
-                }
-
-                Object.keys(finalGroups[instrumentName]).forEach((groupId) => {
-                    mergedGroups[instrumentName][groupId] = finalGroups[instrumentName][groupId];
-                });
-            });
-
-            // Filter out singular IDs that appear in overlap groups
-            Object.keys(mergedGroups).forEach((instrumentName) => {
-                const instrumentGroups = mergedGroups[instrumentName];
-
-                // Collect all overlap group IDs
-                const allOverlapIds = new Set();
-                Object.keys(instrumentGroups).forEach((groupId) => {
-                    const group = instrumentGroups[groupId];
-                    if (group.overlapGroup) {
-                        Object.keys(group.overlapGroup).forEach((id) => allOverlapIds.add(id));
-                    }
-                });
-
-                // Remove singular IDs that appear in any overlap group
-                Object.keys(instrumentGroups).forEach((groupId) => {
-                    if (!instrumentGroups[groupId].overlapGroup && allOverlapIds.has(groupId)) {
-                        delete instrumentGroups[groupId];
-                    }
-                });
-            });
-
+            // Avoid redundant updates
             if (JSON.stringify(previousBeat.current) !== JSON.stringify(mergedGroups)) {
-                console.log('TRUE');
-                console.log(previousBeat.current);
-                console.log(mergedGroups);
-
                 previousBeat.current = mergedGroups;
                 return mergedGroups;
             }
             return prevGroups;
         });
-
-        setOverlapsCalculated(true);
-    }, [elementRects, previousBeat, setOverlapGroups]);
+    }, [processBeat, setOverlapGroups, previousBeat]);
 
     const findGroupForEvent = useCallback(
         (id) => {
-            for (const [instrumentName, instrumentGroups] of Object.entries(overlapGroups)) {
-                for (const [groupId, group] of Object.entries(instrumentGroups)) {
-                    if (group.overlapGroup) {
-                        if (group.overlapGroup[id]) {
-                            return {
-                                groupId,
-                                instrumentName
-                            };
-                        }
-                    } else if (group.id === id) {
-                        return {
-                            groupId: id,
-                            instrumentName
-                        };
+            for (const [timeline, groups] of Object.entries(overlapGroups)) {
+                for (const [groupId, group] of Object.entries(groups)) {
+                    if (group.overlapGroup && group.overlapGroup[id]) {
+                        return { groupId, timeline };
+                    }
+                    if (!group.overlapGroup && group.id === id) {
+                        return { groupId: id, timeline };
                     }
                 }
             }
-            return null; // If no group is found
+            return null;
         },
         [overlapGroups]
     );
 
-    useEffect(() => {
-        const previousElements = previousElementsRef.current;
-
-        if (elements.length > 0 && (!overlapsCalculated || previousElements !== elements)) {
-            findOverlaps();
-            previousElementsRef.current = elements;
-        }
-    }, [elements, overlapsCalculated, findOverlaps]);
-
-    const resetOverlaps = useCallback(() => {
-        setOverlapsCalculated(false);
-    }, []);
-
-    return { findGroupForEvent, findOverlaps, resetOverlaps };
+    return { findGroupForEvent, findOverlaps, processBeat };
 };

@@ -9,6 +9,7 @@ import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrume
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { Lock } from '../Lock/Lock';
 import { useDynamicStyles } from './hooks/useDynamicStyles';
 import { useEventFocus } from './hooks/useEventFocus';
 import { useClickHandlers } from './useEventClickHandlers';
@@ -38,7 +39,6 @@ const SoundEventElement = React.memo(
     ({
         dragBoundFunc,
         groupChild,
-
         handleClickOverlapGroup,
         handleDragEnd,
         handleDragMove,
@@ -182,9 +182,6 @@ const SoundEventElement = React.memo(
 
         const isFirstInGroup = groupChild?.index === 0;
         const isNotInGroup = !groupChild;
-        if (isFirstInGroup) {
-            console.log('FIRST IN GROUP');
-        }
 
         return (
             <Portal selector=".top-layer" enabled={isDragging}>
@@ -231,16 +228,7 @@ const SoundEventElement = React.memo(
                     />
                     <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
 
-                    {((groupChild && isFirstInGroup) || isNotInGroup) && (
-                        <Text
-                            onClick={onLockSoundEventElement}
-                            x={-10}
-                            y={-10}
-                            text={locked ? '🔒' : '✔️'}
-                            fontSize={18}
-                            fill="white"
-                        />
-                    )}
+                    {isNotInGroup && <Lock isLocked={locked} onClick={onLockSoundEventElement} />}
 
                     <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
                 </Group>

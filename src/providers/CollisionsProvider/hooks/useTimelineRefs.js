@@ -34,6 +34,12 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         return stageRef.current.find((node) => node.id().startsWith('element-'));
     }, [stageRef]);
 
+    // New method to get all groups
+    const getAllGroups = useCallback(() => {
+        if (!stageRef?.current) return [];
+        return stageRef.current.find((node) => node.id().startsWith('overlap-group-'));
+    }, [stageRef]);
+
     const getSoundEventById = useCallback(
         (id) => {
             if (stageRef?.current) {
@@ -101,6 +107,43 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         );
     }, [findAllSoundEventElements, stageRef]);
 
+    // New method to process groups
+    const getProcessedGroups = useCallback(() => {
+        if (!stageRef?.current) return [];
+
+        const groups = getAllGroups();
+        const seenGroupIds = new Set();
+
+        console.log('ALL GROUPS', groups);
+
+        return reduce(
+            groups,
+            (acc, group) => {
+                if (!seenGroupIds.has(group.id())) {
+                    const clientRect = group.getClientRect ? group.getClientRect() : {};
+                    const { height, width, x, y } = clientRect;
+
+                    const groupData = group.attrs['data-overlap-group'] || {};
+                    const timelineY = get(group, 'attrs.timelineY', 0);
+
+                    acc.push({
+                        group,
+                        groupData,
+                        height,
+                        timelineY,
+                        width,
+                        x,
+                        y
+                    });
+
+                    seenGroupIds.add(group.id());
+                }
+                return acc;
+            },
+            []
+        );
+    }, [getAllGroups, stageRef]);
+
     // New method to get all elements for a specific timeline (by instrumentName)
     const getElementsForTimeline = useCallback(
         (instrumentName) => {
@@ -150,8 +193,10 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getAllGroups,
         getElementsForTimeline,
         getProcessedElements,
+        getProcessedGroups,
         getSoundEventById,
         removeTimelineRef,
         stageRef,
