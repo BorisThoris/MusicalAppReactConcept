@@ -1,8 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useOverlaps } from '../../components/Editor/components/InstrumentTimeline/useOverlaps';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
-import { createEvent } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
+import { useBeats } from './hooks/useBeats';
+import { useCalculateRenderChanges } from './hooks/useCalculateRenderChanges';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
@@ -64,10 +65,7 @@ export const CollisionsProvider = ({ children }) => {
         timelineRefs
     });
 
-    console.log('OverlapGroups');
-    console.log(overlapGroups);
-
-    // Assuming timelineRefs is accessible in this scope or passed as an argument
+    const [beats, saveBeatsToLocalStorage] = useBeats();
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
     const calculateFurthestEndTime = () => {
@@ -98,7 +96,12 @@ export const CollisionsProvider = ({ children }) => {
         stageRef
     });
 
-    const { selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({ overlapGroups, setHasChanged });
+    const { changeBeatName, selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({
+        beats,
+        overlapGroups,
+        saveBeatsToLocalStorage,
+        setHasChanged
+    });
 
     const previousOverlapGroupsRef = useRef({});
 
@@ -127,25 +130,15 @@ export const CollisionsProvider = ({ children }) => {
         [overlapGroups]
     );
 
-    const elements = getProcessedElements();
-
-    // Memoize element rects to avoid recalculating on each render
-    const elementRects = useMemo(() => {
-        return elements.map((el) => ({
-            id: el.element.attrs['data-recording'].id,
-            rect: el.element.getClientRect()
-        }));
-    }, [elements]);
-
-    useEffect(() => {
-        findOverlaps();
-    }, [elementRects, findOverlaps, processBeat]);
+    useCalculateRenderChanges({ findOverlaps, getProcessedElements, getProcessedGroups });
 
     const contextValue = useMemo(
         () => ({
             addStageRef,
             addTimeline,
             addTimelineRef,
+            beats,
+            changeBeatName,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
@@ -166,6 +159,7 @@ export const CollisionsProvider = ({ children }) => {
             redo,
             redoHistory,
             removeTimelineRef,
+            saveBeatsToLocalStorage,
             saveToLocalStorage,
             selectedBeat,
             setCopiedEvents,
@@ -179,38 +173,40 @@ export const CollisionsProvider = ({ children }) => {
             updateCurrentBeat
         }),
         [
-            findGroupForEvent,
-            addTimeline,
+            changeBeatName,
             addStageRef,
+            addTimeline,
             addTimelineRef,
-            processBeat,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
             findAllSoundEventElements,
+            findGroupForEvent,
+            furthestEndTime,
+            getElementsForTimeline,
             getProcessedElements,
             getSoundEventById,
             hasChanged,
             history,
             loadFromLocalStorage,
-            getElementsForTimeline,
             overlapGroups,
-            furthestEndTime,
-            totalDurationInPixels,
+            processBeat,
             pushToHistory,
             redo,
             redoHistory,
             removeTimelineRef,
             saveToLocalStorage,
             selectedBeat,
-            setOverlapGroups,
             setSelectedBeat,
             stageRef,
             timelineRefs,
+            totalDurationInPixels,
             undo,
-            updateCurrentBeat
+            updateCurrentBeat,
+            beats,
+            saveBeatsToLocalStorage
         ]
     );
 

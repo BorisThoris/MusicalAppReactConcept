@@ -55,13 +55,21 @@ const union = (parent, rank, idA, idB) => {
     }
 };
 
-export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat, setOverlapGroups, timelineRefs }) => {
+export const useOverlaps = ({
+    getProcessedElements,
+    getProcessedGroups,
+    overlapGroups,
+    previousBeat,
+    setOverlapGroups,
+    timelineRefs
+}) => {
     const processBeat = useCallback(() => {
         const processedElements = getProcessedElements();
+        const processedGroups = getProcessedGroups();
 
         if (!processedElements || processedElements.length === 0) return {};
 
-        // Sort processedElements
+        // Sort processed elements
         const sortedElements = processedElements.sort((a, b) => {
             if (a.recording.instrumentName < b.recording.instrumentName) return -1;
             if (a.recording.instrumentName > b.recording.instrumentName) return 1;
@@ -87,8 +95,33 @@ export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat,
             }
         });
 
+        // Persist processed groups
+        processedGroups.forEach(({ group, groupData, height, timelineY, width, x, y }) => {
+            const instrumentName = groupData?.instrumentName || 'unknown';
+
+            if (!objToSave[instrumentName]) {
+                objToSave[instrumentName] = {};
+            }
+
+            console.log('         ');
+            console.log('Persisting', groupData);
+            console.log('instrumentName', instrumentName);
+
+            objToSave[instrumentName][groupData.id] = {
+                elements: groupData.overlapGroup,
+                endTime: groupData.endTime,
+                groupData,
+                rect: { height, width, x, y },
+                startTime: groupData.startTime,
+                timelineY // Persist overlap group elements if applicable
+            };
+        });
+
+        console.log('OBJ TO SAVE');
+        console.log(objToSave);
+
         return objToSave;
-    }, [getProcessedElements, timelineRefs]);
+    }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 
     const findOverlaps = useCallback(() => {
         const processedData = processBeat();
@@ -149,8 +182,11 @@ export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat,
                     return { ...acc, [singleId]: group.elements[singleId] };
                 }
 
+                const idsArray = Array.from(group.ids);
+                // Combine IDs into a single identifier
+                const combinedId = idsArray.join('-');
                 // Calculate startTime, endTime, and length for overlap groups
-                const times = Array.from(group.ids).map((id) => ({
+                const times = idsArray.map((id) => ({
                     endTime: group.elements[id].endTime,
                     startTime: group.elements[id].startTime
                 }));
@@ -158,10 +194,20 @@ export const useOverlaps = ({ getProcessedElements, overlapGroups, previousBeat,
                 const endTime = Math.max(...times.map((t) => t.endTime));
                 const length = endTime - startTime;
 
+                console.log('TEST');
+                console.log(processedData[timeline]);
+
+                if (processedData[timeline]?.[combinedId]) {
+                    console.log('EXISTING OVERLAPGROUP');
+                    console.log(processedData[timeline]?.[combinedId]);
+                }
+
                 return {
                     ...acc,
                     [rootId]: {
                         endTime,
+                        id: combinedId,
+                        instrumentName: timeline,
                         length,
                         locked: false,
                         overlapGroup: group.elements,

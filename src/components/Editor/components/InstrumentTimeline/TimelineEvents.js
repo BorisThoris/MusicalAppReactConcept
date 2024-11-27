@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Group, Rect } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
@@ -52,6 +52,12 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
         },
         [paintEvent, instrumentName, renderEvent]
     );
+
+    useEffect(() => {
+        return () => {
+            setPaintedEvents([]);
+        };
+    }, [eventGroups]);
 
     // Render dynamically painted events
     const renderPaintedEvents = () => {

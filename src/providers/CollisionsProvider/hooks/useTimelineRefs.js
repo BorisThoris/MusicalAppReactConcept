@@ -114,8 +114,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         const groups = getAllGroups();
         const seenGroupIds = new Set();
 
-        console.log('ALL GROUPS', groups);
-
         return reduce(
             groups,
             (acc, group) => {

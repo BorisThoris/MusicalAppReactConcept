@@ -24,13 +24,15 @@ export const GroupElement = ({
     const onLockSoundEventElement = useCallback(() => {
         if (!groupRef.current) return;
 
-        const prevData = groupRef.current.attrs['data-recording'];
+        const prevData = groupRef.current.attrs['data-overlap-group'];
+
         groupRef.current.setAttrs({
-            'data-recording': { ...prevData, locked: !prevData.locked }
+            'data-overlap-group': { ...prevData, locked: !prevData.locked }
         });
     }, []);
 
-    console.log('groupData', groupData);
+    console.log('GROUPDATA', groupData);
+    console.log('GROUP LOCKED: ', locked);
 
     return (
         <Group x={groupX} data-overlap-group={groupData} ref={groupRef} id={`overlap-group-${id}`}>
