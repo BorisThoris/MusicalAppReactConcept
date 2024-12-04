@@ -53,7 +53,6 @@ export const createSound = ({ eventInstance, eventPath, instrumentName, passedPa
     };
 };
 
-// Helper function to create a main event or sub-event
 export const createEvent = ({ instrumentName, parentId = null, passedStartTime = null, recording }) => {
     const newEventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
 
@@ -105,9 +104,30 @@ export const recreateEvents = (passedGroups) => {
         newRecordings[instrumentName] = {};
 
         Object.values(passedGroups[instrumentName]).forEach((recording) => {
-            const group = createEvent({ instrumentName, recording });
+            if (recording.overlapGroup) {
+                const newOverlapGroup = {};
+                const newEventIds = [];
 
-            newRecordings[instrumentName][group.id] = { ...group };
+                Object.entries(recording.overlapGroup).forEach(([id, overlapEvent]) => {
+                    const recreatedEvent = createEvent({
+                        instrumentName,
+                        recording: overlapEvent
+                    });
+                    newOverlapGroup[recreatedEvent.id] = recreatedEvent;
+                    newEventIds.push(recreatedEvent.id);
+                });
+
+                const newOverlapGroupId = newEventIds.join('-');
+                newRecordings[instrumentName][newOverlapGroupId] = {
+                    ...recording,
+                    id: newOverlapGroupId,
+                    overlapGroup: newOverlapGroup
+                };
+            } else {
+                // Process regular events
+                const recreatedEvent = createEvent({ instrumentName, recording });
+                newRecordings[instrumentName][recreatedEvent.id] = { ...recreatedEvent };
+            }
         });
     });
 

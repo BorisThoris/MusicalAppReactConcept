@@ -17,7 +17,7 @@ export const GroupElement = ({
     const groupRef = useRef();
     const { id, locked, overlapGroup, startTime } = groupData;
 
-    const groupX = startTime * pixelToSecondRatio;
+    const groupX = startTime * pixelToSecondRatio || 100;
     const groupEvents = Object.values(overlapGroup);
     const groupLength = groupEvents.length;
 
@@ -31,31 +31,30 @@ export const GroupElement = ({
         });
     }, []);
 
-    console.log('GROUPDATA', groupData);
-    console.log('GROUP LOCKED: ', locked);
-
     return (
         <Group x={groupX} data-overlap-group={groupData} ref={groupRef} id={`overlap-group-${id}`}>
             <Group offsetX={groupX}>
-                {groupEvents.map((event, index) => (
-                    <SoundEventElement
-                        key={event.id}
-                        timelineHeight={TimelineHeight}
-                        recording={event}
-                        index={index}
-                        timelineY={timelineY}
-                        handleDragEnd={handleDragEnd}
-                        handleDragStart={handleDragStart}
-                        dragBoundFunc={dragBoundFunc}
-                        handleDragMove={handleDragMove}
-                        isElementBeingDragged={isElementBeingDragged}
-                        // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-                        groupChild={{
-                            index,
-                            scale: (index + 1) / groupLength
-                        }}
-                    />
-                ))}
+                {groupEvents.map((event, index) => {
+                    return (
+                        <SoundEventElement
+                            key={event.id}
+                            timelineHeight={TimelineHeight}
+                            recording={event}
+                            index={index}
+                            timelineY={timelineY}
+                            handleDragEnd={handleDragEnd}
+                            handleDragStart={handleDragStart}
+                            dragBoundFunc={dragBoundFunc}
+                            handleDragMove={handleDragMove}
+                            isElementBeingDragged={isElementBeingDragged}
+                            // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
+                            groupChild={{
+                                index,
+                                scale: (index + 1) / groupLength
+                            }}
+                        />
+                    );
+                })}
             </Group>
 
             <Lock isLocked={locked} onClick={onLockSoundEventElement} />

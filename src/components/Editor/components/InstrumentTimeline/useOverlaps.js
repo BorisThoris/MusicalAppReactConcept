@@ -4,13 +4,59 @@ import { useCallback } from 'react';
 import { createEvent } from '../../../../globalHelpers/createSound';
 
 // Utility function for detecting overlaps
-const isOverlapping = (rectA, rectB) =>
-    !(
+const isOverlapping = (elA, elB) => {
+    if (!elA.rect || !elB.rect) return;
+
+    const rectA = elA.rect;
+    const rectB = elB.rect;
+
+    // Check basic rectangle overlap
+    const isOvrlp = !(
         rectA.x > rectB.x + rectB.width ||
         rectA.x + rectA.width < rectB.x ||
         rectA.y > rectB.y + rectB.height ||
         rectA.y + rectA.height < rectB.y
     );
+
+    return isOvrlp;
+};
+
+const isGroupOverlapping = (element, groupElement) => {
+    // Iterate through all elements in the overlap group
+    // eslint-disable-next-line guard-for-in
+    for (const key in groupElement.overlapGroup) {
+        const groupChild = groupElement.overlapGroup[key];
+        if (isOverlapping(element, groupChild)) {
+            return true; // If any overlaps, return true
+        }
+    }
+    return false; // No overlaps found
+};
+
+const checkOverlap = (elA, elB) => {
+    if (elA.groupData && elB.groupData) {
+        // Both elements are groups
+        // eslint-disable-next-line guard-for-in
+        for (const keyA in elA.groupData.overlapGroup) {
+            for (const keyB in elB.groupData.overlapGroup) {
+                if (isOverlapping(elA.groupData.overlapGroup[keyA], elB.groupData.overlapGroup[keyB])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    if (elA.groupData) {
+        // elA is a group, check against all elements in elA's group
+        return isGroupOverlapping(elB, elA);
+    }
+    if (elB.groupData) {
+        // elB is a group, check against all elements in elB's group
+        return isGroupOverlapping(elA, elB);
+    }
+    // Neither is a group, check single overlap
+    return isOverlapping(elA, elB);
+};
 
 // Union-Find helper functions
 const initializeUnionFind = (elements) => {
@@ -103,10 +149,6 @@ export const useOverlaps = ({
                 objToSave[instrumentName] = {};
             }
 
-            console.log('         ');
-            console.log('Persisting', groupData);
-            console.log('instrumentName', instrumentName);
-
             objToSave[instrumentName][groupData.id] = {
                 elements: groupData.overlapGroup,
                 endTime: groupData.endTime,
@@ -117,9 +159,6 @@ export const useOverlaps = ({
             };
         });
 
-        console.log('OBJ TO SAVE');
-        console.log(objToSave);
-
         return objToSave;
     }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 
@@ -129,14 +168,12 @@ export const useOverlaps = ({
         if (!processedData) return;
 
         const allElements = Object.entries(processedData).flatMap(([timeline, events]) =>
-            Object.values(events).map((event) => ({
-                endTime: event.endTime,
-                id: event.id,
-                locked: event.locked,
-                rect: event.rect,
-                startTime: event.startTime,
-                timeline
-            }))
+            Object.values(events).map((event) => {
+                return {
+                    ...event,
+                    timeline
+                };
+            })
         );
 
         const { parent, rank } = initializeUnionFind(allElements);
@@ -146,7 +183,7 @@ export const useOverlaps = ({
             for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {
                 const elementB = allElements[idxB];
 
-                if (!elementA.locked && !elementB.locked && isOverlapping(elementA.rect, elementB.rect)) {
+                if (!elementA.locked && !elementB.locked && checkOverlap(elementA, elementB)) {
                     union(parent, rank, elementA.id, elementB.id);
                 }
             }
@@ -176,6 +213,8 @@ export const useOverlaps = ({
 
         // Finalize groups and calculate timings
         const finalGroups = Object.entries(tempGroups).reduce((result, [timeline, groups]) => {
+            console.log('tempGroups', tempGroups);
+
             const timelineResult = Object.entries(groups).reduce((acc, [rootId, group]) => {
                 if (group.ids.size === 1) {
                     const [singleId] = Array.from(group.ids);
@@ -194,17 +233,11 @@ export const useOverlaps = ({
                 const endTime = Math.max(...times.map((t) => t.endTime));
                 const length = endTime - startTime;
 
-                console.log('TEST');
-                console.log(processedData[timeline]);
-
-                if (processedData[timeline]?.[combinedId]) {
-                    console.log('EXISTING OVERLAPGROUP');
-                    console.log(processedData[timeline]?.[combinedId]);
-                }
+                // console.log('Group', group);
 
                 return {
                     ...acc,
-                    [rootId]: {
+                    [combinedId]: {
                         endTime,
                         id: combinedId,
                         instrumentName: timeline,

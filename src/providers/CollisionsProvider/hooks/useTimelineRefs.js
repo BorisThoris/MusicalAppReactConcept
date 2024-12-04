@@ -1,9 +1,11 @@
+/* eslint-disable no-debugger */
 import { get } from 'lodash';
 import find from 'lodash/find';
 import omit from 'lodash/omit';
 import reduce from 'lodash/reduce';
 import set from 'lodash/set';
 import { useCallback, useState } from 'react';
+import { ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
     const [timelineRefs, setTimelineRefs] = useState({});
@@ -31,7 +33,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const findAllSoundEventElements = useCallback(() => {
         if (!stageRef?.current) return [];
-        return stageRef.current.find((node) => node.id().startsWith('element-'));
+        return stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
     }, [stageRef]);
 
     // New method to get all groups
@@ -43,8 +45,8 @@ export const useTimelineRefs = ({ setHasChanged }) => {
     const getSoundEventById = useCallback(
         (id) => {
             if (stageRef?.current) {
-                const elements = stageRef.current.find((node) => node.id().startsWith(`element-${id}`));
-                const element = elements ? find(elements, (node) => node.id() === `element-${id}`) : null;
+                const elements = stageRef.current.find((node) => node.id().startsWith(`${ELEMENT_ID_PREFIX}${id}`));
+                const element = elements ? find(elements, (node) => node.id() === `${ELEMENT_ID_PREFIX}${id}`) : null;
 
                 if (element) {
                     const clientRect = element.getClientRect ? element.getClientRect() : {};
@@ -118,7 +120,10 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             groups,
             (acc, group) => {
                 if (!seenGroupIds.has(group.id())) {
-                    const clientRect = group.getClientRect ? group.getClientRect() : {};
+                    if (!group.getClientRect) return acc;
+
+                    const clientRect = group.getClientRect();
+
                     const { height, width, x, y } = clientRect;
 
                     const groupData = group.attrs['data-overlap-group'] || {};
@@ -142,6 +147,88 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         );
     }, [getAllGroups, stageRef]);
 
+    const getProcessedItems = useCallback(() => {
+        if (!stageRef?.current) return [];
+
+        const elements = findAllSoundEventElements();
+        const groups = getAllGroups();
+
+        const seenIds = new Set();
+
+        // Process elements
+        const processedElements = reduce(
+            elements,
+            (acc, element) => {
+                if (!seenIds.has(element.id())) {
+                    const { height, width, x, y } = element.getClientRect();
+                    const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
+                    const recording = get(element, "attrs['data-recording']", {});
+                    const timelineY = get(element, 'parent.attrs.timelineY', 0);
+
+                    const child = element.attrs['data-group-child'] || false;
+
+                    if (child) {
+                        return acc;
+                    }
+
+                    acc.push({
+                        clientRect: element.getClientRect(),
+                        height,
+                        // Identifier for elements
+                        id: element.id(),
+                        instrumentName,
+                        rawItem: element,
+                        recording,
+                        timelineY,
+                        type: 'element',
+                        width,
+                        x,
+                        y // Reference to the original element
+                    });
+
+                    seenIds.add(element.id());
+                }
+                return acc;
+            },
+            []
+        );
+
+        // Process groups
+        const processedGroups = reduce(
+            groups,
+            (acc, group) => {
+                if (!seenIds.has(group.id())) {
+                    if (!group.getClientRect) return acc;
+
+                    const { height, width, x, y } = group.getClientRect();
+                    const groupData = group.attrs['data-overlap-group'] || {};
+                    const timelineY = get(group, 'attrs.timelineY', 0);
+
+                    acc.push({
+                        clientRect: group.getClientRect(),
+                        groupData,
+                        height,
+                        // Identifier for groups
+                        id: group.id(),
+                        rawItem: group,
+                        timelineY,
+                        type: 'group',
+                        width,
+                        x,
+                        y // Reference to the original group
+                    });
+
+                    seenIds.add(group.id());
+                }
+                return acc;
+            },
+            []
+        );
+
+        // Combine both arrays
+        return [...processedElements, ...processedGroups];
+    }, [findAllSoundEventElements, getAllGroups, stageRef]);
+
     // New method to get all elements for a specific timeline (by instrumentName)
     const getElementsForTimeline = useCallback(
         (instrumentName) => {
@@ -155,7 +242,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             if (element) {
                 const stage = element.getStage();
                 if (stage) {
-                    const parentElement = stage.findOne(`#parent-${element.id().replace('element-', '')}`);
+                    const parentElement = stage.findOne(`#parent-${element.id().replace(ELEMENT_ID_PREFIX, '')}`);
                     if (parentElement) {
                         parentElement.destroy();
                     }
@@ -195,6 +282,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         getElementsForTimeline,
         getProcessedElements,
         getProcessedGroups,
+        getProcessedItems,
         getSoundEventById,
         removeTimelineRef,
         stageRef,

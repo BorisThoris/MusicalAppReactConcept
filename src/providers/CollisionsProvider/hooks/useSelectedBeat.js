@@ -49,8 +49,6 @@ export const useSelectedBeat = ({ beats, overlapGroups, saveBeatsToLocalStorage,
         [selectedBeat, beats, saveBeatsToLocalStorage, setHasChanged]
     );
 
-    console.log('selectedBeat', selectedBeat);
-
     return {
         beats,
         changeBeatName,

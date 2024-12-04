@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { SelectionContext } from './SelectionsProvider';
 
@@ -60,7 +61,7 @@ export const SoundEventDragProvider = ({ children }) => {
             previousXRef.current = el.target.x();
             setCurrentY(el.evt.y);
 
-            const processId = (id) => (id.startsWith('element-') ? id.split('element-')[1] : id);
+            const processId = (id) => (id.startsWith(ELEMENT_ID_PREFIX) ? id.split(ELEMENT_ID_PREFIX)[1] : id);
             const newDragging = { [processId(el.target.attrs.id)]: true };
 
             if (Object.keys(selectedItems).length > 0) {
@@ -139,7 +140,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 if (Object.keys(selectedItems).length > 0) {
                     Object.values(selectedItems).forEach(({ id }) => {
-                        const targetElement = stage.findOne(`#element-${id}`);
+                        const targetElement = stage.findOne(`#${ELEMENT_ID_PREFIX}${id}`);
                         if (targetElement) {
                             processElement(targetElement);
                         }
@@ -220,7 +221,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
             if (Object.keys(selectedItems).length > 0) {
                 Object.values(selectedItems).forEach((item) => {
-                    const targetElement = stage.findOne(`#element-${item.id}`);
+                    const targetElement = stage.findOne(`#${ELEMENT_ID_PREFIX}${item.id}`);
                     if (targetElement) {
                         finalizeDrag(targetElement);
                     }

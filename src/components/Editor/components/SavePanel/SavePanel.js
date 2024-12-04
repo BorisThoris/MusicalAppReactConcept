@@ -38,6 +38,9 @@ export const SavePanel = () => {
 
         const objToSave = processBeat();
 
+        console.log('SAVING BEAT');
+        console.log(objToSave);
+
         const newBeat = {
             data: objToSave,
             date: new Date().toLocaleString(),

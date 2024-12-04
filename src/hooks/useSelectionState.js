@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
@@ -85,7 +86,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                     (newSelectedItems, { id }) => {
                         const processedElements = getProcessedElements();
                         const elementData = processedElements.find(
-                            (element) => element.element.attrs.id === `element-${id}`
+                            (element) => element.element.attrs.id === `${ELEMENT_ID_PREFIX}${id}`
                         );
 
                         if (newSelectedItems[id]) {
@@ -132,13 +133,15 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             const elementsToDelete = processedElements.filter(({ element, instrumentName }) =>
                 eventsArray.some(
                     (event) =>
-                        event.instrumentName === instrumentName && event.id === element.id().replace('element-', '')
+                        event.instrumentName === instrumentName &&
+                        event.id === element.id().replace(ELEMENT_ID_PREFIX, '')
                 )
             );
 
             elementsToDelete.forEach(({ element, instrumentName }) => {
                 const event = eventsArray.find(
-                    (ev) => ev.instrumentName === instrumentName && ev.id === element.id().replace('element-', '')
+                    (ev) =>
+                        ev.instrumentName === instrumentName && ev.id === element.id().replace(ELEMENT_ID_PREFIX, '')
                 );
                 if (event) {
                     element.destroy();

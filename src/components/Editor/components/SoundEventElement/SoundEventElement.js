@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
+import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
@@ -195,6 +196,7 @@ const SoundEventElement = React.memo(
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
+                    data-group-child={groupChild}
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragMove={handleDragMove}
@@ -203,7 +205,7 @@ const SoundEventElement = React.memo(
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
                     listening={listening}
-                    id={`element-${id}`}
+                    id={`${ELEMENT_ID_PREFIX}${id}`}
                 >
                     <Rect
                         onMouseEnter={handleMouseEnterWithCursor}
