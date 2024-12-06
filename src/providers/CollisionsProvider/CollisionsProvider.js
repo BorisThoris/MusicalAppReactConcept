@@ -42,7 +42,6 @@ export const CollisionsProvider = ({ children }) => {
         getElementsForTimeline,
         getProcessedElements,
         getProcessedGroups,
-        getProcessedItems,
         getSoundEventById,
         removeTimelineRef,
         stageRef,
@@ -60,7 +59,6 @@ export const CollisionsProvider = ({ children }) => {
     const { findGroupForEvent, findOverlaps, processBeat } = useOverlaps({
         getProcessedElements,
         getProcessedGroups,
-        getProcessedItems,
         overlapGroups,
         previousBeat,
         setOverlapGroups,
@@ -154,7 +152,6 @@ export const CollisionsProvider = ({ children }) => {
             furthestEndTime,
             getElementsForTimeline,
             getProcessedElements,
-            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
@@ -179,7 +176,6 @@ export const CollisionsProvider = ({ children }) => {
             updateCurrentBeat
         }),
         [
-            getProcessedItems,
             changeBeatName,
             addStageRef,
             addTimeline,

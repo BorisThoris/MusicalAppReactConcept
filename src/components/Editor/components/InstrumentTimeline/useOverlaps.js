@@ -213,8 +213,6 @@ export const useOverlaps = ({
 
         // Finalize groups and calculate timings
         const finalGroups = Object.entries(tempGroups).reduce((result, [timeline, groups]) => {
-            console.log('tempGroups', tempGroups);
-
             const timelineResult = Object.entries(groups).reduce((acc, [rootId, group]) => {
                 if (group.ids.size === 1) {
                     const [singleId] = Array.from(group.ids);
@@ -232,8 +230,6 @@ export const useOverlaps = ({
                 const startTime = Math.min(...times.map((t) => t.startTime));
                 const endTime = Math.max(...times.map((t) => t.endTime));
                 const length = endTime - startTime;
-
-                // console.log('Group', group);
 
                 return {
                     ...acc,

@@ -12,7 +12,7 @@ const TimelineTracker = () => {
     const trackerRef = useRef();
     const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
         useRecordingPlayerContext();
-    const { furthestEndTime, getProcessedElements, getProcessedItems } = useContext(CollisionsContext);
+    const { furthestEndTime, getProcessedElements } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
     const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);

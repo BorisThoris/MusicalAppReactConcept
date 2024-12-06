@@ -31,9 +31,6 @@ export const useCalculateRenderChanges = ({ findOverlaps, getProcessedElements, 
             const prevRect = prevRectsRef.current[index];
             if (!prevRect) return true; // New rect
 
-            // Log for debugging purposes
-            if (rect.data.overlapGroup) console.log('rect', rect.data);
-
             const isDifferent =
                 rect.id !== prevRect.id || // ID changed
                 rect.type !== prevRect.type || // Type changed

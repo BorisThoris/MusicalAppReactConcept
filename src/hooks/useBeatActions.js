@@ -61,8 +61,6 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
             if (beatToLoad) {
                 const savedOverlapGroups = beatToLoad.data;
 
-                console.log(savedOverlapGroups);
-
                 const recreatedEvents = recreateEvents(savedOverlapGroups);
 
                 console.log('savedOverlapGroups', recreatedEvents);
