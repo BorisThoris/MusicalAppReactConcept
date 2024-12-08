@@ -142,17 +142,22 @@ export const useOverlaps = ({
         });
 
         // Persist processed groups
-        processedGroups.forEach(({ group, groupData, height, timelineY, width, x, y }) => {
+        processedGroups.forEach(({ groupData, height, timelineY, width, x, y }) => {
             const instrumentName = groupData?.instrumentName || 'unknown';
 
             if (!objToSave[instrumentName]) {
                 objToSave[instrumentName] = {};
             }
 
+            if (groupData.locked) {
+                console.log('LOCKED');
+            }
+
             objToSave[instrumentName][groupData.id] = {
                 elements: groupData.overlapGroup,
                 endTime: groupData.endTime,
                 groupData,
+                locked: groupData.locked,
                 rect: { height, width, x, y },
                 startTime: groupData.startTime,
                 timelineY // Persist overlap group elements if applicable
@@ -189,13 +194,18 @@ export const useOverlaps = ({
             }
         });
 
+        console.log('All Ells', allElements);
+
         // Organize overlap groups
-        const tempGroups = allElements.reduce((groups, { id, timeline }) => {
+        const tempGroups = allElements.reduce((groups, currentGroup) => {
+            const { groupData, id, locked, timeline } = currentGroup;
+
             const rootId = find(parent, id);
 
+            const existingGroup = processedData[timeline][id];
             if (!processedData[timeline] || !processedData[timeline][id]) return groups;
 
-            const group = groups[timeline]?.[rootId] || { elements: {}, ids: new Set() };
+            const group = groups[timeline]?.[rootId] || { ...existingGroup, ids: new Set() };
             const { element, rect, ...filteredEvent } = processedData[timeline][id];
 
             return {
@@ -203,17 +213,23 @@ export const useOverlaps = ({
                 [timeline]: {
                     ...groups[timeline],
                     [rootId]: {
-                        ...group,
                         elements: { ...group.elements, [id]: filteredEvent },
-                        ids: new Set([...group.ids, id])
+                        ids: new Set([...group.ids, id]),
+                        locked: groupData?.locked
                     }
                 }
             };
         }, {});
 
+        console.log('Temp Group', tempGroups);
+
         // Finalize groups and calculate timings
         const finalGroups = Object.entries(tempGroups).reduce((result, [timeline, groups]) => {
             const timelineResult = Object.entries(groups).reduce((acc, [rootId, group]) => {
+                if (group.locked) {
+                    console.log('Locked group', group);
+                }
+
                 if (group.ids.size === 1) {
                     const [singleId] = Array.from(group.ids);
                     return { ...acc, [singleId]: group.elements[singleId] };
@@ -231,6 +247,9 @@ export const useOverlaps = ({
                 const endTime = Math.max(...times.map((t) => t.endTime));
                 const length = endTime - startTime;
 
+                const sameGroup = processedData[timeline][combinedId];
+                console.log('sameGroups', sameGroup);
+
                 return {
                     ...acc,
                     [combinedId]: {
@@ -238,7 +257,7 @@ export const useOverlaps = ({
                         id: combinedId,
                         instrumentName: timeline,
                         length,
-                        locked: false,
+                        locked: sameGroup?.locked || false,
                         overlapGroup: group.elements,
                         startTime
                     }
