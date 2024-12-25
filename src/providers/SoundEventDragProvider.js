@@ -1,3 +1,4 @@
+import set from 'lodash/set';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
@@ -37,6 +38,24 @@ export const SoundEventDragProvider = ({ children }) => {
             endTime: newEndTime,
             startTime: newStartTime
         };
+
+        const group = element.attrs['data-group-child'];
+        if (group) {
+            const groupElements = group.attrs?.['data-overlap-group']?.elements;
+
+            if (groupElements) {
+                const foundRecording = groupElements[recording.id];
+
+                if (foundRecording) {
+                    groupElements[recording.id] = updatedRecording;
+
+                    console.log('Updated groupElements:', groupElements);
+                }
+            } else {
+                // eslint-disable-next-line no-alert
+                alert('Overlap group data not found.');
+            }
+        }
 
         element.setAttr('data-recording', updatedRecording);
 
@@ -181,6 +200,10 @@ export const SoundEventDragProvider = ({ children }) => {
         }
 
         closestTimeline.getLayer().batchDraw();
+    }, []);
+
+    const handleGroupDragEnd = useCallback(() => {
+        alert('yo');
     }, []);
 
     const handleDragEnd = useCallback(

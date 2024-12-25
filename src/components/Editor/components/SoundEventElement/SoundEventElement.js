@@ -38,8 +38,9 @@ const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 // Component
 const SoundEventElement = React.memo(
     ({
+        childScale,
         dragBoundFunc,
-        groupChild,
+        groupRef,
         handleClickOverlapGroup,
         handleDragEnd,
         handleDragMove,
@@ -54,7 +55,7 @@ const SoundEventElement = React.memo(
         const { eventLength, id, locked, name, parentId, startTime } = recording;
 
         // Refs and State
-        const groupRef = useRef();
+        const elementContainerRef = useRef();
         const elementRef = useRef();
         const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
         const isDragging = isElementBeingDragged(id);
@@ -88,17 +89,17 @@ const SoundEventElement = React.memo(
         );
 
         const onLockSoundEventElement = useCallback(() => {
-            const prevData = groupRef.current.attrs['data-recording'];
+            const prevData = elementContainerRef.current.attrs['data-recording'];
             const updatedState = { ...prevData, locked: !prevData.locked };
 
-            groupRef.current.setAttrs({
+            elementContainerRef.current.setAttrs({
                 'data-recording': updatedState
             });
         }, []);
 
         const handleDelete = useCallback(() => {
-            if (groupRef.current) {
-                groupRef.current.destroy();
+            if (elementContainerRef.current) {
+                elementContainerRef.current.destroy();
             }
         }, []);
 
@@ -107,36 +108,36 @@ const SoundEventElement = React.memo(
         }, [startTime]);
 
         useEffect(() => {
-            if (groupRef.current && !isFocused) {
-                const currentZIndex = groupRef.current.zIndex();
+            if (elementContainerRef.current && !isFocused) {
+                const currentZIndex = elementContainerRef.current.zIndex();
 
                 if (originalZIndex === null) {
                     setOriginalZIndex(currentZIndex);
                 } else if (originalZIndex !== currentZIndex) {
-                    groupRef.current.zIndex(originalZIndex);
+                    elementContainerRef.current.zIndex(originalZIndex);
                 }
             }
         }, [isFocused, originalZIndex]);
 
         useEffect(() => {
-            if (isFocused && groupRef.current) {
-                groupRef.current.moveToTop();
+            if (isFocused && elementContainerRef.current) {
+                elementContainerRef.current.moveToTop();
             }
         }, [isFocused]);
 
         const dynamicStyle = useMemo(() => {
-            if (!groupChild) {
+            if (!groupRef) {
                 return { stroke: 'black', strokeWidth: 2 };
             }
 
-            const calculatedHeight = timelineHeight * groupChild.scale;
+            const calculatedHeight = timelineHeight * childScale;
 
             return {
                 height: calculatedHeight,
                 stroke: 'blue',
                 strokeWidth: 4
             };
-        }, [groupChild, timelineHeight]);
+        }, [childScale, groupRef, timelineHeight]);
 
         // Component Render
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
@@ -181,22 +182,23 @@ const SoundEventElement = React.memo(
             [handleDragEnd]
         );
 
-        const isFirstInGroup = groupChild?.index === 0;
-        const isNotInGroup = !groupChild;
+        const isFirstInGroup = index === 0;
+        const isNotInGroup = !groupRef;
+
+        // console.log('group parent', groupRef?.parentRef);
 
         return (
             <Portal selector=".top-layer" enabled={isDragging}>
                 <Group
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                     onContextMenu={handleContextClick}
-                    ref={groupRef}
+                    ref={elementContainerRef}
                     key={index}
                     y={isDragging ? timelineY : 0}
                     x={elementXPosition}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
-                    data-group-child={groupChild}
+                    data-group-child={groupRef}
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragMove={handleDragMove}
@@ -243,7 +245,7 @@ const SoundEventElement = React.memo(
 // Prop Types and Default Props
 SoundEventElement.propTypes = {
     canvasOffsetY: PropTypes.number.isRequired,
-    groupChild: PropTypes.bool,
+    groupRef: PropTypes.bool,
     index: PropTypes.number.isRequired,
     isFocused: PropTypes.bool,
     isTargeted: PropTypes.bool,
@@ -264,7 +266,7 @@ SoundEventElement.propTypes = {
 };
 
 SoundEventElement.defaultProps = {
-    groupChild: false,
+    groupRef: false,
     isFocused: false,
     isTargeted: false
 };

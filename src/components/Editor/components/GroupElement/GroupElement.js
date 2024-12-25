@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useRef } from 'react';
-import { Group } from 'react-konva';
+import { Group, Text } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
@@ -17,11 +17,11 @@ export const GroupElement = React.memo(
         timelineY
     }) => {
         const groupRef = useRef();
-        const { id, locked, overlapGroup, startTime } = groupData;
+        const { elements, id, locked, overlapGroup, startTime } = groupData;
 
         const groupX = startTime * pixelToSecondRatio || 100;
 
-        const groupEvents = Object.values(overlapGroup).sort((a, b) => {
+        const groupEvents = Object.values(elements).sort((a, b) => {
             return a.startTime - b.startTime;
         });
         const groupLength = groupEvents.length;
@@ -53,10 +53,8 @@ export const GroupElement = React.memo(
                                 handleDragMove={handleDragMove}
                                 isElementBeingDragged={isElementBeingDragged}
                                 // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-                                groupChild={{
-                                    index,
-                                    scale: (index + 1) / groupLength
-                                }}
+                                childScale={(index + 1) / groupLength}
+                                groupRef={groupRef.current}
                             />
                         );
                     })}

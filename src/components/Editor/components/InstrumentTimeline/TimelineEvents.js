@@ -93,7 +93,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
 
             {/* Render existing SoundEventElements */}
             {Object.values(eventGroups).map((groupData, index) => {
-                if (!groupData.overlapGroup) {
+                if (!groupData?.elements) {
                     return (
                         <SoundEventElement
                             key={index}

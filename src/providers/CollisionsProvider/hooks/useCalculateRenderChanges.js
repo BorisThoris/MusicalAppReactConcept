@@ -17,9 +17,11 @@ export const useCalculateRenderChanges = ({ findOverlaps, getProcessedElements, 
 
         const groupRectsData = groups.map((group) => ({
             data: group.group.attrs['data-overlap-group'],
+            // Include data-overlap-group attributes
+            group: group.group,
             id: group.group.attrs['data-overlap-group'].id,
             rect: group.group.getClientRect(),
-            type: 'group' // Include data-overlap-group attributes
+            type: 'group'
         }));
 
         return [...elementRectsData, ...groupRectsData];
@@ -31,21 +33,15 @@ export const useCalculateRenderChanges = ({ findOverlaps, getProcessedElements, 
             const prevRect = prevRectsRef.current[index];
             if (!prevRect) return true; // New rect
 
-            const isDifferent =
-                rect.id !== prevRect.id || // ID changed
-                rect.type !== prevRect.type || // Type changed
-                rect.rect.x !== prevRect.rect.x || // X position changed
-                rect.rect.y !== prevRect.rect.y || // Y position changed
-                rect.rect.width !== prevRect.rect.width || // Width changed
-                rect.rect.height !== prevRect.rect.height || // Height changed
-                JSON.stringify(rect.data) !== JSON.stringify(prevRect.data); // Data attributes changed
+            const isDifferent = JSON.stringify(rect) !== JSON.stringify(prevRect); // Data attributes changed
 
             return isDifferent;
         });
 
         if (hasChanges) {
+            console.log('FIND OVERLAPS');
             findOverlaps();
-            prevRectsRef.current = elementRects; // Update the previous rects
+            prevRectsRef.current = elementRects;
         }
     }, [elementRects, findOverlaps]);
 };

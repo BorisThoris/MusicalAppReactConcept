@@ -31,21 +31,29 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [updateTimelineRefs]
     );
 
-    const findAllSoundEventElements = useCallback(() => {
-        if (!stageRef?.current) return [];
-        return stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
-    }, [stageRef]);
+    const findAllSoundEventElements = useCallback(
+        (parentGroup) => {
+            if (parentGroup) {
+                return parentGroup.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+            }
+
+            if (!stageRef?.current) return [];
+            return stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+        },
+        [stageRef]
+    );
 
     // New method to get all groups
     const getAllGroups = useCallback(() => {
         if (!stageRef?.current) return [];
+
         return stageRef.current.find((node) => node.id().startsWith('overlap-group-'));
     }, [stageRef]);
 
     const getSoundEventById = useCallback(
         (id) => {
             if (stageRef?.current) {
-                const elements = stageRef.current.find((node) => node.id().startsWith(`${ELEMENT_ID_PREFIX}${id}`));
+                const elements = stageRef.current?.find((node) => node.id().startsWith(`${ELEMENT_ID_PREFIX}${id}`));
                 const element = elements ? find(elements, (node) => node.id() === `${ELEMENT_ID_PREFIX}${id}`) : null;
 
                 if (element) {
@@ -75,39 +83,47 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [stageRef]
     );
 
-    const getProcessedElements = useCallback(() => {
-        if (!stageRef?.current) return [];
+    const getProcessedElements = useCallback(
+        (parentGroup) => {
+            if (!stageRef?.current) return [];
 
-        const elements = findAllSoundEventElements();
-        const seenElementIds = new Set();
+            const elements = findAllSoundEventElements(parentGroup);
+            const seenElementIds = new Set();
 
-        return reduce(
-            elements,
-            (acc, element) => {
-                if (!seenElementIds.has(element.id())) {
-                    const { height, width, x, y } = element.getClientRect();
-                    const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
-                    const recording = get(element, "attrs['data-recording']", {});
-                    const timelineY = get(element, 'parent.attrs.timelineY', 0);
+            return reduce(
+                elements,
+                (acc, element) => {
+                    if (!seenElementIds.has(element.id())) {
+                        const { height, width, x, y } = element.getClientRect();
+                        const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
+                        const recording = get(element, "attrs['data-recording']", {});
+                        const grouped = get(element, "attrs['data-group-child']", false);
 
-                    acc.push({
-                        element,
-                        height,
-                        instrumentName,
-                        recording,
-                        timelineY,
-                        width,
-                        x,
-                        y
-                    });
+                        const timelineY = get(element, 'parent.attrs.timelineY', 0);
 
-                    seenElementIds.add(element.id());
-                }
-                return acc;
-            },
-            []
-        );
-    }, [findAllSoundEventElements, stageRef]);
+                        if (grouped && !parentGroup) return acc;
+
+                        acc.push({
+                            element,
+                            height,
+                            instrumentName,
+                            recording,
+                            rect: { height, width, x, y },
+                            timelineY,
+                            width,
+                            x,
+                            y
+                        });
+
+                        seenElementIds.add(element.id());
+                    }
+                    return acc;
+                },
+                []
+            );
+        },
+        [findAllSoundEventElements, stageRef]
+    );
 
     // New method to process groups
     const getProcessedGroups = useCallback(() => {
@@ -116,35 +132,34 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         const groups = getAllGroups();
         const seenGroupIds = new Set();
 
-        return reduce(
-            groups,
-            (acc, group) => {
-                if (!seenGroupIds.has(group.id())) {
-                    if (!group.getClientRect) return acc;
+        const processedGroups = groups.reduce((acc, group) => {
+            if (!seenGroupIds.has(group.id())) {
+                if (!group.getClientRect) return acc;
 
-                    const clientRect = group.getClientRect();
+                const clientRect = group.getClientRect();
+                const { height, width, x, y } = clientRect;
 
-                    const { height, width, x, y } = clientRect;
+                // Extract group attributes safely
+                const groupData = { ...group.attrs['data-overlap-group'] }; // Clone to avoid mutation
 
-                    const groupData = group.attrs['data-overlap-group'] || {};
-                    const timelineY = get(group, 'attrs.timelineY', 0);
-
-                    acc.push({
+                // Push a new object into the accumulator
+                return [
+                    ...acc,
+                    {
                         group,
-                        groupData,
-                        height,
-                        timelineY,
-                        width,
-                        x,
-                        y
-                    });
+                        ...groupData,
+                        rect: { height, width, x, y }
+                    }
+                ];
+            }
 
-                    seenGroupIds.add(group.id());
-                }
-                return acc;
-            },
-            []
-        );
+            // Add group ID to the seen set (mutating Set is acceptable here)
+            seenGroupIds.add(group.id());
+
+            return acc;
+        }, []);
+
+        return processedGroups;
     }, [getAllGroups, stageRef]);
 
     const getProcessedItems = useCallback(() => {
