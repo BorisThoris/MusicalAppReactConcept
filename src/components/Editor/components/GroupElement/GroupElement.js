@@ -13,11 +13,12 @@ export const GroupElement = React.memo(
         handleDragEnd,
         handleDragMove,
         handleDragStart,
+        instrumentName,
         isElementBeingDragged,
         timelineY
     }) => {
         const groupRef = useRef();
-        const { elements, id, locked, overlapGroup, startTime } = groupData;
+        const { elements, id, locked, startTime } = groupData;
 
         const groupX = startTime * pixelToSecondRatio || 100;
 

@@ -1,11 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useOverlaps } from '../../components/Editor/components/InstrumentTimeline/useOverlaps';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useBeats } from './hooks/useBeats';
 import { useCalculateRenderChanges } from './hooks/useCalculateRenderChanges';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useOverlaps } from './hooks/useOverlaps';
+import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
 
@@ -56,13 +57,13 @@ export const CollisionsProvider = ({ children }) => {
 
     const previousBeat = useRef(overlapGroups);
 
-    const { findGroupForEvent, findOverlaps, processBeat } = useOverlaps({
-        getProcessedElements,
-        getProcessedGroups,
+    const { processBeat } = useProcessBeat({ getProcessedElements, getProcessedGroups, timelineRefs });
+
+    const { findGroupForEvent, findOverlaps } = useOverlaps({
         overlapGroups,
         previousBeat,
-        setOverlapGroups,
-        timelineRefs
+        processBeat,
+        setOverlapGroups
     });
 
     const [beats, saveBeatsToLocalStorage] = useBeats();
