@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useRef } from 'react';
-import { Group, Text } from 'react-konva';
+import { Group } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
@@ -13,7 +13,6 @@ export const GroupElement = React.memo(
         handleDragEnd,
         handleDragMove,
         handleDragStart,
-        instrumentName,
         isElementBeingDragged,
         timelineY
     }) => {

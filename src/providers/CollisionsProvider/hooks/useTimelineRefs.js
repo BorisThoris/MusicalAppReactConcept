@@ -8,7 +8,7 @@ import { useCallback, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
-    const [timelineRefs, setTimelineRefs] = useState({});
+    const [timelineRefs, setTimelineRefs] = useState([]);
     const [stageRef, setStageRef] = useState(null);
 
     const updateTimelineRefs = useCallback((updateFn) => {
@@ -34,11 +34,19 @@ export const useTimelineRefs = ({ setHasChanged }) => {
     const findAllSoundEventElements = useCallback(
         (parentGroup) => {
             if (parentGroup) {
+                // Find elements within the given parent group
                 return parentGroup.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
             }
 
-            if (!stageRef?.current) return [];
-            return stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+            if (!stageRef?.current) {
+                // Return empty array if stage reference is not available
+                return [];
+            }
+
+            // Find all matching elements within the entire stage
+            const stageElements = stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+
+            return stageElements;
         },
         [stageRef]
     );
@@ -85,15 +93,27 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const getProcessedElements = useCallback(
         (parentGroup) => {
-            if (!stageRef?.current) return [];
-
             const elements = findAllSoundEventElements(parentGroup);
+            const idCount = {};
+
+            // Count occurrences of each id
+            elements.forEach((element) => {
+                const id = element.id();
+                idCount[id] = (idCount[id] || 0) + 1;
+            });
+
             const seenElementIds = new Set();
 
             return reduce(
                 elements,
                 (acc, element) => {
-                    if (!seenElementIds.has(element.id())) {
+                    const id = element.id();
+                    if (idCount[id] > 1 && !seenElementIds.has(id)) {
+                        // Log the element if it has duplicates
+                        alert('Duplicate element:', element.attrs['data-recording'].instrumentName);
+                    }
+
+                    if (!seenElementIds.has(id)) {
                         const { height, width, x, y } = element.getClientRect();
                         const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
                         const recording = get(element, "attrs['data-recording']", {});
@@ -115,14 +135,14 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                             y
                         });
 
-                        seenElementIds.add(element.id());
+                        seenElementIds.add(id);
                     }
                     return acc;
                 },
                 []
             );
         },
-        [findAllSoundEventElements, stageRef]
+        [findAllSoundEventElements]
     );
 
     // New method to process groups
@@ -244,14 +264,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         return [...processedElements, ...processedGroups];
     }, [findAllSoundEventElements, getAllGroups, stageRef]);
 
-    // New method to get all elements for a specific timeline (by instrumentName)
-    const getElementsForTimeline = useCallback(
-        (instrumentName) => {
-            return getProcessedElements().filter((el) => el.instrumentName === instrumentName);
-        },
-        [getProcessedElements]
-    );
-
     const clearElements = useCallback((elements) => {
         elements.forEach((element) => {
             if (element) {
@@ -294,7 +306,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllTimelines,
         findAllSoundEventElements,
         getAllGroups,
-        getElementsForTimeline,
+
         getProcessedElements,
         getProcessedGroups,
         getProcessedItems,

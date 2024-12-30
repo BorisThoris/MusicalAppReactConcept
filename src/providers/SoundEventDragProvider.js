@@ -1,4 +1,3 @@
-import set from 'lodash/set';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
@@ -73,6 +72,7 @@ export const SoundEventDragProvider = ({ children }) => {
         (el) => {
             el.evt.stopPropagation(); // Stop event bubbling
             el.target.moveToTop();
+
             const recordingId = el.target.attrs['data-recording']?.id;
             if (recordingId && !isItemSelected(recordingId)) {
                 clearSelection();
@@ -193,17 +193,12 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
         const closestTimelineInstrumentName = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown Timeline';
+
         const recording = element.attrs['data-recording'];
-        if (recording) {
-            recording.instrumentName = closestTimelineInstrumentName;
-            element.setAttr('data-recording', recording);
-        }
+        recording.instrumentName = closestTimelineInstrumentName;
+        element.setAttr('data-recording', recording);
 
         closestTimeline.getLayer().batchDraw();
-    }, []);
-
-    const handleGroupDragEnd = useCallback(() => {
-        alert('yo');
     }, []);
 
     const handleDragEnd = useCallback(
@@ -235,11 +230,10 @@ export const SoundEventDragProvider = ({ children }) => {
                 if (closestTimeline) {
                     insertElementIntoTimeline({ closestTimeline, element });
                     updateStartTimeForElement({ element });
-                } else {
-                    console.warn('No closest timeline found');
                 }
 
-                element.clearCache(); // Clear cache to avoid stale position
+                element.clearCache();
+                element.draw();
             };
 
             if (Object.keys(selectedItems).length > 0) {

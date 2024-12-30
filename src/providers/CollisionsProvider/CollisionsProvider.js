@@ -1,8 +1,8 @@
+import isEqual from 'lodash/isEqual';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useBeats } from './hooks/useBeats';
-import { useCalculateRenderChanges } from './hooks/useCalculateRenderChanges';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useOverlaps } from './hooks/useOverlaps';
@@ -11,22 +11,6 @@ import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
 
 export const CollisionsContext = createContext();
-
-function findDifferences(obj1, obj2, parentKey = '') {
-    if (obj1 === obj2) return;
-
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
-        console.log(`Difference at ${parentKey}:`, obj1, obj2);
-        return;
-    }
-
-    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-    // eslint-disable-next-line no-restricted-syntax
-    for (const key of allKeys) {
-        const newKey = parentKey ? `${parentKey}.${key}` : key;
-        findDifferences(obj1[key], obj2[key], newKey);
-    }
-}
 
 export const CollisionsProvider = ({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
@@ -40,7 +24,6 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
-        getElementsForTimeline,
         getProcessedElements,
         getProcessedGroups,
         getSoundEventById,
@@ -56,17 +39,28 @@ export const CollisionsProvider = ({ children }) => {
     });
 
     const previousBeat = useRef(overlapGroups);
+    const prevProcessBeatResultRef = useRef(null);
 
     const { processBeat } = useProcessBeat({ getProcessedElements, getProcessedGroups, timelineRefs });
+    const currentBeat = processBeat();
 
     const { findGroupForEvent, findOverlaps } = useOverlaps({
+        currentBeat,
         overlapGroups,
         previousBeat,
-        processBeat,
         setOverlapGroups
     });
 
     const [beats, saveBeatsToLocalStorage] = useBeats();
+
+    useEffect(() => {
+        const prevBeat = prevProcessBeatResultRef.current;
+
+        if (!isEqual(prevBeat, currentBeat)) {
+            findOverlaps();
+            prevProcessBeatResultRef.current = currentBeat;
+        }
+    }, [currentBeat, findOverlaps]);
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
     const calculateFurthestEndTime = () => {
@@ -92,7 +86,7 @@ export const CollisionsProvider = ({ children }) => {
 
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
         overlapGroups,
-        processBeat,
+        processBeat: () => {},
         setOverlapGroups,
         stageRef
     });
@@ -131,10 +125,7 @@ export const CollisionsProvider = ({ children }) => {
         [overlapGroups]
     );
 
-    useCalculateRenderChanges({ findOverlaps, getProcessedElements, getProcessedGroups });
-
-    console.log('OVERLAP GROUPS ');
-    console.log(overlapGroups);
+    console.log('OVERLAP GROUPS: ', overlapGroups);
 
     const contextValue = useMemo(
         () => ({
@@ -151,14 +142,14 @@ export const CollisionsProvider = ({ children }) => {
             findAllSoundEventElements,
             findGroupForEvent,
             furthestEndTime,
-            getElementsForTimeline,
+
             getProcessedElements,
             getSoundEventById,
             hasChanged,
             history,
             loadFromLocalStorage,
             overlapGroups,
-            processBeat,
+
             pushToHistory,
             redo,
             redoHistory,
@@ -189,14 +180,14 @@ export const CollisionsProvider = ({ children }) => {
             findAllSoundEventElements,
             findGroupForEvent,
             furthestEndTime,
-            getElementsForTimeline,
+
             getProcessedElements,
             getSoundEventById,
             hasChanged,
             history,
             loadFromLocalStorage,
             overlapGroups,
-            processBeat,
+
             pushToHistory,
             redo,
             redoHistory,

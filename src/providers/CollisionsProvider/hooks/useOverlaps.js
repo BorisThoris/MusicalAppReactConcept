@@ -3,10 +3,8 @@
 import { useCallback } from 'react';
 import { useFindOverlaps } from './useFindOverlaps';
 
-export const useOverlaps = ({ overlapGroups, previousBeat, processBeat, setOverlapGroups }) => {
-    const processedData = processBeat();
-
-    const { findOverlaps } = useFindOverlaps({ previousBeat, processedData, setOverlapGroups });
+export const useOverlaps = ({ currentBeat, overlapGroups, previousBeat, setOverlapGroups }) => {
+    const { findOverlaps } = useFindOverlaps({ previousBeat, processedData: currentBeat, setOverlapGroups });
 
     const findGroupForEvent = useCallback(
         (id) => {
@@ -25,5 +23,5 @@ export const useOverlaps = ({ overlapGroups, previousBeat, processBeat, setOverl
         [overlapGroups]
     );
 
-    return { findGroupForEvent, findOverlaps, processBeat };
+    return { findGroupForEvent, findOverlaps };
 };

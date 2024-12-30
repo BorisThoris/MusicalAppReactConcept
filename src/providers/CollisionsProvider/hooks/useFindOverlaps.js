@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-restricted-syntax */
+import isEqual from 'lodash/isEqual';
 import { useCallback } from 'react';
 // Assume utility functions are modularized
 
@@ -111,8 +112,8 @@ export const useFindOverlaps = ({ previousBeat, processedData, setOverlapGroups 
     const findOverlaps = useCallback(() => {
         if (!processedData) return;
 
-        const allElements = Object.entries(processedData).flatMap(([timeline, events]) => {
-            return Object.values(events).map((event) => ({ ...event, timeline }));
+        const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) => {
+            return Object.values(events).map((event) => ({ ...event, instrumentName }));
         });
 
         const { parent, rank } = initializeUnionFind(allElements);
@@ -135,25 +136,25 @@ export const useFindOverlaps = ({ previousBeat, processedData, setOverlapGroups 
         });
 
         const tempGroups = allElements.reduce((groups, currentElement) => {
-            const { id, timeline } = currentElement;
+            const { id, instrumentName } = currentElement;
             const rootId = find(parent, id);
 
-            if (!groups[timeline]) groups[timeline] = {};
-            if (!groups[timeline][rootId]) {
-                groups[timeline][rootId] = {
+            if (!groups[instrumentName]) groups[instrumentName] = {};
+            if (!groups[instrumentName][rootId]) {
+                groups[instrumentName][rootId] = {
                     elements: {},
                     ids: new Set()
                 };
             }
 
-            groups[timeline][rootId].ids.add(id);
-            groups[timeline][rootId].elements[id] = currentElement;
+            groups[instrumentName][rootId].ids.add(id);
+            groups[instrumentName][rootId].elements[id] = currentElement;
 
             return groups;
         }, {});
 
-        const finalGroups = Object.entries(tempGroups).reduce((result, [timeline, groups]) => {
-            result[timeline] = Object.entries(groups).reduce((acc, [rootId, group]) => {
+        const finalGroups = Object.entries(tempGroups).reduce((result, [instrumentName, groups]) => {
+            result[instrumentName] = Object.entries(groups).reduce((acc, [rootId, group]) => {
                 const idsArray = Array.from(group.ids);
 
                 if (idsArray.length === 1) {
@@ -168,25 +169,21 @@ export const useFindOverlaps = ({ previousBeat, processedData, setOverlapGroups 
                         ...group,
                         endTime,
                         id: rootId,
-                        instrumentName: timeline,
+                        instrumentName,
                         length,
                         startTime
                     };
                 }
                 return acc;
             }, {});
+
             return result;
         }, {});
 
-        setOverlapGroups((prevGroups) => {
-            const mergedGroups = { ...prevGroups, ...finalGroups };
-
-            if (JSON.stringify(previousBeat.current) !== JSON.stringify(mergedGroups)) {
-                previousBeat.current = mergedGroups;
-                return mergedGroups;
-            }
-            return prevGroups;
-        });
+        if (!isEqual(previousBeat.current, finalGroups)) {
+            previousBeat.current = finalGroups;
+            setOverlapGroups(finalGroups);
+        }
     }, [processedData, setOverlapGroups, previousBeat]);
 
     return { findOverlaps, isOverlapping };

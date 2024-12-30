@@ -95,6 +95,10 @@ const SoundEventElement = React.memo(
             elementContainerRef.current.setAttrs({
                 'data-recording': updatedState
             });
+
+            console.log(' elementContainerRef.current', elementContainerRef.current.attrs['data-recording']);
+
+            elementContainerRef.current.draw();
         }, []);
 
         const handleDelete = useCallback(() => {
@@ -231,6 +235,8 @@ const SoundEventElement = React.memo(
                         {...dynamicStyle}
                     />
                     <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
+
+                    <Text x={5} y={25} text={`${id}`} fill="black" fontSize={15} listening={false} />
 
                     {isNotInGroup && <Lock isLocked={locked} onClick={onLockSoundEventElement} />}
 

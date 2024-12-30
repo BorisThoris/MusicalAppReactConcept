@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import { isEqual } from 'lodash';
+import { useCallback, useRef } from 'react';
 import { createEvent } from '../../../globalHelpers/createSound';
 import { isOverlapping } from './useFindOverlaps';
 
@@ -32,7 +33,6 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
 
         if (orphanElements.length > 0) {
             // Update the group attributes with filtered elements
-
             overlapGroup.group.setAttrs({
                 ...overlapGroup.group.attrs,
                 'data-overlap-group': {
@@ -47,13 +47,26 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
 };
 
 export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timelineRefs }) => {
+    const prevElementsRef = useRef(null);
+    const prevGroupsRef = useRef(null);
+    const prevResultRef = useRef(null);
+
     const processBeat = useCallback(() => {
         const processedElements = getProcessedElements();
         const processedGroups = getProcessedGroups();
 
-        const { orphanElements } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
+        // Compare with previous elements and groups
+        const elementsChanged = !prevElementsRef.current || !isEqual(processedElements, prevElementsRef.current);
+        const groupsChanged = !prevGroupsRef.current || !isEqual(processedGroups, prevGroupsRef.current);
 
-        // Sort processed
+        if (!elementsChanged && !groupsChanged) {
+            return prevResultRef.current; // Return the cached result if no changes
+        }
+
+        prevElementsRef.current = processedElements;
+        prevGroupsRef.current = processedGroups;
+
+        const { orphanElements } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
         const allElements = [...processedElements, ...orphanElements];
 
@@ -63,7 +76,6 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return a.recording.id - b.recording.id;
         });
 
-        // Build the structured object to save
         const objToSave = sortedElements.reduce((acc, { element, recording }) => {
             const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
 
@@ -75,18 +87,14 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return acc;
         }, {});
 
-        // Include all timelines from timelineRefs
         Object.keys(timelineRefs).forEach((timelineName) => {
             if (!objToSave[timelineName]) {
                 objToSave[timelineName] = {};
             }
         });
 
-        console.log('processedGroups', processedGroups);
-
-        // Persist processed groups
         processedGroups.forEach((ovrlpGrp) => {
-            const instrumentName = ovrlpGrp?.instrumentName || 'sadec batec';
+            const instrumentName = ovrlpGrp?.instrumentName || 'FALL BACK TIMELINE VALUE';
             const hasElements = Object.keys(ovrlpGrp.group?.attrs['data-overlap-group'].elements || {}).length > 0;
 
             if (!objToSave[instrumentName]) {
@@ -109,6 +117,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             };
         });
 
+        prevResultRef.current = objToSave; // Cache the result
         return objToSave;
     }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 

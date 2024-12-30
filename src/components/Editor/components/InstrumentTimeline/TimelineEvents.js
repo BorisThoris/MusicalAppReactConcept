@@ -10,20 +10,13 @@ import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
     const { timelineState } = useContext(TimelineContext);
-    const { addTimelineRef, findGroupForEvent, removeTimelineRef } = useContext(CollisionsContext);
+    const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
     const { dragBoundFunc, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } =
         useContext(SoundEventDragContext);
     const { paintEvent, paintingTarget } = usePaintings();
 
     const timelineRef = useRef();
     const [paintedEvents, setPaintedEvents] = useState([]);
-
-    const handleDragEndWithOverlapCheck = useCallback(
-        (e) => {
-            handleDragEnd(e);
-        },
-        [handleDragEnd]
-    );
 
     // Add timeline reference for collision detection
     useLayoutEffect(() => {
@@ -32,6 +25,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
             currentTimelineRef.timelineY = timelineY;
             addTimelineRef(`${instrumentName}`, currentTimelineRef);
         }
+
         return () => {
             if (currentTimelineRef) {
                 removeTimelineRef(instrumentName);
@@ -68,7 +62,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                 recording={event}
                 index={index}
                 timelineY={event.timelineY}
-                handleDragEnd={handleDragEndWithOverlapCheck}
+                handleDragEnd={handleDragEnd}
                 handleDragStart={handleDragStart}
                 dragBoundFunc={dragBoundFunc}
                 handleDragMove={handleDragMove}
@@ -101,7 +95,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                             recording={groupData}
                             index={index}
                             timelineY={timelineY}
-                            handleDragEnd={handleDragEndWithOverlapCheck}
+                            handleDragEnd={handleDragEnd}
                             handleDragStart={handleDragStart}
                             dragBoundFunc={dragBoundFunc}
                             handleDragMove={handleDragMove}
@@ -114,14 +108,12 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                     <GroupElement
                         key={index}
                         groupData={groupData}
-                        index={index}
                         timelineY={timelineY}
-                        handleDragEnd={handleDragEndWithOverlapCheck}
+                        handleDragEnd={handleDragEnd}
                         handleDragStart={handleDragStart}
                         dragBoundFunc={dragBoundFunc}
                         handleDragMove={handleDragMove}
                         isElementBeingDragged={isElementBeingDragged}
-                        findGroupForEvent={findGroupForEvent}
                     />
                 );
             })}
