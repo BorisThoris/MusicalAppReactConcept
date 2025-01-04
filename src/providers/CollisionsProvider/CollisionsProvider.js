@@ -5,10 +5,10 @@ import { PanelContext } from '../../hooks/usePanelState';
 import { useBeats } from './hooks/useBeats';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { useOverlaps } from './hooks/useOverlaps';
 import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
+import { findOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
@@ -27,6 +27,7 @@ export const CollisionsProvider = ({ children }) => {
         getProcessedElements,
         getProcessedGroups,
         getSoundEventById,
+        removeStageRef,
         removeTimelineRef,
         stageRef,
         timelineRefs
@@ -38,29 +39,28 @@ export const CollisionsProvider = ({ children }) => {
         setOverlapGroups
     });
 
-    const previousBeat = useRef(overlapGroups);
     const prevProcessBeatResultRef = useRef(null);
 
     const { processBeat } = useProcessBeat({ getProcessedElements, getProcessedGroups, timelineRefs });
-    const currentBeat = processBeat();
-
-    const { findGroupForEvent, findOverlaps } = useOverlaps({
-        currentBeat,
-        overlapGroups,
-        previousBeat,
-        setOverlapGroups
-    });
 
     const [beats, saveBeatsToLocalStorage] = useBeats();
 
-    useEffect(() => {
-        const prevBeat = prevProcessBeatResultRef.current;
+    const currentBeat = useRef(processBeat());
 
-        if (!isEqual(prevBeat, currentBeat)) {
-            findOverlaps();
-            prevProcessBeatResultRef.current = currentBeat;
-        }
-    }, [currentBeat, findOverlaps]);
+    const updateBeatRef = useCallback(() => {
+        currentBeat.current = processBeat();
+    }, [processBeat]);
+
+    const prevBeat = prevProcessBeatResultRef.current;
+    const beatDiff = !isEqual(prevBeat, currentBeat.current);
+
+    if (beatDiff) {
+        console.log('yo');
+        console.log('CurrentBeat', currentBeat.current);
+
+        setOverlapGroups(findOverlaps(currentBeat.current));
+        prevProcessBeatResultRef.current = currentBeat.current;
+    }
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
     const calculateFurthestEndTime = () => {
@@ -140,19 +140,18 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             deleteAllTimelines,
             findAllSoundEventElements,
-            findGroupForEvent,
             furthestEndTime,
-
             getProcessedElements,
             getSoundEventById,
             hasChanged,
             history,
             loadFromLocalStorage,
             overlapGroups,
-
+            processBeat,
             pushToHistory,
             redo,
             redoHistory,
+            removeStageRef,
             removeTimelineRef,
             saveBeatsToLocalStorage,
             saveToLocalStorage,
@@ -165,6 +164,7 @@ export const CollisionsProvider = ({ children }) => {
             timelineRefs,
             totalDurationInPixels,
             undo,
+            updateBeatRef,
             updateCurrentBeat
         }),
         [
@@ -178,16 +178,14 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllElements,
             deleteAllTimelines,
             findAllSoundEventElements,
-            findGroupForEvent,
             furthestEndTime,
-
             getProcessedElements,
             getSoundEventById,
+            updateBeatRef,
             hasChanged,
             history,
             loadFromLocalStorage,
             overlapGroups,
-
             pushToHistory,
             redo,
             redoHistory,
@@ -201,7 +199,9 @@ export const CollisionsProvider = ({ children }) => {
             undo,
             updateCurrentBeat,
             beats,
-            saveBeatsToLocalStorage
+            saveBeatsToLocalStorage,
+            removeStageRef,
+            processBeat
         ]
     );
 

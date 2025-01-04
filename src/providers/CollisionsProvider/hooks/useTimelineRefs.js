@@ -4,32 +4,34 @@ import find from 'lodash/find';
 import omit from 'lodash/omit';
 import reduce from 'lodash/reduce';
 import set from 'lodash/set';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
-    const [timelineRefs, setTimelineRefs] = useState([]);
-    const [stageRef, setStageRef] = useState(null);
+    const timelineRefs = useRef({});
 
-    const updateTimelineRefs = useCallback((updateFn) => {
-        setTimelineRefs((prevRefs) => updateFn(prevRefs));
+    const addTimelineRef = useCallback((instrumentName, ref) => {
+        timelineRefs.current = set({ ...timelineRefs.current }, instrumentName, ref);
     }, []);
 
-    const addStageRef = useCallback(setStageRef, [setStageRef]);
+    const removeTimelineRef = useCallback((instrumentName) => {
+        timelineRefs.current = omit(timelineRefs.current, instrumentName);
+    }, []);
 
-    const addTimelineRef = useCallback(
-        (instrumentName, ref) => {
-            updateTimelineRefs((prevRefs) => set({ ...prevRefs }, instrumentName, ref));
+    const stageRefRef = useRef(null);
+
+    const addStageRef = useCallback(
+        (ref) => {
+            stageRefRef.current = ref;
         },
-        [updateTimelineRefs]
+        [stageRefRef]
     );
 
-    const removeTimelineRef = useCallback(
-        (instrumentName) => {
-            updateTimelineRefs((prevRefs) => omit(prevRefs, instrumentName));
-        },
-        [updateTimelineRefs]
-    );
+    const removeStageRef = useCallback(() => {
+        stageRefRef.current = null;
+    }, []);
+
+    const stageRef = stageRefRef.current;
 
     const findAllSoundEventElements = useCallback(
         (parentGroup) => {
@@ -44,7 +46,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             }
 
             // Find all matching elements within the entire stage
-            const stageElements = stageRef.current.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+            const stageElements = stageRef.current?.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
 
             return stageElements;
         },
@@ -284,7 +286,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
         const elements = findAllSoundEventElements();
         clearElements(elements);
-        setTimelineRefs({});
+        timelineRefs.current = {};
         setHasChanged(true);
     }, [stageRef, findAllSoundEventElements, clearElements, setHasChanged]);
 
@@ -295,7 +297,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         }
 
         clearElements(findAllSoundEventElements());
-        setTimelineRefs({});
+        timelineRefs.current = {};
         setHasChanged(true);
     }, [stageRef, clearElements, findAllSoundEventElements, setHasChanged]);
 
@@ -306,11 +308,11 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllTimelines,
         findAllSoundEventElements,
         getAllGroups,
-
         getProcessedElements,
         getProcessedGroups,
         getProcessedItems,
         getSoundEventById,
+        removeStageRef,
         removeTimelineRef,
         stageRef,
         timelineRefs

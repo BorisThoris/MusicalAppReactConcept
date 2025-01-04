@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash';
 import { useCallback, useRef } from 'react';
 import { createEvent } from '../../../globalHelpers/createSound';
-import { isOverlapping } from './useFindOverlaps';
+import { isOverlapping } from '../overlapHelpers';
 
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
@@ -60,6 +60,8 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         const groupsChanged = !prevGroupsRef.current || !isEqual(processedGroups, prevGroupsRef.current);
 
         if (!elementsChanged && !groupsChanged) {
+            console.log('No Diff');
+
             return prevResultRef.current; // Return the cached result if no changes
         }
 

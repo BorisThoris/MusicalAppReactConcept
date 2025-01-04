@@ -60,7 +60,7 @@ export const useInstrumentRecordingsOperations = () => {
                     set(soundEvent.element, 'attrs.data-recording', recordingData);
 
                     // Trigger a redraw by Konva
-                    soundEvent.element.getLayer().batchDraw();
+                    soundEvent.element.draw();
                 }
             }
         },

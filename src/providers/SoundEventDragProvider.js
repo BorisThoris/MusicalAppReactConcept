@@ -20,25 +20,29 @@ export const SoundEventDragProvider = ({ children }) => {
             x: element.x(),
             y: element.y()
         });
-        element.getLayer().batchDraw(); // Force re-render
     }, []);
 
     const updateStartTimeForElement = useCallback(({ element }) => {
-        if (!element) return;
+        const recording = element.attrs?.['data-recording'];
 
-        const recording = element.attrs['data-recording'];
-        if (!recording) return;
-
+        // Calculate new start and end times
         const newStartTime = element.x() / pixelToSecondRatio;
         const newEndTime = newStartTime + recording.eventLength;
 
+        // Check if there's an actual change before proceeding
+        if (recording.startTime === newStartTime && recording.endTime === newEndTime) {
+            return;
+        }
+
+        // Create an updated recording object
         const updatedRecording = {
             ...recording,
             endTime: newEndTime,
             startTime: newStartTime
         };
 
-        const group = element.attrs['data-group-child'];
+        // Update the group data if applicable
+        const group = element.attrs?.['data-group-child'];
         if (group) {
             const groupElements = group.attrs?.['data-overlap-group']?.elements;
 
@@ -47,20 +51,18 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 if (foundRecording) {
                     groupElements[recording.id] = updatedRecording;
-
-                    console.log('Updated groupElements:', groupElements);
                 }
-            } else {
-                // eslint-disable-next-line no-alert
-                alert('Overlap group data not found.');
             }
         }
 
+        // Update the element attributes
         element.setAttr('data-recording', updatedRecording);
 
+        // Update the text node, if it exists
         const textNode = element.findOne('Text');
         if (textNode) {
             textNode.setAttr('text', `Start: ${newStartTime.toFixed(2)}s`);
+            textNode.setAttr('y', `60`);
         }
 
         console.log(
@@ -197,7 +199,6 @@ export const SoundEventDragProvider = ({ children }) => {
         const recording = element.attrs['data-recording'];
         recording.instrumentName = closestTimelineInstrumentName;
         element.setAttr('data-recording', recording);
-
         closestTimeline.getLayer().batchDraw();
     }, []);
 
@@ -205,10 +206,6 @@ export const SoundEventDragProvider = ({ children }) => {
         (e) => {
             const stage = e.target.getStage();
             if (!stage) return;
-
-            if (dragRequestRef.current) {
-                cancelAnimationFrame(dragRequestRef.current);
-            }
 
             const finalizeDrag = (element) => {
                 const elementBox = element.getAbsolutePosition();
@@ -232,8 +229,8 @@ export const SoundEventDragProvider = ({ children }) => {
                     updateStartTimeForElement({ element });
                 }
 
-                element.clearCache();
-                element.draw();
+                const layer = element.getLayer();
+                layer.draw();
             };
 
             if (Object.keys(selectedItems).length > 0) {
