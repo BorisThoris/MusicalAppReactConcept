@@ -1,3 +1,4 @@
+import cloneDeep from 'lodash/cloneDeep';
 import React, { useCallback, useContext, useMemo } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
@@ -114,7 +115,7 @@ export const SelectionsPanel = () => {
                 const updatedValues = { ...selectedValues };
 
                 Object.entries(updatedValues).forEach(([key, { element }]) => {
-                    const oldRecording = element.attrs['data-recording'];
+                    const oldRecording = cloneDeep(element.attrs['data-recording']);
 
                     if (id && oldRecording.id !== id) {
                         return;
@@ -130,6 +131,7 @@ export const SelectionsPanel = () => {
                         };
 
                         element.setAttr('data-recording', newRecording);
+                        element.getLayer().draw();
 
                         updateSelectedItemById(oldRecording.id, {
                             endTime: newRecording.endTime,

@@ -55,11 +55,14 @@ export const CollisionsProvider = ({ children }) => {
     const beatDiff = !isEqual(prevBeat, currentBeat.current);
 
     if (beatDiff) {
-        console.log('yo');
-        console.log('CurrentBeat', currentBeat.current);
+        const newOverlapGroups = findOverlaps(currentBeat.current);
 
-        setOverlapGroups(findOverlaps(currentBeat.current));
+        // if (!isEqual(overlapGroups, newOverlapGroups)) {
+        //     console.log('yo');
+        setOverlapGroups(newOverlapGroups);
+
         prevProcessBeatResultRef.current = currentBeat.current;
+        // }
     }
 
     // Function to calculate the furthest end time by finding elements in the Konva stage

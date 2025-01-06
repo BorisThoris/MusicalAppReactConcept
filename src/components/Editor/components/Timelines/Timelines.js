@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import isEqual from 'lodash/isEqual';
 import React, { useContext, useEffect, useMemo, useRef } from 'react';
-import { Layer, Stage } from 'react-konva';
+import { Layer, Stage, useStrictMode } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
@@ -45,6 +45,8 @@ const Timelines = React.memo(() => {
             removeStageRef();
         };
     }, [addStageRef, removeStageRef, updateBeatRef]);
+
+    useStrictMode(true); // Enable globally
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions

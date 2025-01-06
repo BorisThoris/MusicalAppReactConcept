@@ -1,3 +1,4 @@
+import cloneDeep from 'lodash/cloneDeep';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
@@ -23,7 +24,7 @@ export const SoundEventDragProvider = ({ children }) => {
     }, []);
 
     const updateStartTimeForElement = useCallback(({ element }) => {
-        const recording = element.attrs?.['data-recording'];
+        const recording = cloneDeep(element.attrs?.['data-recording']);
 
         // Calculate new start and end times
         const newStartTime = element.x() / pixelToSecondRatio;
@@ -57,13 +58,6 @@ export const SoundEventDragProvider = ({ children }) => {
 
         // Update the element attributes
         element.setAttr('data-recording', updatedRecording);
-
-        // Update the text node, if it exists
-        const textNode = element.findOne('Text');
-        if (textNode) {
-            textNode.setAttr('text', `Start: ${newStartTime.toFixed(2)}s`);
-            textNode.setAttr('y', `60`);
-        }
 
         console.log(
             `Updated element: ${element.attrs.id}, new start time: ${newStartTime}, new end time: ${newEndTime}`
@@ -99,14 +93,14 @@ export const SoundEventDragProvider = ({ children }) => {
     const applyHighlightToTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('yellow');
-            timeline.getLayer().batchDraw();
+            timeline.getLayer().draw();
         }
     };
 
     const removeHighlightFromTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('white');
-            timeline.getLayer().batchDraw();
+            timeline.getLayer().draw();
         }
     };
 
@@ -184,9 +178,9 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 highlightedTimelinesRef.current = newHighlightedTimelines;
 
-                const layer = e.target.getLayer();
+                const layer = e.target.getStage();
                 if (layer) {
-                    layer.batchDraw();
+                    layer.draw();
                 }
             });
         },
@@ -196,42 +190,52 @@ export const SoundEventDragProvider = ({ children }) => {
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
         const closestTimelineInstrumentName = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown Timeline';
 
-        const recording = element.attrs['data-recording'];
+        const recording = cloneDeep(element.attrs['data-recording']);
         recording.instrumentName = closestTimelineInstrumentName;
+
         element.setAttr('data-recording', recording);
-        closestTimeline.getLayer().batchDraw();
+
+        // Redraw the timeline's layer to reflect changes
+        closestTimeline.clearCache();
+        closestTimeline.draw();
+        closestTimeline.getLayer().clearCache();
+        closestTimeline.getLayer().draw();
     }, []);
+
+    const finalizeDrag = useCallback(
+        (element) => {
+            const elementBox = element.getAbsolutePosition();
+            let closestTimeline = null;
+            let minDistance = Infinity;
+
+            const allTimelineElements = element.getStage().find((node) => node.attrs?.id?.includes('-events'));
+
+            allTimelineElements.forEach((timelineElement) => {
+                const timelineBox = timelineElement.parent.getAbsolutePosition();
+                const distance = Math.abs(elementBox.y - timelineBox.y);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTimeline = timelineElement;
+                }
+            });
+
+            insertElementIntoTimeline({ closestTimeline, element });
+            updateStartTimeForElement({ element });
+
+            console.log(' Element Element Element Element', element.attrs['data-recording'].id);
+
+            element.clearCache();
+            element.draw();
+            element.getLayer().draw();
+        },
+        [insertElementIntoTimeline, updateStartTimeForElement]
+    );
 
     const handleDragEnd = useCallback(
         (e) => {
             const stage = e.target.getStage();
             if (!stage) return;
-
-            const finalizeDrag = (element) => {
-                const elementBox = element.getAbsolutePosition();
-                let closestTimeline = null;
-                let minDistance = Infinity;
-
-                const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('-events'));
-
-                allTimelineElements.forEach((timelineElement) => {
-                    const timelineBox = timelineElement.parent.getAbsolutePosition();
-                    const distance = Math.abs(elementBox.y - timelineBox.y);
-
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestTimeline = timelineElement;
-                    }
-                });
-
-                if (closestTimeline) {
-                    insertElementIntoTimeline({ closestTimeline, element });
-                    updateStartTimeForElement({ element });
-                }
-
-                const layer = element.getLayer();
-                layer.draw();
-            };
 
             if (Object.keys(selectedItems).length > 0) {
                 Object.values(selectedItems).forEach((item) => {
@@ -252,7 +256,7 @@ export const SoundEventDragProvider = ({ children }) => {
             previousXRef.current = null;
             setIsDragging({});
         },
-        [insertElementIntoTimeline, selectedItems, updateStartTimeForElement]
+        [finalizeDrag, selectedItems]
     );
 
     const isElementBeingDragged = useCallback(

@@ -5,45 +5,54 @@ import { isOverlapping } from '../overlapHelpers';
 
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
-
-    overlapGroups.forEach((overlapGroup) => {
+    const updatedOverlapGroups = overlapGroups.map((overlapGroup) => {
         const groupElement = overlapGroup.group;
         const childElements = getProcessedElements(groupElement);
 
-        const overlappingElements = {};
+        const newOverlappingElements = {};
+        const newChildElements = [];
 
-        // Check for overlaps and build the overlappingElements object
+        // Check for overlaps and build the newOverlappingElements object
         Object.values(childElements).forEach((currentElementA) => {
             let hasOverlap = false;
 
             Object.values(childElements).forEach((currentElementB) => {
                 if (currentElementA !== currentElementB && isOverlapping(currentElementA, currentElementB)) {
                     hasOverlap = true;
-
-                    overlappingElements[currentElementA.recording.id] = currentElementA.recording;
-                    overlappingElements[currentElementB.recording.id] = currentElementB.recording;
+                    newOverlappingElements[currentElementA.recording.id] = currentElementA.recording;
+                    newOverlappingElements[currentElementB.recording.id] = currentElementB.recording;
                 }
             });
 
             if (!hasOverlap) {
-                currentElementA.element.destroy();
+                // If there's no overlap, consider it an orphan element
                 orphanElements.push(currentElementA);
+            } else {
+                // Retain the element in the group if it overlaps
+                newChildElements.push(currentElementA);
             }
         });
 
-        if (orphanElements.length > 0) {
-            // Update the group attributes with filtered elements
-            overlapGroup.group.setAttrs({
-                ...overlapGroup.group.attrs,
-                'data-overlap-group': {
-                    ...overlapGroup.group.attrs['data-overlap-group'],
-                    elements: {}
+        // Return a new overlap group with updated attributes and child elements
+        return {
+            ...overlapGroup,
+            group: {
+                ...groupElement,
+                attrs: {
+                    ...groupElement.attrs,
+                    'data-overlap-group': {
+                        ...groupElement.attrs['data-overlap-group'],
+                        elements: newChildElements.reduce((acc, element) => {
+                            acc[element.recording.id] = element.recording;
+                            return acc;
+                        }, {})
+                    }
                 }
-            });
-        }
+            }
+        };
     });
 
-    return { orphanElements };
+    return { orphanElements, overlapGroups: updatedOverlapGroups };
 };
 
 export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timelineRefs }) => {
@@ -60,15 +69,18 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         const groupsChanged = !prevGroupsRef.current || !isEqual(processedGroups, prevGroupsRef.current);
 
         if (!elementsChanged && !groupsChanged) {
-            console.log('No Diff');
+            // console.log('No Diff');
 
             return prevResultRef.current; // Return the cached result if no changes
         }
 
-        prevElementsRef.current = processedElements;
-        prevGroupsRef.current = processedGroups;
+        const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
-        const { orphanElements } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
+        // console.log('Processed Elements', processedElements);
+        // console.log('ORPHANS', orphanElements);
+
+        prevElementsRef.current = processedElements;
+        prevGroupsRef.current = overlapGroups;
 
         const allElements = [...processedElements, ...orphanElements];
 
@@ -95,7 +107,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             }
         });
 
-        processedGroups.forEach((ovrlpGrp) => {
+        overlapGroups.forEach((ovrlpGrp) => {
             const instrumentName = ovrlpGrp?.instrumentName || 'FALL BACK TIMELINE VALUE';
             const hasElements = Object.keys(ovrlpGrp.group?.attrs['data-overlap-group'].elements || {}).length > 0;
 

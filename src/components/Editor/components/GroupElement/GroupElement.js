@@ -34,6 +34,7 @@ export const GroupElement = React.memo(
             groupRef.current.setAttrs({
                 'data-overlap-group': { ...prevData, locked: !prevData.locked }
             });
+            groupRef.current.getLayer().draw();
         }, []);
 
         return (

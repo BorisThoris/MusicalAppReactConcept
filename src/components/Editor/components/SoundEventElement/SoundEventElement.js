@@ -2,7 +2,7 @@
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, Group, Rect, Text } from 'react-konva';
+import { Circle, Group, Rect, Text, useStrictMode } from 'react-konva';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
@@ -96,9 +96,7 @@ const SoundEventElement = React.memo(
                 'data-recording': updatedState
             });
 
-            console.log(' elementContainerRef.current', elementContainerRef.current.attrs['data-recording']);
-
-            elementContainerRef.current.draw();
+            elementContainerRef.current.getLayer().draw();
         }, []);
 
         const handleDelete = useCallback(() => {
@@ -191,8 +189,12 @@ const SoundEventElement = React.memo(
 
         // console.log('group parent', groupRef?.parentRef);
 
+        const portalRef = useRef(null);
+
+        // useStrictMode(true); // Enable globally
+
         return (
-            <Portal selector=".top-layer" enabled={isDragging}>
+            <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
                     onContextMenu={handleContextClick}
                     ref={elementContainerRef}
@@ -205,13 +207,14 @@ const SoundEventElement = React.memo(
                     data-group-child={groupRef}
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
-                    onDragMove={handleDragMove}
+                    // onDragMove={handleDragMove}
                     onDragStart={handleDragStartWithCursor}
                     onDragEnd={handleDragEndWithCursor}
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
                     listening={listening}
                     id={`${ELEMENT_ID_PREFIX}${id}`}
+                    data-portal-parent={portalRef?.current}
                 >
                     <Rect
                         onMouseEnter={handleMouseEnterWithCursor}

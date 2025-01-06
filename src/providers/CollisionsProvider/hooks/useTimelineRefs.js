@@ -70,7 +70,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                     const clientRect = element.getClientRect ? element.getClientRect() : {};
                     const { height, width, x, y } = clientRect;
 
-                    const recordingData = element.attrs ? element.attrs['data-recording'] : {};
+                    const recordingData = element.attrs ? { ...element.attrs['data-recording'] } : {};
                     const instrumentName = recordingData ? recordingData.instrumentName : null;
 
                     const parentAttrs = element.parent ? element.parent.attrs : {};
