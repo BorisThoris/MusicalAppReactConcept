@@ -45,7 +45,8 @@ export const SoundEventDragProvider = ({ children }) => {
         // Update the group data if applicable
         const group = element.attrs?.['data-group-child'];
         if (group) {
-            const groupElements = group.attrs?.['data-overlap-group']?.elements;
+            const groupElement = { ...group.attrs?.['data-overlap-group'] };
+            const groupElements = { ...groupElement?.elements };
 
             if (groupElements) {
                 const foundRecording = groupElements[recording.id];
@@ -54,6 +55,9 @@ export const SoundEventDragProvider = ({ children }) => {
                     groupElements[recording.id] = updatedRecording;
                 }
             }
+
+            group.setAttr('data-overlap-group', { ...groupElement, elements: groupElements });
+            group.getLayer().draw();
         }
 
         // Update the element attributes
@@ -222,8 +226,6 @@ export const SoundEventDragProvider = ({ children }) => {
 
             insertElementIntoTimeline({ closestTimeline, element });
             updateStartTimeForElement({ element });
-
-            console.log(' Element Element Element Element', element.attrs['data-recording'].id);
 
             element.clearCache();
             element.draw();

@@ -45,24 +45,22 @@ export const CollisionsProvider = ({ children }) => {
 
     const [beats, saveBeatsToLocalStorage] = useBeats();
 
-    const currentBeat = useRef(processBeat());
+    const currentBeat = useRef(null);
 
     const updateBeatRef = useCallback(() => {
-        currentBeat.current = processBeat();
+        const newData = processBeat();
+        currentBeat.current = { ...newData };
     }, [processBeat]);
 
     const prevBeat = prevProcessBeatResultRef.current;
     const beatDiff = !isEqual(prevBeat, currentBeat.current);
 
     if (beatDiff) {
+        console.log('current Beat', currentBeat.current);
         const newOverlapGroups = findOverlaps(currentBeat.current);
-
-        // if (!isEqual(overlapGroups, newOverlapGroups)) {
-        //     console.log('yo');
         setOverlapGroups(newOverlapGroups);
 
         prevProcessBeatResultRef.current = currentBeat.current;
-        // }
     }
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
@@ -116,17 +114,25 @@ export const CollisionsProvider = ({ children }) => {
         setCopiedEvents(sortedEvents);
     }, []);
 
-    const addTimeline = useCallback(
-        (passedName) => {
-            const newTimelineName = passedName ?? `Additional Timeline ${Object.keys(overlapGroups).length + 1}`;
+    const addTimeline = useCallback((passedName) => {
+        setOverlapGroups((prevGroups) => {
+            let newTimelineName = passedName ?? `Additional Timeline ${Object.keys(prevGroups).length + 1}`;
 
-            setOverlapGroups((prevGroups) => ({
+            // Ensure the name is unique
+            let counter = 1;
+            while (prevGroups[newTimelineName]) {
+                newTimelineName = passedName
+                    ? `${passedName} (${counter})`
+                    : `Additional Timeline ${Object.keys(prevGroups).length + counter}`;
+                counter += 1;
+            }
+
+            return {
                 ...prevGroups,
                 [newTimelineName]: {}
-            }));
-        },
-        [overlapGroups]
-    );
+            };
+        });
+    }, []);
 
     console.log('OVERLAP GROUPS: ', overlapGroups);
 

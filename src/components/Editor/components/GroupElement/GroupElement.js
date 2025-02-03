@@ -37,8 +37,12 @@ export const GroupElement = React.memo(
             groupRef.current.getLayer().draw();
         }, []);
 
+        console.log('GROUP EVS', groupEvents);
+
+        const groupId = `overlap-group-${id}`;
+
         return (
-            <Group x={groupX} data-overlap-group={groupData} ref={groupRef} id={`overlap-group-${id}`}>
+            <Group x={groupX} data-overlap-group={groupData} ref={groupRef} id={groupId}>
                 <Group offsetX={groupX}>
                     {groupEvents.map((event, index) => {
                         return (
@@ -56,6 +60,7 @@ export const GroupElement = React.memo(
                                 // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
                                 childScale={(index + 1) / groupLength}
                                 groupRef={groupRef.current}
+                                parentGroupId={groupId}
                             />
                         );
                     })}

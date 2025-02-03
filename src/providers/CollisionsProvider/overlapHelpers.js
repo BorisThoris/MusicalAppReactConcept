@@ -1,64 +1,30 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-restricted-syntax */
-import { useCallback } from 'react';
+
 // Assume utility functions are modularized
 
 // Utility function for detecting overlaps
 export const isOverlapping = (elA, elB) => {
-    if (!elA.rect || !elB.rect) return;
+    if (!elA.rect || !elB.rect) return false;
+
+    const { endTime: aEndTime, startTime: aStartTime } = elA;
+    const { endTime: bEndTime, startTime: bStartTime } = elB;
 
     const rectA = elA.rect;
     const rectB = elB.rect;
 
     // Check basic rectangle overlap
-    const isOvrlp = !(
+    const isRectOverlapping = !(
         rectA.x > rectB.x + rectB.width ||
         rectA.x + rectA.width < rectB.x ||
         rectA.y > rectB.y + rectB.height ||
         rectA.y + rectA.height < rectB.y
     );
 
-    return isOvrlp;
-};
+    // Check time overlap
+    const isTimeOverlapping = !(aEndTime <= bStartTime || bEndTime <= aStartTime);
 
-const isGroupOverlapping = (element, groupElement) => {
-    const groupEls = groupElement.elements;
-
-    // eslint-disable-next-line guard-for-in
-    for (const key in groupEls) {
-        const groupChild = groupEls[key];
-
-        if (isOverlapping(element, groupChild)) {
-            return true;
-        }
-    }
-    return false;
-};
-
-const checkOverlap = (elA, elB) => {
-    const aGroup = elA.elements;
-    const bGroup = elB.elements;
-
-    if (aGroup && bGroup) {
-        // eslint-disable-next-line guard-for-in
-        for (const keyA in aGroup) {
-            for (const keyB in bGroup) {
-                if (isOverlapping(aGroup[keyA], bGroup[keyB])) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-    if (aGroup) {
-        return isGroupOverlapping(elB, elA);
-    }
-    if (bGroup) {
-        return isGroupOverlapping(elA, elB);
-    }
-    // Neither is a group, check single overlap
-    return isOverlapping(elA, elB);
+    return isRectOverlapping && isTimeOverlapping;
 };
 
 // Union-Find helper functions
@@ -110,6 +76,13 @@ const union = (parent, rank, elementA, elementB) => {
 export const findOverlaps = (processedData) => {
     if (!processedData) return;
 
+    const getAllElements = (element) => {
+        if (element.elements) {
+            return Object.values(element.elements);
+        }
+        return [element];
+    };
+
     const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) => {
         return Object.values(events).map((event) => ({ ...event, instrumentName }));
     });
@@ -125,28 +98,35 @@ export const findOverlaps = (processedData) => {
             const elementBLocked = elementB.locked || false;
             const elementsNotLocked = !elementALocked && !elementBLocked;
 
-            const areElementsOverlapping = checkOverlap(elementA, elementB);
+            const groupA = getAllElements(elementA);
+            const groupB = getAllElements(elementB);
 
-            if (elementsNotLocked && areElementsOverlapping) {
+            const areGroupsOverlapping = groupA.some((elA) => groupB.some((elB) => isOverlapping(elA, elB)));
+
+            if (elementsNotLocked && areGroupsOverlapping) {
                 union(parent, rank, elementA, elementB);
             }
         }
     });
 
     const tempGroups = allElements.reduce((groups, currentElement) => {
-        const { id, instrumentName } = currentElement;
-        const rootId = find(parent, id);
+        const rootId = find(parent, currentElement.id);
+        const actualElements = getAllElements(currentElement);
 
-        if (!groups[instrumentName]) groups[instrumentName] = {};
-        if (!groups[instrumentName][rootId]) {
-            groups[instrumentName][rootId] = {
+        if (!groups[currentElement.instrumentName]) {
+            groups[currentElement.instrumentName] = {};
+        }
+        if (!groups[currentElement.instrumentName][rootId]) {
+            groups[currentElement.instrumentName][rootId] = {
                 elements: {},
                 ids: new Set()
             };
         }
 
-        groups[instrumentName][rootId].ids.add(id);
-        groups[instrumentName][rootId].elements[id] = currentElement;
+        actualElements.forEach((actualElement) => {
+            groups[currentElement.instrumentName][rootId].ids.add(actualElement.id);
+            groups[currentElement.instrumentName][rootId].elements[actualElement.id] = actualElement;
+        });
 
         return groups;
     }, {});
@@ -178,5 +158,6 @@ export const findOverlaps = (processedData) => {
         return result;
     }, {});
 
+    console.log('Final Groups', findOverlaps);
     return finalGroups;
 };

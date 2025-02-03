@@ -48,6 +48,7 @@ const SoundEventElement = React.memo(
         index,
         isElementBeingDragged,
         listening,
+        parentGroupId,
         recording,
         timelineHeight,
         timelineY
@@ -187,11 +188,7 @@ const SoundEventElement = React.memo(
         const isFirstInGroup = index === 0;
         const isNotInGroup = !groupRef;
 
-        // console.log('group parent', groupRef?.parentRef);
-
         const portalRef = useRef(null);
-
-        // useStrictMode(true); // Enable globally
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
@@ -215,6 +212,7 @@ const SoundEventElement = React.memo(
                     listening={listening}
                     id={`${ELEMENT_ID_PREFIX}${id}`}
                     data-portal-parent={portalRef?.current}
+                    data-parent-group-id={parentGroupId}
                 >
                     <Rect
                         onMouseEnter={handleMouseEnterWithCursor}
@@ -244,6 +242,17 @@ const SoundEventElement = React.memo(
                     {isNotInGroup && <Lock isLocked={locked} onClick={onLockSoundEventElement} />}
 
                     <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
+
+                    {parentGroupId && (
+                        <Text
+                            x={5}
+                            y={45 + index * 20}
+                            text={`Parent Group ID ${parentGroupId}`}
+                            fill="black"
+                            fontSize={15}
+                            listening={false}
+                        />
+                    )}
                 </Group>
             </Portal>
         );

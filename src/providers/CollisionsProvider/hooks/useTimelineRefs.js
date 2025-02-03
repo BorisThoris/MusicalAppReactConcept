@@ -35,20 +35,13 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const findAllSoundEventElements = useCallback(
         (parentGroup) => {
-            if (parentGroup) {
-                // Find elements within the given parent group
-                return parentGroup.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
-            }
+            const stage = stageRef?.current;
+            if (!stage) return []; // Return early if stage is not available
 
-            if (!stageRef?.current) {
-                // Return empty array if stage reference is not available
-                return [];
-            }
-
-            // Find all matching elements within the entire stage
-            const stageElements = stageRef.current?.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
-
-            return stageElements;
+            return stage.find((node) => {
+                if (!node.id().startsWith(ELEMENT_ID_PREFIX)) return false;
+                return !parentGroup || node.attrs['data-parent-group-id'] === parentGroup.attrs.id;
+            });
         },
         [stageRef]
     );
@@ -112,7 +105,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                     const id = element.id();
                     if (idCount[id] > 1 && !seenElementIds.has(id)) {
                         // Log the element if it has duplicates
-                        alert('Duplicate element:', element.attrs['data-recording'].instrumentName);
+                        // alert('Duplicate element:', element.attrs['data-recording'].instrumentName);
                     }
 
                     if (!seenElementIds.has(id)) {
