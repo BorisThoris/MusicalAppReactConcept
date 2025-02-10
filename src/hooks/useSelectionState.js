@@ -4,36 +4,14 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 import { useTimeRange } from './useTimeRange';
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { getProcessedElements, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
+    const { getProcessedElements, getProcessedItems, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
 
     const [selectedItems, setSelectedItems] = useState({});
-    const [filteredSelectedItems, setFilteredSelectedItems] = useState({});
+
     const [highestYLevel, setHighestYLevel] = useState(0);
 
     const prevSelectedItemsRef = useRef({});
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
-
-    useEffect(() => {
-        if (JSON.stringify(prevSelectedItemsRef.current) === JSON.stringify(selectedItems)) {
-            return;
-        }
-
-        const filterItemsByInstrument = (items) => {
-            return Object.values(items).reduce((acc, item) => {
-                const instrument = item.instrumentName;
-                return {
-                    ...acc,
-                    [instrument]: {
-                        ...acc[instrument],
-                        [item.id]: item
-                    }
-                };
-            }, {});
-        };
-
-        const filteredItems = filterItemsByInstrument(selectedItems);
-        setFilteredSelectedItems(filteredItems);
-    }, [overlapGroups, selectedItems]);
 
     useEffect(() => {
         if (JSON.stringify(prevSelectedItemsRef.current) === JSON.stringify(overlapGroups)) {
@@ -82,10 +60,13 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         (input) => {
             setSelectedItems((prevSelectedItems) => {
                 const itemsToToggle = Array.isArray(input) ? input : [input];
+
                 return itemsToToggle.reduce(
                     (newSelectedItems, { id }) => {
-                        const processedElements = getProcessedElements();
-                        const elementData = processedElements.find(
+                        const processedItems = getProcessedItems();
+                        console.log('getProcessedItems', processedItems);
+
+                        const elementData = processedItems.find(
                             (element) => element.element.attrs.id === `${ELEMENT_ID_PREFIX}${id}`
                         );
 
@@ -99,13 +80,15 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                                 [id]: { ...elementData.recording, element: elementData.element }
                             };
                         }
+
+                        alert('sad');
                         return newSelectedItems;
                     },
                     { ...prevSelectedItems }
                 );
             });
         },
-        [getProcessedElements]
+        [getProcessedItems]
     );
 
     const unSelectItem = useCallback((input) => {

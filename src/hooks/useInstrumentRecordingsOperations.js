@@ -23,8 +23,8 @@ export const useInstrumentRecordingsOperations = () => {
     };
 
     const getEventById = useCallback(
-        (id) => {
-            const element = getSoundEventById(id);
+        (id, type) => {
+            const element = getSoundEventById(id, type);
             return element?.recording;
         },
         [getSoundEventById]

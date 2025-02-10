@@ -8,6 +8,7 @@ import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
@@ -41,7 +42,6 @@ const SoundEventElement = React.memo(
         childScale,
         dragBoundFunc,
         groupRef,
-        handleClickOverlapGroup,
         handleDragEnd,
         handleDragMove,
         handleDragStart,
@@ -53,7 +53,7 @@ const SoundEventElement = React.memo(
         timelineHeight,
         timelineY
     }) => {
-        const { eventLength, id, locked, name, parentId, startTime } = recording;
+        const { eventLength, id, locked, name, startTime } = recording;
 
         // Refs and State
         const elementContainerRef = useRef();
@@ -68,16 +68,17 @@ const SoundEventElement = React.memo(
 
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-        const { getEventById } = useInstrumentRecordingsOperations();
+
+        const { getGroupById } = useContext(CollisionsContext);
 
         // Derived values
         const isSelected = isItemSelected(id);
-        const parent = getEventById(parentId);
+
+        const parent = getGroupById(parentGroupId);
 
         // Hooks
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
         const { handleClick, handleDoubleClick } = useClickHandlers({
-            handleClickOverlapGroup,
             parent,
             recording
         });

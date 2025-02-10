@@ -24,8 +24,10 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getGroupById,
         getProcessedElements,
         getProcessedGroups,
+        getProcessedItems,
         getSoundEventById,
         removeStageRef,
         removeTimelineRef,
@@ -150,7 +152,9 @@ export const CollisionsProvider = ({ children }) => {
             deleteAllTimelines,
             findAllSoundEventElements,
             furthestEndTime,
+            getGroupById,
             getProcessedElements,
+            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
@@ -190,6 +194,7 @@ export const CollisionsProvider = ({ children }) => {
             furthestEndTime,
             getProcessedElements,
             getSoundEventById,
+            getGroupById,
             updateBeatRef,
             hasChanged,
             history,
@@ -210,7 +215,8 @@ export const CollisionsProvider = ({ children }) => {
             beats,
             saveBeatsToLocalStorage,
             removeStageRef,
-            processBeat
+            processBeat,
+            getProcessedItems
         ]
     );
 

@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useRef } from 'react';
-import { Group } from 'react-konva';
+import { Group, Text } from 'react-konva';
+import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
@@ -37,12 +38,12 @@ export const GroupElement = React.memo(
             groupRef.current.getLayer().draw();
         }, []);
 
-        console.log('GROUP EVS', groupEvents);
-
-        const groupId = `overlap-group-${id}`;
+        const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
 
         return (
-            <Group x={groupX} data-overlap-group={groupData} ref={groupRef} id={groupId}>
+            <Group x={groupX} data-overlap-group={groupData} ref={groupRef} data-group-id={groupId} id={groupId}>
+                <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
+
                 <Group offsetX={groupX}>
                     {groupEvents.map((event, index) => {
                         return (
