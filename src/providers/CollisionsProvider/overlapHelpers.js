@@ -158,6 +158,5 @@ export const findOverlaps = (processedData) => {
         return result;
     }, {});
 
-    console.log('Final Groups', findOverlaps);
     return finalGroups;
 };

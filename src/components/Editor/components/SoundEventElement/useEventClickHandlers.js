@@ -10,8 +10,6 @@ export const useClickHandlers = ({ parent, recording }) => {
     const { toggleItem: selectElement } = useContext(SelectionContext);
 
     const openSelectionPanel = useCallback(() => {
-        console.log('recording', recording);
-
         selectElement(recording);
         openSelectionsPanel();
     }, [selectElement, openSelectionsPanel, recording]);

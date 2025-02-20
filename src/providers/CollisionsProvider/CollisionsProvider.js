@@ -17,6 +17,7 @@ export const CollisionsProvider = ({ children }) => {
     const [hasChanged, setHasChanged] = useState(false);
     const [copiedEvents, setCopiedEvents] = useState([]);
     const { openLoadPanel } = useContext(PanelContext);
+    const [dragging, setDragging] = useState({});
 
     const {
         addStageRef,
@@ -47,22 +48,35 @@ export const CollisionsProvider = ({ children }) => {
 
     const [beats, saveBeatsToLocalStorage] = useBeats();
 
-    const currentBeat = useRef(null);
+    const [currentBeat, setCurrentBeat] = useState(null);
+
+    const isDragging = useMemo(() => Object.keys(dragging).length >= 1, [dragging]);
+
+    // Only process beats when no dragging is active.
+
+    const refreshBeat = useCallback(() => {
+        const newData = processBeat();
+
+        if (!isEqual(currentBeat, newData)) {
+            setCurrentBeat({ ...newData });
+        }
+    }, [currentBeat, processBeat]);
 
     const updateBeatRef = useCallback(() => {
-        const newData = processBeat();
-        currentBeat.current = { ...newData };
-    }, [processBeat]);
+        if (isDragging) return;
+
+        refreshBeat();
+    }, [isDragging, refreshBeat]);
 
     const prevBeat = prevProcessBeatResultRef.current;
-    const beatDiff = !isEqual(prevBeat, currentBeat.current);
+    const beatDiff = !isEqual(prevBeat, currentBeat);
 
-    if (beatDiff) {
-        console.log('current Beat', currentBeat.current);
-        const newOverlapGroups = findOverlaps(currentBeat.current);
+    // Only recalc overlap groups if there's a beat change AND no dragging.
+    if (beatDiff && !isDragging) {
+        // alert('beatDiff && !isDragging');
+        const newOverlapGroups = findOverlaps(currentBeat);
         setOverlapGroups(newOverlapGroups);
-
-        prevProcessBeatResultRef.current = currentBeat.current;
+        prevProcessBeatResultRef.current = currentBeat;
     }
 
     // Function to calculate the furthest end time by finding elements in the Konva stage
@@ -150,6 +164,7 @@ export const CollisionsProvider = ({ children }) => {
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
+            dragging,
             findAllSoundEventElements,
             furthestEndTime,
             getGroupById,
@@ -158,18 +173,21 @@ export const CollisionsProvider = ({ children }) => {
             getSoundEventById,
             hasChanged,
             history,
+            isDragging,
             loadFromLocalStorage,
             overlapGroups,
             processBeat,
             pushToHistory,
             redo,
             redoHistory,
+            refreshBeat,
             removeStageRef,
             removeTimelineRef,
             saveBeatsToLocalStorage,
             saveToLocalStorage,
             selectedBeat,
             setCopiedEvents,
+            setDragging,
             setHasChanged,
             setOverlapGroups,
             setSelectedBeat,
@@ -216,7 +234,11 @@ export const CollisionsProvider = ({ children }) => {
             saveBeatsToLocalStorage,
             removeStageRef,
             processBeat,
-            getProcessedItems
+            getProcessedItems,
+            isDragging,
+            dragging,
+            setDragging,
+            refreshBeat
         ]
     );
 

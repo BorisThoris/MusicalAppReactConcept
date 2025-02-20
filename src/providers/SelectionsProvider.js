@@ -11,7 +11,6 @@ export const SelectionContext = createContext({
     selectedItems: {},
     selectedValues: [{}],
     setSelectionBasedOnCoordinates: ({ intersectedElements, yLevel }) => {},
-
     toggleItem: (id) => {}
 });
 
@@ -46,11 +45,13 @@ export const SelectionProvider = ({ children }) => {
         }
     }, [openSelectionsPanel, panels, selectedItems]);
 
-    const selectedValues = Object.values(selectedItems).sort((a, b) => {
-        if (!a.startTime) return 1;
-        if (!b.startTime) return -1;
-        return a.startTime - b.startTime;
-    });
+    const selectedValues = useMemo(() => {
+        return Object.values(selectedItems).sort((a, b) => {
+            if (!a.startTime) return 1;
+            if (!b.startTime) return -1;
+            return a.startTime - b.startTime;
+        });
+    }, [selectedItems]);
 
     const handleCloseSelectionsPanel = useCallback(() => {
         closeSelectionsPanel();
@@ -69,7 +70,6 @@ export const SelectionProvider = ({ children }) => {
             isItemSelected,
             selectedItems,
             selectedValues,
-
             setSelectionBasedOnCoordinates,
             startTime: groupStartTime,
             toggleItem,

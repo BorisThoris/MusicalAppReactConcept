@@ -2,11 +2,10 @@
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, Group, Rect, Text, useStrictMode } from 'react-konva';
+import { Circle, Group, Rect, Text } from 'react-konva';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
-import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -36,7 +35,21 @@ const CONSTANTS = {
 
 const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 
-// Component
+const areEqual = (prevProps, nextProps) => {
+    const equal = isEqual(prevProps, nextProps);
+    if (!equal) {
+        Object.keys(prevProps).forEach((key) => {
+            if (!isEqual(prevProps[key], nextProps[key])) {
+                console.log(`Prop '${key}' changed:`, {
+                    next: nextProps[key],
+                    prev: prevProps[key]
+                });
+            }
+        });
+    }
+    return equal;
+};
+
 const SoundEventElement = React.memo(
     ({
         childScale,
@@ -58,31 +71,26 @@ const SoundEventElement = React.memo(
         // Refs and State
         const elementContainerRef = useRef();
         const elementRef = useRef();
-        const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
-        const isDragging = isElementBeingDragged(id);
+        // Controlled x position (derived from startTime)
 
+        const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
+        // Determine if this element is currently being dragged
+        const isDragging = isElementBeingDragged(id);
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
         const { isItemSelected } = useContext(SelectionContext);
-
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-
         const { getGroupById } = useContext(CollisionsContext);
 
         // Derived values
         const isSelected = isItemSelected(id);
-
         const parent = getGroupById(parentGroupId);
 
-        // Hooks
+        // Hooks for focus and click handling
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
-        const { handleClick, handleDoubleClick } = useClickHandlers({
-            parent,
-            recording
-        });
-
+        const { handleClick, handleDoubleClick } = useClickHandlers({ parent, recording });
         const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
             isFocused,
             isSelected,
@@ -133,9 +141,7 @@ const SoundEventElement = React.memo(
             if (!groupRef) {
                 return { stroke: 'black', strokeWidth: 2 };
             }
-
             const calculatedHeight = timelineHeight * childScale;
-
             return {
                 height: calculatedHeight,
                 stroke: 'blue',
@@ -143,7 +149,6 @@ const SoundEventElement = React.memo(
             };
         }, [childScale, groupRef, timelineHeight]);
 
-        // Component Render
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
         const handleContextClick = useCallback((e) => {
@@ -181,14 +186,18 @@ const SoundEventElement = React.memo(
             (e) => {
                 const container = e.target.getStage().container();
                 container.style.cursor = 'grab';
+                // Update the controlled state with the new x position when drag ends.
+                setElementXPosition(e.target.x());
                 handleDragEnd(e);
             },
             [handleDragEnd]
         );
 
-        const isFirstInGroup = index === 0;
-        const isNotInGroup = !groupRef;
+        // When not dragging, we want to control the position via state.
+        // When dragging, we allow Konva to update the position internally.
+        const controlledPositionProps = !isDragging ? { x: elementXPosition, y: 0 } : {};
 
+        const isNotInGroup = !groupRef;
         const portalRef = useRef(null);
 
         return (
@@ -197,16 +206,15 @@ const SoundEventElement = React.memo(
                     onContextMenu={handleContextClick}
                     ref={elementContainerRef}
                     key={index}
-                    y={isDragging ? timelineY : 0}
-                    x={elementXPosition}
+                    {...controlledPositionProps}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
                     data-group-child={groupRef}
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
-                    // onDragMove={handleDragMove}
                     onDragStart={handleDragStartWithCursor}
+                    onDragMove={handleDragMove}
                     onDragEnd={handleDragEndWithCursor}
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
@@ -237,13 +245,9 @@ const SoundEventElement = React.memo(
                         {...dynamicStyle}
                     />
                     <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
-
                     <Text x={5} y={25} text={`${id}`} fill="black" fontSize={15} listening={false} />
-
                     {isNotInGroup && <Lock isLocked={locked} onClick={onLockSoundEventElement} />}
-
                     <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
-
                     {parentGroupId && (
                         <Text
                             x={5}
@@ -258,10 +262,9 @@ const SoundEventElement = React.memo(
             </Portal>
         );
     },
-    (prevProps, nextProps) => isEqual(prevProps, nextProps)
+    (prevProps, nextProps) => areEqual(prevProps, nextProps)
 );
 
-// Prop Types and Default Props
 SoundEventElement.propTypes = {
     canvasOffsetY: PropTypes.number.isRequired,
     groupRef: PropTypes.bool,

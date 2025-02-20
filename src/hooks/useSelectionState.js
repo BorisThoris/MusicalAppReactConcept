@@ -1,7 +1,10 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
+
+// Use a constant to ensure empty selections always have the same reference
+const EMPTY_SELECTION = {};
 
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { getProcessedElements, getProcessedItems, getSoundEventById, overlapGroups } = useContext(CollisionsContext);
@@ -64,7 +67,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 return itemsToToggle.reduce(
                     (newSelectedItems, { id }) => {
                         const processedItems = getProcessedItems();
-                        console.log('getProcessedItems', processedItems);
 
                         const elementData = processedItems.find(
                             (element) => element.element.attrs.id === `${ELEMENT_ID_PREFIX}${id}`
@@ -81,7 +83,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                             };
                         }
 
-                        alert('sad');
                         return newSelectedItems;
                     },
                     { ...prevSelectedItems }
@@ -91,57 +92,22 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         [getProcessedItems]
     );
 
-    const unSelectItem = useCallback((input) => {
-        setSelectedItems((prevSelectedItems) => {
-            const itemsToDelete = Array.isArray(input) ? input : [input];
-            return itemsToDelete.reduce(
-                (newSelectedItems, { id }) => {
-                    const { [id]: removed, ...rest } = newSelectedItems;
-                    return rest;
-                },
-                { ...prevSelectedItems }
-            );
-        });
-    }, []);
-
     const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
 
     const updateSelectedItemsStartTime = useCallback((newStartTime) => {}, []);
 
-    const deleteSelections = useCallback(
-        (selectedEvents) => {
-            const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
-            const processedElements = getProcessedElements();
+    const deleteSelections = useCallback((selectedEvents) => {
+        const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
 
-            const elementsToDelete = processedElements.filter(({ element, instrumentName }) =>
-                eventsArray.some(
-                    (event) =>
-                        event.instrumentName === instrumentName &&
-                        event.id === element.id().replace(ELEMENT_ID_PREFIX, '')
-                )
-            );
-
-            elementsToDelete.forEach(({ element, instrumentName }) => {
-                const event = eventsArray.find(
-                    (ev) =>
-                        ev.instrumentName === instrumentName && ev.id === element.id().replace(ELEMENT_ID_PREFIX, '')
-                );
-                if (event) {
-                    element.destroy();
-                }
+        // Remove deleted items from selectedItems
+        setSelectedItems((prevSelectedItems) => {
+            const updatedSelectedItems = { ...prevSelectedItems };
+            eventsArray.forEach(({ id }) => {
+                delete updatedSelectedItems[id];
             });
-
-            // Remove deleted items from selectedItems
-            setSelectedItems((prevSelectedItems) => {
-                const updatedSelectedItems = { ...prevSelectedItems };
-                eventsArray.forEach(({ id }) => {
-                    delete updatedSelectedItems[id];
-                });
-                return updatedSelectedItems;
-            });
-        },
-        [getProcessedElements]
-    );
+            return updatedSelectedItems;
+        });
+    }, []);
 
     // Helper function to update a selected item by id
     const updateSelectedItemById = (id, updates) => {
@@ -161,6 +127,10 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         });
     };
 
+    const memoizedSelectedItems = useMemo(() => {
+        return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
+    }, [selectedItems]);
+
     return {
         clearSelection,
         deleteSelections,
@@ -168,11 +138,10 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         groupStartTime,
         highestYLevel,
         isItemSelected,
-        selectedItems,
+        selectedItems: memoizedSelectedItems,
         setSelectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
-        unSelectItem,
         updateSelectedItemById,
         updateSelectedItemsStartTime
     };

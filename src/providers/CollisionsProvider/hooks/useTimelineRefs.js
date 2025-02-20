@@ -76,8 +76,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                 const elements = stageRef.current?.find((node) => node.id().startsWith(`${ELEMENT_ID_PREFIX}${id}`));
                 const element = elements ? find(elements, (node) => node.id() === `${ELEMENT_ID_PREFIX}${id}`) : null;
 
-                console.log(`${ELEMENT_ID_PREFIX}${id}`);
-
                 if (element) {
                     const clientRect = element.getClientRect ? element.getClientRect() : {};
                     const { height, width, x, y } = clientRect;
@@ -87,8 +85,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
                     const parentAttrs = element.parent ? element.parent.attrs : {};
                     const timelineY = parentAttrs ? parentAttrs.timelineY : null;
-
-                    console.log('RETURNIG EL', element);
 
                     return {
                         element,
@@ -133,6 +129,9 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                         const { height, width, x, y } = element.getClientRect();
                         const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
                         const recording = get(element, "attrs['data-recording']", {});
+
+                        console.log('REF RECORDING', recording);
+
                         const grouped = get(element, "attrs['data-group-child']", false);
 
                         const timelineY = get(element, 'parent.attrs.timelineY', 0);
@@ -203,8 +202,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
         const elements = findAllSoundEventElements();
 
-        const groups = getAllGroups();
-
         const seenIds = new Set();
         const processedItems = [];
 
@@ -235,22 +232,12 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         elements.forEach((element) => {
             const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
             const recording = get(element, "attrs['data-recording']", {});
-            const isChild = element.attrs['data-group-child'] || false;
 
-            // if (!isChild) {
             processItem(element, 'element', { instrumentName, recording });
-            // }
         });
 
-        // // Process groups
-        // groups.forEach((group) => {
-        //     const groupData = group.attrs['data-overlap-group'] || {};
-        //     processItem(group, 'group', { groupData });
-        // });
-
-        console.log('Proccessed Items Return', processedItems);
         return processedItems;
-    }, [findAllSoundEventElements, getAllGroups, stageRef]);
+    }, [findAllSoundEventElements, stageRef]);
 
     const clearElements = useCallback((elements) => {
         elements.forEach((element) => {

@@ -34,8 +34,6 @@ export const SelectionsPanel = () => {
 
     const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
-    const { unSelectItem } = useSelectionState({ markersAndTrackerOffset });
-
     const startTimeCorrected = selectedValues[0]?.startTime;
 
     const useReplayEvents = useCallback(() => {
@@ -88,10 +86,17 @@ export const SelectionsPanel = () => {
 
     const onDeleteChildRecording = useCallback(
         (event) => {
-            deleteSelections(event);
-            unSelectItem(event);
+            const stage = event.element.getStage();
+            const topLayer = stage.findOne('.top-layer'); // Find the top layer using its name
+
+            event.element.destroy(); // Remove the recording element
+            deleteSelections(event); // Update the selections context/state
+
+            if (topLayer) {
+                topLayer.batchDraw(); // Trigger a re-render on the top layer
+            }
         },
-        [deleteSelections, unSelectItem]
+        [deleteSelections]
     );
 
     const onPlayEvent = useCallback(

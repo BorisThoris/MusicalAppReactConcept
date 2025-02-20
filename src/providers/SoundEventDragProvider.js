@@ -1,16 +1,20 @@
 import cloneDeep from 'lodash/cloneDeep';
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from './SelectionsProvider';
 
 export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
+    const { refreshBeat } = useContext(CollisionsContext);
     const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
+    // Use isDragging state from the CollisionsProvider
+    const { dragging, setDragging } = useContext(CollisionsContext);
 
-    const [currentY, setCurrentY] = useState(0);
-    const [isDragging, setIsDragging] = useState({});
+    // Remove state for currentY and use a ref instead.
+    const currentYRef = useRef(0);
     const previousXRef = useRef(null);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
@@ -50,7 +54,6 @@ export const SoundEventDragProvider = ({ children }) => {
 
             if (groupElements) {
                 const foundRecording = groupElements[recording.id];
-
                 if (foundRecording) {
                     groupElements[recording.id] = updatedRecording;
                 }
@@ -60,7 +63,7 @@ export const SoundEventDragProvider = ({ children }) => {
             group.getLayer().draw();
         }
 
-        // Update the element attributes
+        console.log('UPDATED RECORDING', updatedRecording);
         element.setAttr('data-recording', updatedRecording);
 
         console.log(
@@ -78,7 +81,8 @@ export const SoundEventDragProvider = ({ children }) => {
                 clearSelection();
             }
             previousXRef.current = el.target.x();
-            setCurrentY(el.evt.y);
+            // Instead of setting state, update the ref directly
+            currentYRef.current = el.evt.y;
 
             const processId = (id) => (id.startsWith(ELEMENT_ID_PREFIX) ? id.split(ELEMENT_ID_PREFIX)[1] : id);
             const newDragging = { [processId(el.target.attrs.id)]: true };
@@ -89,9 +93,9 @@ export const SoundEventDragProvider = ({ children }) => {
                 });
             }
 
-            setIsDragging((prevDragging) => ({ ...prevDragging, ...newDragging }));
+            setDragging((prevDragging) => ({ ...prevDragging, ...newDragging }));
         },
-        [clearSelection, isItemSelected, selectedItems]
+        [clearSelection, isItemSelected, selectedItems, setDragging]
     );
 
     const applyHighlightToTimeline = (timeline) => {
@@ -120,11 +124,13 @@ export const SoundEventDragProvider = ({ children }) => {
 
             dragRequestRef.current = requestAnimationFrame(() => {
                 const currentX = e.target.x();
-                const deltaY = e.evt.y - currentY;
+                // Use the ref value for currentY
+                const deltaY = e.evt.y - currentYRef.current;
                 const deltaX = previousXRef.current !== null ? currentX - previousXRef.current : 0;
 
                 previousXRef.current = currentX;
-                setCurrentY(e.evt.y);
+                // Update the ref instead of state
+                currentYRef.current = e.evt.y;
 
                 const newHighlightedTimelines = new Set();
 
@@ -149,7 +155,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 const processElement = (element) => {
                     element.move({ x: deltaX, y: deltaY });
-                    forceUpdatePosition(element); // Force update after movement
+                    forceUpdatePosition(element);
 
                     const closestTimeline = findClosestTimeline(element);
                     if (closestTimeline) {
@@ -182,13 +188,10 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 highlightedTimelinesRef.current = newHighlightedTimelines;
 
-                const layer = e.target.getStage();
-                if (layer) {
-                    layer.draw();
-                }
+                stage.draw();
             });
         },
-        [currentY, selectedItems, forceUpdatePosition]
+        [selectedItems, forceUpdatePosition]
     );
 
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
@@ -199,7 +202,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
         element.setAttr('data-recording', recording);
 
-        // Redraw the timeline's layer to reflect changes
+        // Removed draw calls:
         closestTimeline.clearCache();
         closestTimeline.draw();
         closestTimeline.getLayer().clearCache();
@@ -208,11 +211,13 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const finalizeDrag = useCallback(
         (element) => {
+            const stage = element.getStage();
+
             const elementBox = element.getAbsolutePosition();
             let closestTimeline = null;
             let minDistance = Infinity;
 
-            const allTimelineElements = element.getStage().find((node) => node.attrs?.id?.includes('-events'));
+            const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('-events'));
 
             allTimelineElements.forEach((timelineElement) => {
                 const timelineBox = timelineElement.parent.getAbsolutePosition();
@@ -256,16 +261,18 @@ export const SoundEventDragProvider = ({ children }) => {
 
             highlightedTimelinesRef.current = new Set();
             previousXRef.current = null;
-            setIsDragging({});
+
+            setDragging({});
+            refreshBeat();
         },
-        [finalizeDrag, selectedItems]
+        [finalizeDrag, selectedItems, setDragging, refreshBeat]
     );
 
     const isElementBeingDragged = useCallback(
         (id) => {
-            return !!isDragging[id];
+            return !!dragging[id];
         },
-        [isDragging]
+        [dragging]
     );
 
     const contextValue = useMemo(
@@ -275,12 +282,10 @@ export const SoundEventDragProvider = ({ children }) => {
             handleDragMove,
             handleDragStart,
             insertElementIntoTimeline,
-            isDragging,
             isElementBeingDragged,
-            removeHighlightFromTimeline,
-            setIsDragging
+            removeHighlightFromTimeline
         }),
-        [handleDragEnd, handleDragMove, handleDragStart, insertElementIntoTimeline, isDragging, isElementBeingDragged]
+        [handleDragEnd, handleDragMove, handleDragStart, insertElementIntoTimeline, isElementBeingDragged]
     );
 
     return <SoundEventDragContext.Provider value={contextValue}>{children}</SoundEventDragContext.Provider>;
@@ -289,3 +294,5 @@ export const SoundEventDragProvider = ({ children }) => {
 const useDrag = () => {
     return useContext(SoundEventDragContext);
 };
+
+export default useDrag;
