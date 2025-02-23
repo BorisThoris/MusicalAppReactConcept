@@ -37,16 +37,16 @@ const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 
 const areEqual = (prevProps, nextProps) => {
     const equal = isEqual(prevProps, nextProps);
-    if (!equal) {
-        Object.keys(prevProps).forEach((key) => {
-            if (!isEqual(prevProps[key], nextProps[key])) {
-                console.log(`Prop '${key}' changed:`, {
-                    next: nextProps[key],
-                    prev: prevProps[key]
-                });
-            }
-        });
-    }
+    // if (!equal) {
+    //     Object.keys(prevProps).forEach((key) => {
+    //         if (!isEqual(prevProps[key], nextProps[key])) {
+    //             console.log(`Prop '${key}' changed:`, {
+    //                 next: nextProps[key],
+    //                 prev: prevProps[key]
+    //             });
+    //         }
+    //     });
+    // }
     return equal;
 };
 
@@ -68,13 +68,14 @@ const SoundEventElement = React.memo(
     }) => {
         const { eventLength, id, locked, name, startTime } = recording;
 
-        // Refs and State
+        // Refs for the element container and for storing positions.
         const elementContainerRef = useRef();
         const elementRef = useRef();
-        // Controlled x position (derived from startTime)
+        // Using refs to avoid re-renders on every drag update.
+        const elementXRef = useRef(startTime * pixelToSecondRatio);
+        const elementYRef = useRef(timelineY); // This ref will update during dragging but not affect rendering.
 
-        const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
-        // Determine if this element is currently being dragged
+        // Determine if this element is currently being dragged.
         const isDragging = isElementBeingDragged(id);
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
@@ -115,9 +116,25 @@ const SoundEventElement = React.memo(
             }
         }, []);
 
+        // Update X ref and Konva node when startTime changes.
         useEffect(() => {
-            setElementXPosition(startTime * pixelToSecondRatio);
+            if (elementContainerRef.current) {
+                const newX = startTime * pixelToSecondRatio;
+                elementContainerRef.current.x(newX);
+                elementXRef.current = newX;
+            }
         }, [startTime]);
+
+        // Update the local Y ref when timelineY changes.
+        useEffect(() => {
+            if (elementContainerRef.current) {
+                elementYRef.current = timelineY;
+                // Only update the Konva node's Y if dragging.
+                if (isDragging) {
+                    elementContainerRef.current.y(timelineY);
+                }
+            }
+        }, [timelineY, isDragging]);
 
         useEffect(() => {
             if (elementContainerRef.current && !isFocused) {
@@ -182,20 +199,32 @@ const SoundEventElement = React.memo(
             [handleDragStart]
         );
 
+        // On drag move, update the X ref (and Y ref if needed) but let the Y offset remain controlled by timelineY.
+        const handleDragMoveWithCursor = useCallback(
+            (e) => {
+                elementXRef.current = e.target.x();
+                // Update Y ref in case you need it later (but we don't use it for rendering)
+                elementYRef.current = e.target.y();
+                handleDragMove(e);
+            },
+            [handleDragMove]
+        );
+
+        // On drag end, update the X ref only—maintaining the old offset logic for Y.
         const handleDragEndWithCursor = useCallback(
             (e) => {
                 const container = e.target.getStage().container();
                 container.style.cursor = 'grab';
-                // Update the controlled state with the new x position when drag ends.
-                setElementXPosition(e.target.x());
+                elementXRef.current = e.target.x();
+                // Do not update the rendered Y value; it remains controlled by timelineY when dragging.
                 handleDragEnd(e);
             },
             [handleDragEnd]
         );
 
-        // When not dragging, we want to control the position via state.
-        // When dragging, we allow Konva to update the position internally.
-        const controlledPositionProps = !isDragging ? { x: elementXPosition, y: 0 } : {};
+        // When not dragging, we want to maintain the old Y offset (0) and let Konva manage X.
+        // When dragging, the Y is set to timelineY.
+        const controlledPositionProps = !isDragging ? { x: elementXRef.current, y: 0 } : {};
 
         const isNotInGroup = !groupRef;
         const portalRef = useRef(null);
@@ -206,7 +235,9 @@ const SoundEventElement = React.memo(
                     onContextMenu={handleContextClick}
                     ref={elementContainerRef}
                     key={index}
-                    {...controlledPositionProps}
+                    // Use the old offsetting for Y: if dragging, use timelineY; otherwise 0.
+                    x={elementXRef.current}
+                    y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
@@ -214,7 +245,7 @@ const SoundEventElement = React.memo(
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragStart={handleDragStartWithCursor}
-                    onDragMove={handleDragMove}
+                    onDragMove={handleDragMoveWithCursor}
                     onDragEnd={handleDragEndWithCursor}
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
@@ -222,6 +253,7 @@ const SoundEventElement = React.memo(
                     id={`${ELEMENT_ID_PREFIX}${id}`}
                     data-portal-parent={portalRef?.current}
                     data-parent-group-id={parentGroupId}
+                    {...controlledPositionProps}
                 >
                     <Rect
                         onMouseEnter={handleMouseEnterWithCursor}

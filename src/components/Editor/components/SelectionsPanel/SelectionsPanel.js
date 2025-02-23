@@ -5,7 +5,6 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
-import { useSelectionState } from '../../../../hooks/useSelectionState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext, TimelineHeight, Y_OFFSET } from '../../../../providers/TimelineProvider';
@@ -31,8 +30,6 @@ export const SelectionsPanel = () => {
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
-
-    const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
     const startTimeCorrected = selectedValues[0]?.startTime;
 

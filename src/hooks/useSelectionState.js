@@ -102,8 +102,9 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         // Remove deleted items from selectedItems
         setSelectedItems((prevSelectedItems) => {
             const updatedSelectedItems = { ...prevSelectedItems };
-            eventsArray.forEach(({ id }) => {
+            eventsArray.forEach(({ element, id }) => {
                 delete updatedSelectedItems[id];
+                element.destroy();
             });
             return updatedSelectedItems;
         });

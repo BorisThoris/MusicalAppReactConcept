@@ -130,8 +130,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                         const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
                         const recording = get(element, "attrs['data-recording']", {});
 
-                        console.log('REF RECORDING', recording);
-
                         const grouped = get(element, "attrs['data-group-child']", false);
 
                         const timelineY = get(element, 'parent.attrs.timelineY', 0);
