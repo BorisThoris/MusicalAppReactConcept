@@ -1,7 +1,7 @@
 // @ts-nocheck
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -35,8 +35,10 @@ const CONSTANTS = {
 
 const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 
+// Helper function for comparing props
 const areEqual = (prevProps, nextProps) => {
     const equal = isEqual(prevProps, nextProps);
+    // Uncomment below to log detailed changes if needed:
     // if (!equal) {
     //     Object.keys(prevProps).forEach((key) => {
     //         if (!isEqual(prevProps[key], nextProps[key])) {
@@ -66,14 +68,14 @@ const SoundEventElement = React.memo(
         timelineHeight,
         timelineY
     }) => {
-        const { eventLength, id, locked, name, startTime } = recording;
+        const { eventLength, id, isSelected, locked, name, startTime } = recording;
 
         // Refs for the element container and for storing positions.
         const elementContainerRef = useRef();
         const elementRef = useRef();
         // Using refs to avoid re-renders on every drag update.
         const elementXRef = useRef(startTime * pixelToSecondRatio);
-        const elementYRef = useRef(timelineY); // This ref will update during dragging but not affect rendering.
+        const elementYRef = useRef(timelineY);
 
         // Determine if this element is currently being dragged.
         const isDragging = isElementBeingDragged(id);
@@ -85,13 +87,22 @@ const SoundEventElement = React.memo(
         const { timelineState } = useContext(TimelineContext);
         const { getGroupById } = useContext(CollisionsContext);
 
-        // Derived values
-        const isSelected = isItemSelected(id);
         const parent = getGroupById(parentGroupId);
 
-        // Hooks for focus and click handling
+        // Hooks for focus and click handling.
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
-        const { handleClick, handleDoubleClick } = useClickHandlers({ parent, recording });
+
+        const toggleSelection = useCallback(() => {
+            const prevData = elementContainerRef.current.attrs['data-recording'];
+            const updatedState = { ...prevData, isSelected: true };
+
+            elementContainerRef.current.setAttrs({
+                'data-recording': updatedState
+            });
+            elementContainerRef.current.getLayer().draw();
+        }, []);
+
+        const { handleClick, handleDoubleClick } = useClickHandlers({ parent, recording, toggleSelection });
         const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
             isFocused,
             isSelected,
@@ -106,7 +117,6 @@ const SoundEventElement = React.memo(
             elementContainerRef.current.setAttrs({
                 'data-recording': updatedState
             });
-
             elementContainerRef.current.getLayer().draw();
         }, []);
 
@@ -139,7 +149,6 @@ const SoundEventElement = React.memo(
         useEffect(() => {
             if (elementContainerRef.current && !isFocused) {
                 const currentZIndex = elementContainerRef.current.zIndex();
-
                 if (originalZIndex === null) {
                     setOriginalZIndex(currentZIndex);
                 } else if (originalZIndex !== currentZIndex) {
@@ -203,7 +212,6 @@ const SoundEventElement = React.memo(
         const handleDragMoveWithCursor = useCallback(
             (e) => {
                 elementXRef.current = e.target.x();
-                // Update Y ref in case you need it later (but we don't use it for rendering)
                 elementYRef.current = e.target.y();
                 handleDragMove(e);
             },
@@ -216,7 +224,6 @@ const SoundEventElement = React.memo(
                 const container = e.target.getStage().container();
                 container.style.cursor = 'grab';
                 elementXRef.current = e.target.x();
-                // Do not update the rendered Y value; it remains controlled by timelineY when dragging.
                 handleDragEnd(e);
             },
             [handleDragEnd]
@@ -235,7 +242,6 @@ const SoundEventElement = React.memo(
                     onContextMenu={handleContextClick}
                     ref={elementContainerRef}
                     key={index}
-                    // Use the old offsetting for Y: if dragging, use timelineY; otherwise 0.
                     x={elementXRef.current}
                     y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}

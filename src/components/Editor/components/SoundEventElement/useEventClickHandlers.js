@@ -3,7 +3,7 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 
-export const useClickHandlers = ({ parent, recording }) => {
+export const useClickHandlers = ({ parent, recording, toggleSelection }) => {
     const { eventInstance } = recording;
     const { openSelectionsPanel } = useContext(PanelContext);
 
@@ -23,12 +23,13 @@ export const useClickHandlers = ({ parent, recording }) => {
             const locked = overlapGroup?.locked ?? false;
 
             openSelectionPanel();
+            toggleSelection();
 
             if (isParentPresent && locked) {
                 console.log('lol, parent');
             }
         },
-        [parent, openSelectionPanel]
+        [openSelectionPanel, parent, toggleSelection]
     );
 
     const handleDoubleClick = useCallback(() => playEventInstance(eventInstance), [eventInstance]);

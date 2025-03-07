@@ -13,6 +13,7 @@ import { findOverlaps } from './overlapHelpers';
 export const CollisionsContext = createContext();
 
 export const CollisionsProvider = ({ children }) => {
+    const [processedItems, setProcessedItems] = useState([]);
     const [overlapGroups, setOverlapGroups] = useState({});
     const [hasChanged, setHasChanged] = useState(false);
     const [copiedEvents, setCopiedEvents] = useState([]);
@@ -56,11 +57,16 @@ export const CollisionsProvider = ({ children }) => {
 
     const refreshBeat = useCallback(() => {
         const newData = processBeat();
+        const newProcessedItems = getProcessedItems();
+
+        if (!isEqual(processedItems, newProcessedItems)) {
+            setProcessedItems(newProcessedItems);
+        }
 
         if (!isEqual(currentBeat, newData)) {
             setCurrentBeat({ ...newData });
         }
-    }, [currentBeat, processBeat]);
+    }, [currentBeat, processedItems, getProcessedItems, processBeat]);
 
     const updateBeatRef = useCallback(() => {
         if (isDragging) return;
@@ -177,6 +183,7 @@ export const CollisionsProvider = ({ children }) => {
             loadFromLocalStorage,
             overlapGroups,
             processBeat,
+            processedItems,
             pushToHistory,
             redo,
             redoHistory,
@@ -191,7 +198,7 @@ export const CollisionsProvider = ({ children }) => {
             setHasChanged,
             setOverlapGroups,
             setSelectedBeat,
-            stageRef,
+            stageRef: stageRef?.current,
             timelineRefs,
             totalDurationInPixels,
             undo,
@@ -235,6 +242,7 @@ export const CollisionsProvider = ({ children }) => {
             removeStageRef,
             processBeat,
             getProcessedItems,
+            processedItems,
             isDragging,
             dragging,
             setDragging,

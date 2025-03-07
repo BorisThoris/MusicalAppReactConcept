@@ -25,7 +25,7 @@ export const SelectionsPanel = () => {
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, endTime, selectedValues, startTime, updateSelectedItemById } = useContext(SelectionContext);
 
-    const { copyEvents } = useContext(CollisionsContext);
+    const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
@@ -51,7 +51,7 @@ export const SelectionsPanel = () => {
             const elementAbsolutePos = element?.getAbsolutePosition() || { x: 0, y: 0 };
 
             // Get the Konva stage container's DOM offset in the page
-            const stageContainer = element.getStage().container();
+            const stageContainer = stageRef.container();
             const containerRect = stageContainer.getBoundingClientRect();
 
             // Calculate global Y position
@@ -83,8 +83,7 @@ export const SelectionsPanel = () => {
 
     const onDeleteChildRecording = useCallback(
         (event) => {
-            const stage = event.element.getStage();
-            const topLayer = stage.findOne('.top-layer'); // Find the top layer using its name
+            const topLayer = stageRef.findOne('.top-layer'); // Find the top layer using its name
 
             event.element.destroy(); // Remove the recording element
             deleteSelections(event); // Update the selections context/state
@@ -93,7 +92,7 @@ export const SelectionsPanel = () => {
                 topLayer.batchDraw(); // Trigger a re-render on the top layer
             }
         },
-        [deleteSelections]
+        [deleteSelections, stageRef]
     );
 
     const onPlayEvent = useCallback(

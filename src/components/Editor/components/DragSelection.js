@@ -5,17 +5,17 @@ import useContextMenu from '../../../hooks/useContextMenu';
 import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
 
-export const DragSelection = ({ stageRef }) => {
+export const DragSelection = () => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
     const [isDragging, setIsDragging] = useState(false);
 
     const selectionRectRef = useRef();
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
-    const { getProcessedItems } = useContext(CollisionsContext);
+    const { processedItems, stageRef } = useContext(CollisionsContext);
 
     const { handleCloseMenu } = useContextMenu();
-    const processedElements = getProcessedItems();
+    const processedElements = processedItems;
 
     const hasMoved = useCallback(() => {
         if (!dragPos.start || !dragPos.end) {
@@ -136,9 +136,9 @@ export const DragSelection = ({ stageRef }) => {
     );
 
     useEffect(() => {
-        if (!stageRef.current) return;
+        if (!stageRef) return;
 
-        const stage = stageRef.current;
+        const stage = stageRef;
 
         // Handlers
         const mouseDownHandler = (e) => {

@@ -12,7 +12,7 @@ const TimelineTracker = () => {
     const trackerRef = useRef();
     const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
         useRecordingPlayerContext();
-    const { furthestEndTime, getProcessedItems } = useContext(CollisionsContext);
+    const { furthestEndTime, processedItems } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
     const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
@@ -20,7 +20,7 @@ const TimelineTracker = () => {
 
     const { playCollidedElements } = useCollisionDetection(
         trackerRef,
-        getProcessedItems(),
+        processedItems,
         mutedInstruments,
         playbackStatus
     );

@@ -5,7 +5,7 @@ import omit from 'lodash/omit';
 import reduce from 'lodash/reduce';
 import set from 'lodash/set';
 import { useCallback, useRef } from 'react';
-import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
+import { ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
     const timelineRefs = useRef({});

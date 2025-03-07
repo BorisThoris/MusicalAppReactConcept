@@ -8,8 +8,7 @@ import { SelectionContext } from './SelectionsProvider';
 export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
-    // ----- Contexts for collision and selection handling -----
-    const { dragging, refreshBeat, setDragging } = useContext(CollisionsContext);
+    const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
 
     // Memoize selected element IDs so we don't recalculate on every drag event
@@ -61,8 +60,6 @@ export const SoundEventDragProvider = ({ children }) => {
                     groupElements[recording.id] = updatedRecording;
                 }
             }
-            // group.setAttr('data-overlap-group', { ...groupElement, elements: groupElements });
-            // group.getLayer().draw();
         }
 
         element.setAttr('data-recording', updatedRecording);
@@ -92,46 +89,51 @@ export const SoundEventDragProvider = ({ children }) => {
     // ===== Timeline Search Functions =====
 
     // Finds the closest timeline rectangle based on vertical distance
-    const findClosestTimelineRect = useCallback((element) => {
-        const stage = element.getStage();
-        const elementBox = element.getClientRect();
-        let closestTimeline = null;
-        let minDistance = Infinity;
+    const findClosestTimelineRect = useCallback(
+        (element) => {
+            const elementBox = element.getClientRect();
+            let closestTimeline = null;
+            let minDistance = Infinity;
 
-        const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('timelineRect'));
+            const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('timelineRect'));
 
-        allTimelineElements.forEach((timelineElement) => {
-            const timelineBox = timelineElement.getClientRect();
-            const distance = Math.abs(elementBox.y - timelineBox.y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestTimeline = timelineElement;
-            }
-        });
+            allTimelineElements.forEach((timelineElement) => {
+                const timelineBox = timelineElement.getClientRect();
+                const distance = Math.abs(elementBox.y - timelineBox.y);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTimeline = timelineElement;
+                }
+            });
 
-        return closestTimeline;
-    }, []);
+            return closestTimeline;
+        },
+        [stageRef]
+    );
 
     // Finds the closest timeline event container for an element
-    const findClosestTimelineEvents = useCallback((element) => {
-        const stage = element.getStage();
-        const elementBox = element.getAbsolutePosition();
-        let closestTimeline = null;
-        let minDistance = Infinity;
+    const findClosestTimelineEvents = useCallback(
+        (element) => {
+            const stage = stageRef;
+            const elementBox = element.getAbsolutePosition();
+            let closestTimeline = null;
+            let minDistance = Infinity;
 
-        const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('-events'));
+            const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('-events'));
 
-        allTimelineElements.forEach((timelineElement) => {
-            const timelineBox = timelineElement.parent.getAbsolutePosition();
-            const distance = Math.abs(elementBox.y - timelineBox.y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestTimeline = timelineElement;
-            }
-        });
+            allTimelineElements.forEach((timelineElement) => {
+                const timelineBox = timelineElement.parent.getAbsolutePosition();
+                const distance = Math.abs(elementBox.y - timelineBox.y);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTimeline = timelineElement;
+                }
+            });
 
-        return closestTimeline;
-    }, []);
+            return closestTimeline;
+        },
+        [stageRef]
+    );
 
     // Inserts the element into the timeline by updating its instrument name
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
@@ -140,11 +142,11 @@ export const SoundEventDragProvider = ({ children }) => {
         recording.instrumentName = closestTimelineInstrumentName;
 
         element.setAttr('data-recording', recording);
-        console.log('UPDATED RECORDING', element.attrs['data-recording'].instrumentName);
     }, []);
 
     // ===== Reusable Function for Processing Selected Elements =====
-    // This function iterates over the memoized selectedElementIds and applies the provided action callback to each element.
+    // This function iterates over the memoized selectedElementIds
+    // and applies the provided action callback to each element.
     const processSelectedElements = useCallback(
         (stage, action) => {
             selectedElementIds.forEach((id) => {
@@ -189,7 +191,7 @@ export const SoundEventDragProvider = ({ children }) => {
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
-            const stage = e.target.getStage();
+            const stage = stageRef;
             if (!stage) return;
 
             if (dragRequestRef.current) {
@@ -216,13 +218,6 @@ export const SoundEventDragProvider = ({ children }) => {
                     if (closestTimeline) {
                         newHighlightedTimelines.add(closestTimeline);
                     }
-
-                    // Update its timeline association as the element moves
-                    const closestTimelineEvents = findClosestTimelineEvents(element);
-                    if (closestTimelineEvents) {
-                        console.log('yoooo');
-                        insertElementIntoTimeline({ closestTimeline: closestTimelineEvents, element });
-                    }
                 };
 
                 if (selectedElementIds.length > 0) {
@@ -245,23 +240,13 @@ export const SoundEventDragProvider = ({ children }) => {
                 highlightedTimelinesRef.current = newHighlightedTimelines;
             });
         },
-        [
-            findClosestTimelineRect,
-            findClosestTimelineEvents,
-            insertElementIntoTimeline,
-            selectedElementIds,
-            forceUpdatePosition,
-            processSelectedElements
-        ]
+        [stageRef, selectedElementIds.length, forceUpdatePosition, findClosestTimelineRect, processSelectedElements]
     );
 
     // Finalize the drag by inserting the element into its closest timeline and updating its time
     const finalizeDrag = useCallback(
         (element) => {
             const closestTimeline = findClosestTimelineEvents(element);
-
-            console.log('Finalizing Drag for Element', element);
-            console.log('ClosestTimeline ', closestTimeline);
 
             insertElementIntoTimeline({ closestTimeline, element });
             updateStartTimeForElement({ element });
@@ -272,7 +257,7 @@ export const SoundEventDragProvider = ({ children }) => {
     // Handle drag end: finalize position updates, clear highlights, and reset dragging state
     const handleDragEnd = useCallback(
         (e) => {
-            const stage = e.target.getStage();
+            const stage = stageRef;
             if (!stage) return;
 
             if (selectedElementIds.length > 0) {
@@ -289,7 +274,7 @@ export const SoundEventDragProvider = ({ children }) => {
             setDragging({});
             refreshBeat();
         },
-        [finalizeDrag, selectedElementIds, setDragging, refreshBeat, processSelectedElements]
+        [stageRef, selectedElementIds.length, setDragging, refreshBeat, processSelectedElements, finalizeDrag]
     );
 
     // Utility to check if an element is currently being dragged

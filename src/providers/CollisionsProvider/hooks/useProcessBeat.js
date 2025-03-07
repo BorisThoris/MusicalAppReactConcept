@@ -88,10 +88,12 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
 
             if (!acc[recording.instrumentName]) acc[recording.instrumentName] = {};
+
             acc[recording.instrumentName][recording.id] = {
                 ...newRec,
                 rect: element.getClientRect()
             };
+
             return acc;
         }, {});
 
