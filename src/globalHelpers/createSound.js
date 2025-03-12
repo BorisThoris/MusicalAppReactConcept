@@ -73,6 +73,7 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
     const { endTime } = mainEvent;
 
     return {
+        ...recording,
         ...mainEvent,
         endTime: parseFloat(endTime.toFixed(2)),
         eventLength: endTime - startTime,

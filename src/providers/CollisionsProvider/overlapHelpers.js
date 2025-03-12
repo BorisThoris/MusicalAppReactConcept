@@ -89,6 +89,8 @@ export const findOverlaps = (processedData) => {
 
     const { parent, rank } = initializeUnionFind(allElements);
 
+    console.log('allElements allElements', allElements);
+
     // Detect overlaps and union groups
     allElements.forEach((elementA, idxA) => {
         for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {

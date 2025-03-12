@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash';
+import _, { isEqual } from 'lodash';
 import { useCallback, useRef } from 'react';
 import { createEvent } from '../../../globalHelpers/createSound';
 import { isOverlapping } from '../overlapHelpers';
@@ -103,29 +103,43 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             }
         });
 
-        overlapGroups.forEach((ovrlpGrp) => {
-            const instrumentName = ovrlpGrp?.instrumentName || 'FALL BACK TIMELINE VALUE';
-            const hasElements = Object.keys(ovrlpGrp.elements || {}).length > 0;
+        overlapGroups.forEach(
+            ({
+                elements = {},
+                endTime,
+                id,
+                ids,
+                instrumentName = 'FALL BACK TIMELINE VALUE',
+                length,
+                locked,
+                startTime
+            }) => {
+                const hasElements = Object.keys(elements || {}).length > 0;
 
-            if (!objToSave[instrumentName]) {
-                objToSave[instrumentName] = {};
+                if (!id || !hasElements) return;
+
+                objToSave[instrumentName] ??= {};
+
+                // Process elements with createEvent and map to new IDs
+                const recreatedElements = Object.fromEntries(
+                    Object.values(elements).map((element) => {
+                        const newElement = createEvent({ instrumentName: element.instrumentName, recording: element });
+                        return [newElement.id, newElement];
+                    })
+                );
+
+                objToSave[instrumentName][id] = {
+                    elements: recreatedElements,
+                    endTime,
+                    id,
+                    ids: Object.keys(recreatedElements), // Set the new element IDs
+                    instrumentName,
+                    length,
+                    locked,
+                    startTime
+                };
             }
-
-            if (!ovrlpGrp || !hasElements) {
-                return;
-            }
-
-            objToSave[instrumentName][ovrlpGrp.id] = {
-                elements: ovrlpGrp.elements,
-                endTime: ovrlpGrp.endTime,
-                id: ovrlpGrp.id,
-                ids: ovrlpGrp.ids,
-                instrumentName: ovrlpGrp.instrumentName,
-                length: ovrlpGrp.length,
-                locked: ovrlpGrp.locked,
-                startTime: ovrlpGrp.startTime
-            };
-        });
+        );
 
         prevResultRef.current = objToSave; // Cache the result
 

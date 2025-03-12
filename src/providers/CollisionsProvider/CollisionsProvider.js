@@ -79,6 +79,9 @@ export const CollisionsProvider = ({ children }) => {
 
     // Only recalc overlap groups if there's a beat change AND no dragging.
     if (beatDiff && !isDragging) {
+        console.clear();
+        console.log('beat Diff');
+
         // alert('beatDiff && !isDragging');
         const newOverlapGroups = findOverlaps(currentBeat);
         setOverlapGroups(newOverlapGroups);

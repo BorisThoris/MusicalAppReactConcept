@@ -158,7 +158,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [findAllSoundEventElements]
     );
 
-    // New method to process groups
     const getProcessedGroups = useCallback(() => {
         if (!stageRef?.current) return [];
 
@@ -167,28 +166,26 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
         const processedGroups = groups.reduce((acc, group) => {
             if (!seenGroupIds.has(group.id())) {
-                if (!group.getClientRect) return acc;
+                seenGroupIds.add(group.id());
 
-                const clientRect = group.getClientRect();
+                if (!group.hasChildren()) return acc; // Ensure we only process groups with children
+
+                const clientRect = group.getClientRect(); // Safe usage
                 const { height, width, x, y } = clientRect;
 
                 // Extract group attributes safely
-                const groupData = { ...group.attrs['data-overlap-group'] }; // Clone to avoid mutation
+                const groupData = group.getAttr('data-overlap-group') || {};
 
-                // Push a new object into the accumulator
-                return [
-                    ...acc,
-                    {
-                        group,
-                        ...groupData,
-                        rect: { height, width, x, y }
-                    }
-                ];
+                // Find all elements within the group and filter them by ID prefix
+                const groupElements = group.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+
+                acc.push({
+                    group,
+                    ...groupData,
+                    elements: groupElements,
+                    rect: { height, width, x, y }
+                });
             }
-
-            // Add group ID to the seen set (mutating Set is acceptable here)
-            seenGroupIds.add(group.id());
-
             return acc;
         }, []);
 

@@ -56,7 +56,7 @@ export const useInstrumentRecordingsOperations = () => {
                     }
 
                     // Re-assign the updated data-recording back to the element's attributes
-                    soundEvent.element.setAttr('attrs.data-recording', recordingData);
+                    soundEvent.element.setAttr('data-recording', recordingData);
 
                     // Trigger a redraw by Konva
                     soundEvent.element.draw();
