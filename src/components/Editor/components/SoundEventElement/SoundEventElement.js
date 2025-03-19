@@ -94,7 +94,7 @@ const SoundEventElement = React.memo(
 
         const toggleSelection = useCallback(() => {
             const prevData = elementContainerRef.current.attrs['data-recording'];
-            const updatedState = { ...prevData, isSelected: true };
+            const updatedState = { ...prevData, isSelected: !prevData.isSelected };
 
             elementContainerRef.current.setAttrs({
                 'data-recording': updatedState
@@ -126,10 +126,9 @@ const SoundEventElement = React.memo(
             }
         }, []);
 
-        // Update X ref and Konva node when startTime changes.
         useEffect(() => {
-            if (elementContainerRef.current) {
-                const newX = startTime * pixelToSecondRatio;
+            const newX = startTime * pixelToSecondRatio;
+            if (elementContainerRef.current && elementXRef.current !== newX) {
                 elementContainerRef.current.x(newX);
                 elementXRef.current = newX;
             }

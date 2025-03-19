@@ -1,4 +1,5 @@
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import isEqual from 'lodash/isEqual';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
@@ -99,14 +100,40 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
     }, [selectedItems]);
 
-    // Ensure the visual selection state of each processed item matches our state.
-    useLayoutEffect(() => {
+    const getRecordingData = (element) => {
+        if (!element) return null;
+        if (typeof element.getAttr === 'function') {
+            return element.getAttr('data-recording');
+        }
+        if (typeof element === 'string') {
+            try {
+                const parsed = JSON.parse(element);
+                // Assuming the parsed object holds the attributes under an "attrs" key.
+                return parsed?.attrs?.['data-recording'] || null;
+            } catch (e) {
+                console.error('Failed to parse element JSON', e);
+                return null;
+            }
+        } else if (typeof element === 'object') {
+            // Fallback: maybe the element is a plain object with an "attrs" property.
+            return element.attrs?.['data-recording'] || null;
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        const layersToDraw = new Set();
+
+        console.log('processedItems', processedItems);
+        console.log('Selections', selectedItems);
+
         processedItems.forEach((item) => {
             if (!item.element) return;
             const recordingData = item.element.getAttr('data-recording');
             const id = recordingData?.id;
             const currentlySelected = recordingData?.isSelected || false;
             const shouldSelect = !!(id && selectedItems[id]);
+
             if (currentlySelected !== shouldSelect) {
                 item.element.setAttr('data-recording', {
                     ...recordingData,
@@ -114,24 +141,25 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 });
                 const layer = item.element.getLayer();
                 if (layer) {
-                    layer.draw();
+                    layersToDraw.add(layer);
                 }
             }
         });
+
+        // Draw each unique layer only once at the end
+        layersToDraw.forEach((layer) => {
+            layer.draw();
+        });
     }, [selectedItems, processedItems]);
 
-    // Sync the selectedItems state with processedItems.
     useEffect(() => {
-        // Update the selection state:
-        // - Remove any selected item that no longer has a matching processed item with isSelected true.
-        // - Add any processed item that is marked as selected.
         setSelectedItems((prevSelectedItems) => {
             const updatedSelectedItems = {};
 
-            // Retain only those items that still have a matching processed item with isSelected true.
+            // Preserve selections from previous state if they still match
             Object.keys(prevSelectedItems).forEach((id) => {
                 const hasMatchingElement = processedItems.some((item) => {
-                    const recData = item.element?.getAttr('data-recording');
+                    const recData = getRecordingData(item.element);
                     return recData && recData.id === id && recData.isSelected;
                 });
                 if (hasMatchingElement) {
@@ -139,26 +167,17 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 }
             });
 
-            // Add any new processed items that are marked as selected.
+            // Add any new selections based on current processed items.
             processedItems.forEach((item) => {
-                const recData = item.element?.getAttr('data-recording');
+                const recData = getRecordingData(item.element);
                 const id = recData?.id;
+
                 if (id && recData.isSelected) {
-                    updatedSelectedItems[id] = {
-                        ...recData,
-                        element: item.element
-                    };
+                    updatedSelectedItems[id] = { ...recData, element: item.element };
                 }
             });
 
-            // Shallow equality check: compare keys and their associated values.
-            const prevKeys = Object.keys(prevSelectedItems);
-            const updatedKeys = Object.keys(updatedSelectedItems);
-            const isEqual =
-                prevKeys.length === updatedKeys.length &&
-                prevKeys.every((key) => updatedSelectedItems[key] === prevSelectedItems[key]);
-
-            return isEqual ? prevSelectedItems : updatedSelectedItems;
+            return isEqual(prevSelectedItems, updatedSelectedItems) ? prevSelectedItems : updatedSelectedItems;
         });
     }, [processedItems]);
 

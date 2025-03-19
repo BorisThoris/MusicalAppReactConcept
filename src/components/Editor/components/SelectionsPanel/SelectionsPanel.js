@@ -1,5 +1,4 @@
-import cloneDeep from 'lodash/cloneDeep';
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -23,7 +22,7 @@ const EventsContainer = styled(FlexContainer)`
 export const SelectionsPanel = () => {
     const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, endTime, selectedValues, startTime, updateSelectedItemById } = useContext(SelectionContext);
+    const { clearSelection, endTime, selectedValues, startTime } = useContext(SelectionContext);
 
     const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
@@ -116,7 +115,7 @@ export const SelectionsPanel = () => {
                 const updatedValues = { ...selectedValues };
 
                 Object.entries(updatedValues).forEach(([key, { element }]) => {
-                    const oldRecording = cloneDeep(element.attrs['data-recording']);
+                    const oldRecording = element.attrs['data-recording'];
 
                     if (id && oldRecording.id !== id) {
                         return;
@@ -132,22 +131,11 @@ export const SelectionsPanel = () => {
                         };
 
                         element.setAttr('data-recording', newRecording);
-                        element.getLayer().draw();
-
-                        updateSelectedItemById(oldRecording.id, {
-                            endTime: newRecording.endTime,
-                            startTime: newRecording.startTime
-                        });
-
-                        const layer = element.getLayer();
-                        if (layer) {
-                            layer.draw();
-                        }
                     }
                 });
             }
         },
-        [selectedValues, updateSelectedItemById]
+        [selectedValues]
     );
 
     if (selectedValues.length > 0) {

@@ -59,12 +59,12 @@ export const CollisionsProvider = ({ children }) => {
         const newData = processBeat();
         const newProcessedItems = getProcessedItems();
 
-        if (!isEqual(processedItems, newProcessedItems)) {
-            setProcessedItems(newProcessedItems);
-        }
-
         if (!isEqual(currentBeat, newData)) {
             setCurrentBeat({ ...newData });
+
+            if (!isEqual(processedItems, newProcessedItems)) {
+                setProcessedItems(newProcessedItems);
+            }
         }
     }, [currentBeat, processedItems, getProcessedItems, processBeat]);
 
@@ -79,12 +79,11 @@ export const CollisionsProvider = ({ children }) => {
 
     // Only recalc overlap groups if there's a beat change AND no dragging.
     if (beatDiff && !isDragging) {
-        console.clear();
-        console.log('beat Diff');
-
         // alert('beatDiff && !isDragging');
         const newOverlapGroups = findOverlaps(currentBeat);
         setOverlapGroups(newOverlapGroups);
+
+        console.log('OVERLAP GROUPS: ', newOverlapGroups);
         prevProcessBeatResultRef.current = currentBeat;
     }
 
@@ -158,8 +157,6 @@ export const CollisionsProvider = ({ children }) => {
             };
         });
     }, []);
-
-    console.log('OVERLAP GROUPS: ', overlapGroups);
 
     const contextValue = useMemo(
         () => ({

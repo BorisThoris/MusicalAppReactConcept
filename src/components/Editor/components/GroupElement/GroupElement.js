@@ -27,7 +27,7 @@ export const GroupElement = React.memo(
         });
         const groupLength = groupEvents.length;
 
-        const onLockSoundEventElement = useCallback(() => {
+        const onLockGroup = useCallback(() => {
             if (!groupRef.current) return;
 
             const prevData = groupRef.current.attrs['data-overlap-group'];
@@ -40,8 +40,27 @@ export const GroupElement = React.memo(
 
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
 
+        const toggleSelection = useCallback(() => {
+            const prevData = groupRef.current.attrs['data-data-overlap-group'];
+            const updatedState = { ...prevData, isSelected: true };
+
+            groupRef.current.setAttrs({
+                'data-recording': updatedState
+            });
+            groupRef.current.getLayer().draw();
+        }, []);
+
+        const onGroupClick = useCallback(() => {}, []);
+
         return (
-            <Group x={groupX} data-overlap-group={groupData} ref={groupRef} data-group-id={groupId} id={groupId}>
+            <Group
+                x={groupX}
+                data-overlap-group={groupData}
+                ref={groupRef}
+                data-group-id={groupId}
+                id={groupId}
+                onClick={onGroupClick}
+            >
                 <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 
                 <Group offsetX={groupX}>
@@ -67,7 +86,7 @@ export const GroupElement = React.memo(
                     })}
                 </Group>
 
-                <Lock isLocked={locked} onClick={onLockSoundEventElement} />
+                <Lock isLocked={locked} onClick={onLockGroup} />
             </Group>
         );
     },

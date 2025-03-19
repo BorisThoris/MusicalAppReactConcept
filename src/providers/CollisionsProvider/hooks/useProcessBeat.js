@@ -108,7 +108,6 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 elements = {},
                 endTime,
                 id,
-                ids,
                 instrumentName = 'FALL BACK TIMELINE VALUE',
                 length,
                 locked,

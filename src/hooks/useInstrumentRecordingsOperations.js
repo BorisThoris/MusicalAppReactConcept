@@ -2,7 +2,6 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
-import cloneDeep from 'lodash/cloneDeep';
 import find from 'lodash/find';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
@@ -15,7 +14,7 @@ export const useInstrumentRecordingsOperations = () => {
 
     const updateGroups = (setOverlapGroups, updateCallback) => {
         setOverlapGroups((prevGroups) => {
-            const updatedGroups = cloneDeep(prevGroups);
+            const updatedGroups = { ...prevGroups };
             updateCallback(updatedGroups);
 
             return updatedGroups;
