@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useBeats } from './hooks/useBeats';
@@ -123,13 +123,13 @@ export const CollisionsProvider = ({ children }) => {
         setHasChanged
     });
 
-    const previousOverlapGroupsRef = useRef({});
-
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (Object.values(overlapGroups).length === 0) {
-            openLoadPanel();
+            console.log('    ');
+            console.log(overlapGroups);
+            console.log('Object.values(overlapGroups).length', Object.values(overlapGroups).length);
 
-            previousOverlapGroupsRef.current = {};
+            openLoadPanel();
         }
     }, [openLoadPanel, overlapGroups]);
 

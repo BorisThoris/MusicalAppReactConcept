@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { useBeatActions } from '../../../../hooks/useBeatActions';
 import { PanelContext } from '../../../../hooks/usePanelState';
