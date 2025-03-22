@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash/cloneDeep';
 import { useCallback, useRef, useState } from 'react';
 import { recreateEvents } from '../../../globalHelpers/createSound';
 
@@ -8,7 +7,8 @@ export const useHistory = ({ calculateOverlapsForAllInstruments, overlapGroups, 
     const recalculationsDisabledRef = useRef(false);
 
     const pushToHistory = useCallback((currentOverlapGroups) => {
-        setHistory((prevHistory) => [...prevHistory, recreateEvents(cloneDeep(currentOverlapGroups))]);
+        // Use spread operator to create a shallow copy of currentOverlapGroups
+        setHistory((prevHistory) => [...prevHistory, recreateEvents([...currentOverlapGroups])]);
         setRedoHistory([]);
     }, []);
 
@@ -21,9 +21,10 @@ export const useHistory = ({ calculateOverlapsForAllInstruments, overlapGroups, 
             const newHistory = prevHistory.slice(0, -1);
             const previousState = prevHistory[prevHistory.length - 1];
 
-            // Clone the previous state and recalculate overlaps
-            const updatedGroups = calculateOverlapsForAllInstruments(recreateEvents(cloneDeep(previousState)));
-            setRedoHistory((prevRedoHistory) => [cloneDeep(overlapGroups), ...prevRedoHistory]);
+            // Use shallow copy for the previous state
+            const updatedGroups = calculateOverlapsForAllInstruments(recreateEvents([...previousState]));
+            // Create a shallow copy of overlapGroups when storing in redoHistory
+            setRedoHistory((prevRedoHistory) => [[...overlapGroups], ...prevRedoHistory]);
             setOverlapGroups(updatedGroups);
 
             recalculationsDisabledRef.current = false;
@@ -41,9 +42,10 @@ export const useHistory = ({ calculateOverlapsForAllInstruments, overlapGroups, 
             const nextState = prevRedoHistory[0];
             const newRedoHistory = prevRedoHistory.slice(1);
 
-            // Clone the next state and recalculate overlaps
-            const updatedGroups = calculateOverlapsForAllInstruments(recreateEvents(cloneDeep(nextState)));
-            setHistory((prevHistory) => [...prevHistory, cloneDeep(overlapGroups)]);
+            // Use shallow copy for the next state
+            const updatedGroups = calculateOverlapsForAllInstruments(recreateEvents([...nextState]));
+            // When adding to history, spread overlapGroups to shallow copy it
+            setHistory((prevHistory) => [...prevHistory, [...overlapGroups]]);
             setOverlapGroups(updatedGroups);
 
             recalculationsDisabledRef.current = false;

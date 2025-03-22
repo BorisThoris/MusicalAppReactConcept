@@ -28,15 +28,30 @@ const ParameterControl = React.memo(({ event, param }) => {
     }, []);
 
     useEffect(() => {
-        if (event?.eventInstance?.setParameterByName) {
+        if (!event || typeof event !== 'object') {
+            console.warn('Invalid event object:', event);
+            return;
+        }
+
+        if (!event.eventInstance || typeof event.eventInstance !== 'object') {
+            console.warn('Invalid or missing eventInstance:', event.eventInstance);
+            return;
+        }
+
+        if (typeof event.eventInstance.setParameterByName !== 'function') {
+            console.warn('setParameterByName is not a function:', event.eventInstance.setParameterByName);
+            return;
+        }
+
+        try {
             event.eventInstance.setParameterByName(name, paramValue, false);
 
             updateRecordingParams({
                 event,
                 updatedParam: { ...param, value: paramValue }
             });
-        } else {
-            alert('Invalid eventInstance object:', event.eventInstance);
+        } catch (error) {
+            console.error('Error calling setParameterByName:', error);
         }
     }, [event, name, paramValue, param, updateRecordingParams]);
 

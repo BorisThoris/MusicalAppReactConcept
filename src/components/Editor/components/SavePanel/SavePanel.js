@@ -28,7 +28,7 @@ const SaveButton = styled.button`
 export const SavePanel = () => {
     const [beatName, setBeatName] = useState('');
     const { closeSavePanel } = useContext(PanelContext);
-    const { processBeat } = useContext(CollisionsContext);
+    const { overlapGroups } = useContext(CollisionsContext);
 
     const handleSave = useCallback(() => {
         if (!beatName.trim()) {
@@ -36,21 +36,38 @@ export const SavePanel = () => {
             return;
         }
 
-        const objToSave = processBeat();
-
         const newBeat = {
-            data: objToSave,
+            data: overlapGroups,
             date: new Date().toLocaleString(),
             name: beatName.trim()
         };
 
         const savedBeats = JSON.parse(localStorage.getItem('beats')) || [];
-        savedBeats.push(newBeat);
+
+        const existingIndex = savedBeats.findIndex((beat) => beat.name === newBeat.name);
+
+        if (existingIndex !== -1) {
+            // Prompt for confirmation if the beat name already exists
+            // eslint-disable-next-line no-alert
+            const confirmOverwrite = window.confirm(
+                `A beat with the name "${newBeat.name}" already exists. Do you want to overwrite it?`
+            );
+
+            if (!confirmOverwrite) {
+                return;
+            }
+
+            // Overwrite the existing beat
+            savedBeats[existingIndex] = newBeat;
+        } else {
+            // Add the new beat
+            savedBeats.push(newBeat);
+        }
 
         localStorage.setItem('beats', JSON.stringify(savedBeats));
 
         closeSavePanel();
-    }, [beatName, closeSavePanel, processBeat]);
+    }, [beatName, closeSavePanel, overlapGroups]);
 
     const handleSaveBeat = useCallback((e) => {
         setBeatName(e.target.value);

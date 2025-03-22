@@ -1,5 +1,6 @@
-import React, { useContext, useEffect, useRef } from 'react';
-import { Layer, Stage } from 'react-konva';
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import { Layer, Stage, useStrictMode } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
@@ -8,36 +9,51 @@ import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerP
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
-import { useOverlaps } from '../InstrumentTimeline/useOverlaps';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
 const Timelines = React.memo(() => {
     const stageRef = useRef(null);
-    const { addStageRef, overlapGroups } = useContext(CollisionsContext);
+    const topLayerRef = useRef(null);
+
+    const { addStageRef, overlapGroups, removeStageRef, updateBeatRef } = useContext(CollisionsContext);
     const { playbackStatus } = useContext(RecordingsPlayerContext);
     const { hideActionsMenu } = useContext(PanelContext);
 
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
 
-    const recordingsArr = Object.entries(overlapGroups);
-    const EditorHeight = recordingsArr.length * TimelineHeight + markersHeight || 500;
+    const recordingsArr = useMemo(() => Object.entries(overlapGroups), [overlapGroups]);
+    const EditorHeight = useMemo(() => recordingsArr.length * TimelineHeight + markersHeight || 500, [recordingsArr]);
 
     useEffect(() => {
         addStageRef(stageRef);
-    }, [addStageRef]);
 
-    const { overlappingIds, resetOverlaps } = useOverlaps({ eventGroups: recordingsArr });
+        // Attach event listener to the top layer
+        const topLayer = topLayerRef.current;
+        if (topLayer) {
+            topLayer.on('draw', updateBeatRef);
+        }
+
+        // Cleanup event listener
+        return () => {
+            if (topLayer) {
+                topLayer.off('draw', updateBeatRef);
+            }
+            removeStageRef();
+        };
+    }, [addStageRef, removeStageRef, updateBeatRef]);
+
+    useStrictMode(true);
 
     return (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div onClick={hideActionsMenu}>
             <PaintingTopBar />
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
-                <Layer name="top-layer">
+                <Layer ref={topLayerRef} name="top-layer">
                     {recordingsArr.map(([parentGroupName, events], index) => (
                         <InstrumentTimeline
                             key={parentGroupName}
@@ -45,8 +61,6 @@ const Timelines = React.memo(() => {
                             events={events}
                             index={index}
                             markersHeight={markersHeight}
-                            overlappingIds={overlappingIds}
-                            resetOverlaps={resetOverlaps}
                         />
                     ))}
                 </Layer>

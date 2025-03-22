@@ -11,7 +11,6 @@ export const SelectionContext = createContext({
     selectedItems: {},
     selectedValues: [{}],
     setSelectionBasedOnCoordinates: ({ intersectedElements, yLevel }) => {},
-
     toggleItem: (id) => {}
 });
 
@@ -46,19 +45,13 @@ export const SelectionProvider = ({ children }) => {
         }
     }, [openSelectionsPanel, panels, selectedItems]);
 
-    const selectedValues = Object.values(selectedItems).sort((a, b) => {
-        console.log(selectedItems);
-
-        console.log('A');
-        console.log(a);
-        console.log(a.startTime);
-
-        if (!a.startTime) return 1; // Move items without startTime to the end
-        if (!b.startTime) return -1;
-        return a.startTime - b.startTime;
-    });
-
-    console.log(selectedValues);
+    const selectedValues = useMemo(() => {
+        return Object.values(selectedItems).sort((a, b) => {
+            if (!a.startTime) return 1;
+            if (!b.startTime) return -1;
+            return a.startTime - b.startTime;
+        });
+    }, [selectedItems]);
 
     const handleCloseSelectionsPanel = useCallback(() => {
         closeSelectionsPanel();
@@ -77,7 +70,6 @@ export const SelectionProvider = ({ children }) => {
             isItemSelected,
             selectedItems,
             selectedValues,
-
             setSelectionBasedOnCoordinates,
             startTime: groupStartTime,
             toggleItem,

@@ -63,12 +63,7 @@ export const EventItem = ({ event, onDelete, onModifyStartTime, onPlay, overlapG
         <EventItemContainer focused={focusedEvent === id} onMouseEnter={focusEvent}>
             {isGroupNotLocked && isSelected && <UnselectButton onClick={onItemSelect}>Unselect</UnselectButton>}
 
-            <EventHeaderComponent
-                onPlay={handlePlay}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                isSelected={isSelected}
-            />
+            <EventHeaderComponent onPlay={handlePlay} onDelete={handleDelete} onDuplicate={handleDuplicate} />
 
             {isGroupNotLocked && (
                 <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={onmModifyStartTime} />

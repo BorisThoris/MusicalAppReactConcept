@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { useBeatActions } from '../../../../hooks/useBeatActions';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import Modal from '../Modal/Modal';
 import { BeatFileRow } from './BeatRow';
 
@@ -12,25 +13,9 @@ const FileSystem = styled.div`
     margin-top: 20px;
 `;
 
-const useBeats = () => {
-    const [beats, setBeats] = useState([]);
-
-    useEffect(() => {
-        const savedBeats = JSON.parse(localStorage.getItem('beats')) || [];
-        setBeats(savedBeats);
-    }, []);
-
-    const saveBeatsToLocalStorage = (updatedBeats) => {
-        localStorage.setItem('beats', JSON.stringify(updatedBeats));
-        setBeats(updatedBeats);
-    };
-
-    return [beats, saveBeatsToLocalStorage];
-};
-
 export const LoadPanel = () => {
     const { closeLoadPanel } = useContext(PanelContext);
-    const [beats, saveBeatsToLocalStorage] = useBeats();
+    const { beats, saveBeatsToLocalStorage } = useContext(CollisionsContext);
 
     const { handleDelete, handleDuplicate, handleLoad } = useBeatActions({
         beats,

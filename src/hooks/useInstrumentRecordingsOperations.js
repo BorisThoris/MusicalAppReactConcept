@@ -2,9 +2,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable prefer-destructuring */
 /* eslint-disable max-len */
-import cloneDeep from 'lodash/cloneDeep';
 import find from 'lodash/find';
-import set from 'lodash/set';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
 import { copyEvent, createEvent, createSound } from '../globalHelpers/createSound';
@@ -16,7 +14,7 @@ export const useInstrumentRecordingsOperations = () => {
 
     const updateGroups = (setOverlapGroups, updateCallback) => {
         setOverlapGroups((prevGroups) => {
-            const updatedGroups = cloneDeep(prevGroups);
+            const updatedGroups = { ...prevGroups };
             updateCallback(updatedGroups);
 
             return updatedGroups;
@@ -24,8 +22,8 @@ export const useInstrumentRecordingsOperations = () => {
     };
 
     const getEventById = useCallback(
-        (id) => {
-            const element = getSoundEventById(id);
+        (id, type) => {
+            const element = getSoundEventById(id, type);
             return element?.recording;
         },
         [getSoundEventById]
@@ -47,7 +45,7 @@ export const useInstrumentRecordingsOperations = () => {
             const soundEvent = getSoundEventById(eventId);
 
             if (soundEvent && soundEvent.element) {
-                const recordingData = soundEvent.element.attrs['data-recording'];
+                const recordingData = { ...soundEvent.element.attrs['data-recording'] };
 
                 if (recordingData && recordingData.params) {
                     // Find and update the specific param using Lodash
@@ -57,10 +55,10 @@ export const useInstrumentRecordingsOperations = () => {
                     }
 
                     // Re-assign the updated data-recording back to the element's attributes
-                    set(soundEvent.element, 'attrs.data-recording', recordingData);
+                    soundEvent.element.setAttr('data-recording', recordingData);
 
                     // Trigger a redraw by Konva
-                    soundEvent.element.getLayer().batchDraw();
+                    soundEvent.element.draw();
                 }
             }
         },

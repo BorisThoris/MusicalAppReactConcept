@@ -12,7 +12,7 @@ export const useFindClosestTimelines = ({ copiedEvents, isHovering, menuPosition
             let closestTimeline = null;
             let minDistance = Infinity;
 
-            const allTimelineElements = stageRef.current.find((node) => node.attrs?.id?.includes('timelineRect'));
+            const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('timelineRect'));
 
             allTimelineElements.forEach((timelineElement) => {
                 const timelineBox = getElementScreenPosition(timelineElement);

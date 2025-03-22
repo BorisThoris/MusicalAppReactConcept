@@ -5,17 +5,17 @@ import useContextMenu from '../../../hooks/useContextMenu';
 import { CollisionsContext } from '../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../providers/SelectionsProvider';
 
-export const DragSelection = ({ stageRef }) => {
+export const DragSelection = () => {
     const [dragPos, setDragPos] = useState({ end: null, start: null });
     const [isDragging, setIsDragging] = useState(false);
 
     const selectionRectRef = useRef();
 
     const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
-    const { getProcessedElements } = useContext(CollisionsContext);
+    const { processedItems, stageRef } = useContext(CollisionsContext);
 
     const { handleCloseMenu } = useContextMenu();
-    const processedElements = getProcessedElements();
+    const processedElements = processedItems;
 
     const hasMoved = useCallback(() => {
         if (!dragPos.start || !dragPos.end) {
@@ -51,23 +51,62 @@ export const DragSelection = ({ stageRef }) => {
                 y: Math.min(start.y, end.y)
             };
 
-            const intersectedElements = [];
-
-            processedElements.forEach((elementData) => {
-                const { height, width, x, y } = elementData;
+            const intersectedElements = processedElements.flatMap((elementData) => {
+                const { element, groupData, height, locked, recording, timelineY, type, width, x, y } = elementData;
                 const elementRect = { height, width, x, y };
 
-                if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
-                    intersectedElements.push({
-                        ...elementData.recording,
-                        element: elementData.element,
-                        endX: x + width,
-                        endY: y + height,
-                        startX: x,
-                        startY: y,
-                        timelineY: elementData.timelineY
-                    });
+                if (type === 'group' && groupData) {
+                    const groupElements = Object.values(groupData.elements);
+
+                    if (locked) {
+                        return groupElements.map((groupElement) => ({
+                            ...groupElement,
+                            element,
+                            endX: groupElement.rect.x + groupElement.rect.width,
+                            endY: groupElement.rect.y + groupElement.rect.height,
+                            startX: groupElement.rect.x,
+                            startY: groupElement.rect.y,
+                            timelineY
+                        }));
+                    }
+
+                    // Otherwise, only add intersecting elements
+                    return groupElements
+                        .filter((groupElement) =>
+                            Konva.Util.haveIntersection(selectionRect, {
+                                height: groupElement.rect.height,
+                                width: groupElement.rect.width,
+                                x: groupElement.rect.x,
+                                y: groupElement.rect.y
+                            })
+                        )
+                        .map((groupElement) => ({
+                            ...groupElement,
+                            element,
+                            endX: groupElement.rect.x + groupElement.rect.width,
+                            endY: groupElement.rect.y + groupElement.rect.height,
+                            startX: groupElement.rect.x,
+                            startY: groupElement.rect.y,
+                            timelineY
+                        }));
                 }
+
+                // Handle regular elements
+                if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
+                    return [
+                        {
+                            ...recording,
+                            element,
+                            endX: x + width,
+                            endY: y + height,
+                            startX: x,
+                            startY: y,
+                            timelineY
+                        }
+                    ];
+                }
+
+                return [];
             });
 
             if (intersectedElements.length > 0) {
@@ -97,9 +136,9 @@ export const DragSelection = ({ stageRef }) => {
     );
 
     useEffect(() => {
-        if (!stageRef.current) return;
+        if (!stageRef) return;
 
-        const stage = stageRef.current;
+        const stage = stageRef;
 
         // Handlers
         const mouseDownHandler = (e) => {

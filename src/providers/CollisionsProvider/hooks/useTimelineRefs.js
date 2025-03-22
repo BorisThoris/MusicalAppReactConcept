@@ -1,51 +1,86 @@
+/* eslint-disable no-debugger */
 import { get } from 'lodash';
 import find from 'lodash/find';
 import omit from 'lodash/omit';
 import reduce from 'lodash/reduce';
 import set from 'lodash/set';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef } from 'react';
+import { ELEMENT_ID_PREFIX } from '../../../globalConstants/elementIds';
 
 export const useTimelineRefs = ({ setHasChanged }) => {
-    const [timelineRefs, setTimelineRefs] = useState({});
-    const [stageRef, setStageRef] = useState(null);
+    const timelineRefs = useRef({});
 
-    const updateTimelineRefs = useCallback((updateFn) => {
-        setTimelineRefs((prevRefs) => updateFn(prevRefs));
+    const addTimelineRef = useCallback((instrumentName, ref) => {
+        timelineRefs.current = set({ ...timelineRefs.current }, instrumentName, ref);
     }, []);
 
-    const addStageRef = useCallback(setStageRef, [setStageRef]);
+    const removeTimelineRef = useCallback((instrumentName) => {
+        timelineRefs.current = omit(timelineRefs.current, instrumentName);
+    }, []);
 
-    const addTimelineRef = useCallback(
-        (instrumentName, ref) => {
-            updateTimelineRefs((prevRefs) => set({ ...prevRefs }, instrumentName, ref));
+    const stageRefRef = useRef(null);
+
+    const addStageRef = useCallback(
+        (ref) => {
+            stageRefRef.current = ref;
         },
-        [updateTimelineRefs]
+        [stageRefRef]
     );
 
-    const removeTimelineRef = useCallback(
-        (instrumentName) => {
-            updateTimelineRefs((prevRefs) => omit(prevRefs, instrumentName));
+    const removeStageRef = useCallback(() => {
+        stageRefRef.current = null;
+    }, []);
+
+    const stageRef = stageRefRef.current;
+
+    const findAllSoundEventElements = useCallback(
+        (parentGroup) => {
+            const stage = stageRef?.current;
+            if (!stage) return [];
+
+            return stage.find((node) => {
+                if (!node.id().startsWith(ELEMENT_ID_PREFIX)) return false;
+
+                // If no parentGroup is provided, return all matching elements
+                if (!parentGroup) return true;
+
+                return node.attrs['data-parent-group-id'] === parentGroup.attrs.id;
+            });
         },
-        [updateTimelineRefs]
+        [stageRef]
     );
 
-    // Utility function to find all elements with IDs starting with "element-"
-    const findAllSoundEventElements = useCallback(() => {
+    // New method to get all groups
+    const getAllGroups = useCallback(() => {
         if (!stageRef?.current) return [];
-        return stageRef.current.find((node) => node.id().startsWith('element-'));
+
+        const groups = stageRef.current.find((node) => node.attrs?.['data-group-id']);
+
+        return groups; // Return nodes that have `data-group-id`
     }, [stageRef]);
+
+    const getGroupById = useCallback(
+        (groupId) => {
+            if (!stageRef?.current) return null;
+
+            const group = stageRef.current.findOne((node) => node.id() === groupId) || null;
+
+            return group;
+        },
+        [stageRef]
+    );
 
     const getSoundEventById = useCallback(
         (id) => {
             if (stageRef?.current) {
-                const elements = stageRef.current.find((node) => node.id().startsWith(`element-${id}`));
-                const element = elements ? find(elements, (node) => node.id() === `element-${id}`) : null;
+                const elements = stageRef.current?.find((node) => node.id().startsWith(`${ELEMENT_ID_PREFIX}${id}`));
+                const element = elements ? find(elements, (node) => node.id() === `${ELEMENT_ID_PREFIX}${id}`) : null;
 
                 if (element) {
                     const clientRect = element.getClientRect ? element.getClientRect() : {};
                     const { height, width, x, y } = clientRect;
 
-                    const recordingData = element.attrs ? element.attrs['data-recording'] : {};
+                    const recordingData = element.attrs ? { ...element.attrs['data-recording'] } : {};
                     const instrumentName = recordingData ? recordingData.instrumentName : null;
 
                     const parentAttrs = element.parent ? element.parent.attrs : {};
@@ -68,39 +103,135 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         [stageRef]
     );
 
-    const getProcessedElements = useCallback(() => {
+    const getProcessedElements = useCallback(
+        (parentGroup) => {
+            const elements = findAllSoundEventElements(parentGroup);
+            const idCount = {};
+
+            // Count occurrences of each id
+            elements.forEach((element) => {
+                const id = element.id();
+                idCount[id] = (idCount[id] || 0) + 1;
+            });
+
+            const seenElementIds = new Set();
+
+            return reduce(
+                elements,
+                (acc, element) => {
+                    const id = element.id();
+                    if (idCount[id] > 1 && !seenElementIds.has(id)) {
+                        // Log the element if it has duplicates
+                        // alert('Duplicate element:', element.attrs['data-recording'].instrumentName);
+                    }
+
+                    if (!seenElementIds.has(id)) {
+                        const { height, width, x, y } = element.getClientRect();
+                        const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
+                        const recording = get(element, "attrs['data-recording']", {});
+
+                        const grouped = get(element, "attrs['data-group-child']", false);
+
+                        const timelineY = get(element, 'parent.attrs.timelineY', 0);
+
+                        if (grouped && !parentGroup) return acc;
+
+                        acc.push({
+                            element,
+                            height,
+                            instrumentName,
+                            recording,
+                            rect: { height, width, x, y },
+                            timelineY,
+                            width,
+                            x,
+                            y
+                        });
+
+                        seenElementIds.add(id);
+                    }
+                    return acc;
+                },
+                []
+            );
+        },
+        [findAllSoundEventElements]
+    );
+
+    const getProcessedGroups = useCallback(() => {
+        if (!stageRef?.current) return [];
+
+        const groups = getAllGroups();
+        const seenGroupIds = new Set();
+
+        const processedGroups = groups.reduce((acc, group) => {
+            if (!seenGroupIds.has(group.id())) {
+                seenGroupIds.add(group.id());
+
+                if (!group.hasChildren()) return acc; // Ensure we only process groups with children
+
+                const clientRect = group.getClientRect(); // Safe usage
+                const { height, width, x, y } = clientRect;
+
+                // Extract group attributes safely
+                const groupData = group.getAttr('data-overlap-group') || {};
+
+                // Find all elements within the group and filter them by ID prefix
+                const groupElements = group.find((node) => node.id().startsWith(ELEMENT_ID_PREFIX));
+
+                acc.push({
+                    group,
+                    ...groupData,
+                    elements: groupElements,
+                    rect: { height, width, x, y }
+                });
+            }
+            return acc;
+        }, []);
+
+        return processedGroups;
+    }, [getAllGroups, stageRef]);
+
+    const getProcessedItems = useCallback(() => {
         if (!stageRef?.current) return [];
 
         const elements = findAllSoundEventElements();
-        const seenElementIds = new Set();
 
-        return reduce(
-            elements,
-            (acc, element) => {
-                if (!seenElementIds.has(element.id())) {
-                    const { height, width, x, y } = element.getClientRect();
-                    // Using lodash.get to safely access nested properties
-                    const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
-                    const recording = get(element, "attrs['data-recording']", {});
-                    const timelineY = get(element, 'parent.attrs.timelineY', 0);
+        const seenIds = new Set();
+        const processedItems = [];
 
-                    acc.push({
-                        element,
-                        height,
-                        instrumentName,
-                        recording,
-                        timelineY,
-                        width,
-                        x,
-                        y
-                    });
+        // Helper function to process elements or groups
+        const processItem = (item, type, additionalData = {}) => {
+            if (seenIds.has(item.id()) || !item.getClientRect) return;
 
-                    seenElementIds.add(element.id());
-                }
-                return acc;
-            },
-            []
-        );
+            const { height, width, x, y } = item.getClientRect();
+            const timelineY = get(item, 'attrs.timelineY', 0);
+
+            processedItems.push({
+                clientRect: { height, width, x, y },
+                element: item,
+                height,
+                id: item.id(),
+                timelineY,
+                type,
+                width,
+                x,
+                y,
+                ...additionalData // Spread any additional extracted data
+            });
+
+            seenIds.add(item.id());
+        };
+
+        // Process elements
+        elements.forEach((element) => {
+            const instrumentName = get(element, "attrs['data-recording'].instrumentName", null);
+            const recording = get(element, "attrs['data-recording']", {});
+
+            processItem(element, 'element', { instrumentName, recording });
+        });
+
+        return processedItems;
     }, [findAllSoundEventElements, stageRef]);
 
     const clearElements = useCallback((elements) => {
@@ -108,7 +239,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             if (element) {
                 const stage = element.getStage();
                 if (stage) {
-                    const parentElement = stage.findOne(`#parent-${element.id().replace('element-', '')}`);
+                    const parentElement = stage.findOne(`#parent-${element.id().replace(ELEMENT_ID_PREFIX, '')}`);
                     if (parentElement) {
                         parentElement.destroy();
                     }
@@ -123,7 +254,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
         const elements = findAllSoundEventElements();
         clearElements(elements);
-        setTimelineRefs({});
+        timelineRefs.current = {};
         setHasChanged(true);
     }, [stageRef, findAllSoundEventElements, clearElements, setHasChanged]);
 
@@ -134,7 +265,7 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         }
 
         clearElements(findAllSoundEventElements());
-        setTimelineRefs({});
+        timelineRefs.current = {};
         setHasChanged(true);
     }, [stageRef, clearElements, findAllSoundEventElements, setHasChanged]);
 
@@ -144,8 +275,13 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getAllGroups,
+        getGroupById,
         getProcessedElements,
+        getProcessedGroups,
+        getProcessedItems,
         getSoundEventById,
+        removeStageRef,
         removeTimelineRef,
         stageRef,
         timelineRefs

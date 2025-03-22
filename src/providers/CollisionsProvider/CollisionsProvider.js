@@ -1,34 +1,30 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import pixelToSecondRatio from '../../globalConstants/pixelToSeconds';
-import { createEvent } from '../../globalHelpers/createSound';
+import isEqual from 'lodash/isEqual';
+import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { PanelContext } from '../../hooks/usePanelState';
+import { useBeatRefresher } from './hooks/useBeatRefresher';
+import { useBeats } from './hooks/useBeats';
+import { useFurthestEndTime } from './hooks/useFurthestEndTime';
 import { useHistory } from './hooks/useHistory';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
+import { useTimelineManager } from './hooks/useTimelineManager';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
+import { findOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
-function findDifferences(obj1, obj2, parentKey = '') {
-    if (obj1 === obj2) return;
-
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
-        console.log(`Difference at ${parentKey}:`, obj1, obj2);
-        return;
-    }
-
-    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-    // eslint-disable-next-line no-restricted-syntax
-    for (const key of allKeys) {
-        const newKey = parentKey ? `${parentKey}.${key}` : key;
-        findDifferences(obj1[key], obj2[key], newKey);
-    }
-}
-
 export const CollisionsProvider = ({ children }) => {
+    /** * STATE & REFS ** */
+    const [processedItems, setProcessedItems] = useState([]);
     const [overlapGroups, setOverlapGroups] = useState({});
     const [hasChanged, setHasChanged] = useState(false);
     const [copiedEvents, setCopiedEvents] = useState([]);
+    const [dragging, setDragging] = useState({});
+    const [currentBeat, setCurrentBeat] = useState(null);
+    const prevProcessBeatResultRef = useRef(null);
+
+    /** * CONTEXT & HOOKS ** */
     const { openLoadPanel } = useContext(PanelContext);
 
     const {
@@ -37,8 +33,12 @@ export const CollisionsProvider = ({ children }) => {
         deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
+        getGroupById,
         getProcessedElements,
+        getProcessedGroups,
+        getProcessedItems,
         getSoundEventById,
+        removeStageRef,
         removeTimelineRef,
         stageRef,
         timelineRefs
@@ -50,209 +50,154 @@ export const CollisionsProvider = ({ children }) => {
         setOverlapGroups
     });
 
-    // Assuming timelineRefs is accessible in this scope or passed as an argument
-    const processBeat = useCallback(() => {
-        const processedElements = getProcessedElements();
-
-        // Sort processedElements alphabetically by instrumentName and numerically by id within each instrumentName
-        const sortedElements = processedElements.sort((a, b) => {
-            // First, compare by instrumentName alphabetically
-            if (a.recording.instrumentName < b.recording.instrumentName) return -1;
-            if (a.recording.instrumentName > b.recording.instrumentName) return 1;
-
-            // If instrumentNames are the same, compare by id numerically
-            return a.recording.id - b.recording.id;
-        });
-
-        // Create the object to save with ordered instrument names
-        const objToSave = sortedElements.reduce((acc, { recording }) => {
-            const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
-
-            const { id, instrumentName } = recording;
-
-            // Initialize instrumentName if it doesn't exist
-            if (!acc[instrumentName]) {
-                acc[instrumentName] = {};
-            }
-
-            // Add recording under the relevant instrumentName
-            acc[instrumentName][id] = newRec;
-
-            return acc;
-        }, {});
-
-        // Get all timeline names from timelineRefs, sorted alphabetically
-        const timelineNames = Object.keys(timelineRefs).sort();
-
-        // Ensure each timelineName is included in objToSave with an empty object if not already present
-        timelineNames.forEach((timelineName) => {
-            if (!objToSave[timelineName]) {
-                objToSave[timelineName] = {};
-            }
-        });
-
-        // Sort objToSave to keep timelines in alphabetical order, and each timeline's ids in numerical order
-        const orderedObjToSave = Object.keys(objToSave)
-            .sort()
-            .reduce((acc, timelineName) => {
-                // Sort each timeline's recordings by numeric id
-                acc[timelineName] = Object.keys(objToSave[timelineName])
-                    .sort((a, b) => Number(a) - Number(b))
-                    .reduce((recordAcc, id) => {
-                        // eslint-disable-next-line no-param-reassign
-                        recordAcc[id] = objToSave[timelineName][id];
-                        return recordAcc;
-                    }, {});
-                return acc;
-            }, {});
-
-        return orderedObjToSave;
-    }, [getProcessedElements, timelineRefs]);
-
-    // Function to calculate the furthest end time by finding elements in the Konva stage
-    const calculateFurthestEndTime = () => {
-        const soundEventElements = findAllSoundEventElements();
-        let maxEndX = 0;
-
-        soundEventElements.forEach((element) => {
-            const elementRect = element.getClientRect();
-            const elementEndX = elementRect.x + elementRect.width;
-
-            if (elementEndX > maxEndX) {
-                maxEndX = elementEndX;
-            }
-        });
-
-        // Convert the maximum X position back into seconds based on the pixelToSecondRatio
-        return maxEndX / pixelToSecondRatio;
-    };
-
-    const furthestEndTime = calculateFurthestEndTime();
-
-    const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
+    const { processBeat } = useProcessBeat({ getProcessedElements, getProcessedGroups, timelineRefs });
+    const [beats, saveBeatsToLocalStorage] = useBeats();
 
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
         overlapGroups,
-        processBeat,
+        processBeat: () => {},
         setOverlapGroups,
         stageRef
     });
 
-    const { selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({ overlapGroups, setHasChanged });
+    const { changeBeatName, selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({
+        beats,
+        overlapGroups,
+        saveBeatsToLocalStorage,
+        setHasChanged
+    });
 
-    const previousOverlapGroupsRef = useRef({});
+    /** * DERIVED VALUES ** */
+    const isDragging = useMemo(() => Object.keys(dragging).length >= 1, [dragging]);
 
-    useEffect(() => {
-        if (Object.values(overlapGroups).length === 0) {
-            openLoadPanel();
-
-            previousOverlapGroupsRef.current = {};
-        }
-    }, [openLoadPanel, overlapGroups]);
+    // Use extracted beat refresher hook
+    const { refreshBeat, updateBeatRef } = useBeatRefresher(
+        currentBeat,
+        processedItems,
+        processBeat,
+        getProcessedItems,
+        isDragging,
+        setCurrentBeat,
+        setProcessedItems
+    );
 
     const copyEvents = useCallback((events) => {
-        const sortedEvents = events.sort((ev1, ev2) => ev1.startTime - ev2.startTime);
+        const sortedEvents = [...events].sort((ev1, ev2) => ev1.startTime - ev2.startTime);
         setCopiedEvents(sortedEvents);
     }, []);
 
-    const addTimeline = useCallback(
-        (passedName) => {
-            const newTimelineName = passedName ?? `Additional Timeline ${Object.keys(overlapGroups).length + 1}`;
+    // Use extracted timeline manager hook
+    const { addTimeline } = useTimelineManager(overlapGroups, setOverlapGroups);
 
-            setOverlapGroups((prevGroups) => ({
-                ...prevGroups,
-                [newTimelineName]: {}
-            }));
-        },
-        [overlapGroups]
-    );
+    /** * OVERLAP GROUPS CALCULATION ** */
+    const prevBeat = prevProcessBeatResultRef.current;
+    const beatDiff = !isEqual(prevBeat, currentBeat);
+    if (beatDiff && !isDragging) {
+        const newOverlapGroups = findOverlaps(currentBeat);
+        setOverlapGroups(newOverlapGroups);
 
-    const elements = getProcessedElements();
+        console.log('OVERLAP GROUPS: ', newOverlapGroups);
+        prevProcessBeatResultRef.current = currentBeat;
+    }
 
-    // Memoize element rects to avoid recalculating on each render
-    const elementRects = useMemo(() => {
-        return elements.map((el) => ({
-            id: el.element.attrs['data-recording'].id,
-            rect: el.element.getClientRect()
-        }));
-    }, [elements]);
+    // Use extracted furthest end time hook
+    const { furthestEndTime, totalDurationInPixels } = useFurthestEndTime(findAllSoundEventElements);
 
-    const previousBeat = useRef(overlapGroups);
-
-    useEffect(() => {
-        const currentBeat = processBeat();
-
-        if (JSON.stringify(previousBeat.current) !== JSON.stringify(currentBeat)) {
-            setOverlapGroups(processBeat());
-            previousBeat.current = currentBeat;
+    /** * SIDE EFFECTS ** */
+    useLayoutEffect(() => {
+        if (Object.values(overlapGroups).length === 0) {
+            openLoadPanel();
         }
-    }, [elementRects, processBeat]);
+    }, [openLoadPanel, overlapGroups]);
 
+    /** * CONTEXT VALUE ** */
     const contextValue = useMemo(
         () => ({
             addStageRef,
             addTimeline,
             addTimelineRef,
+            beats,
+            changeBeatName,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
+            dragging,
             findAllSoundEventElements,
             furthestEndTime,
+            getGroupById,
             getProcessedElements,
+            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
+            isDragging,
             loadFromLocalStorage,
             overlapGroups,
             processBeat,
+            processedItems,
             pushToHistory,
             redo,
             redoHistory,
+            refreshBeat,
+            removeStageRef,
             removeTimelineRef,
+            saveBeatsToLocalStorage,
             saveToLocalStorage,
             selectedBeat,
             setCopiedEvents,
+            setDragging,
             setHasChanged,
             setOverlapGroups,
             setSelectedBeat,
-            stageRef,
+            stageRef: stageRef?.current,
             timelineRefs,
             totalDurationInPixels,
             undo,
+            updateBeatRef,
             updateCurrentBeat
         }),
         [
-            addTimeline,
             addStageRef,
+            addTimeline,
             addTimelineRef,
-            processBeat,
+            beats,
+            changeBeatName,
             clearLocalStorage,
             copiedEvents,
             copyEvents,
             deleteAllElements,
             deleteAllTimelines,
+            dragging,
             findAllSoundEventElements,
+            furthestEndTime,
+            getGroupById,
             getProcessedElements,
+            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
+            isDragging,
             loadFromLocalStorage,
             overlapGroups,
-            furthestEndTime,
-            totalDurationInPixels,
+            processBeat,
+            processedItems,
             pushToHistory,
             redo,
             redoHistory,
+            refreshBeat,
+            removeStageRef,
             removeTimelineRef,
+            saveBeatsToLocalStorage,
             saveToLocalStorage,
             selectedBeat,
-            setOverlapGroups,
             setSelectedBeat,
             stageRef,
             timelineRefs,
+            totalDurationInPixels,
             undo,
+            updateBeatRef,
             updateCurrentBeat
         ]
     );

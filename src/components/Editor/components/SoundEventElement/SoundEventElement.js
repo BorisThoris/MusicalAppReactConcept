@@ -1,14 +1,16 @@
+// @ts-nocheck
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
+import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
-import useContextMenu from '../../../../hooks/useContextMenu';
-import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
+import { Lock } from '../Lock/Lock';
 import { useDynamicStyles } from './hooks/useDynamicStyles';
 import { useEventFocus } from './hooks/useEventFocus';
 import { useClickHandlers } from './useEventClickHandlers';
@@ -33,52 +35,74 @@ const CONSTANTS = {
 
 const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A1FF33'];
 
-// Component
+// Helper function for comparing props
+const areEqual = (prevProps, nextProps) => {
+    const equal = isEqual(prevProps, nextProps);
+    // Uncomment below to log detailed changes if needed:
+    // if (!equal) {
+    //     Object.keys(prevProps).forEach((key) => {
+    //         if (!isEqual(prevProps[key], nextProps[key])) {
+    //             console.log(`Prop '${key}' changed:`, {
+    //                 next: nextProps[key],
+    //                 prev: prevProps[key]
+    //             });
+    //         }
+    //     });
+    // }
+    return equal;
+};
+
 const SoundEventElement = React.memo(
     ({
+        childScale,
         dragBoundFunc,
-        handleClickOverlapGroup,
+        groupRef,
         handleDragEnd,
         handleDragMove,
         handleDragStart,
         index,
         isElementBeingDragged,
-        isOverlapping,
         listening,
+        parentGroupId,
         recording,
         timelineHeight,
         timelineY
     }) => {
-        const { eventLength, id, locked, name, parentId, startTime } = recording;
+        const { eventLength, id, isSelected, locked, name, startTime } = recording;
 
-        // Refs and State
-        const groupRef = useRef();
+        // Refs for the element container and for storing positions.
+        const elementContainerRef = useRef();
         const elementRef = useRef();
-        const [elementXPosition, setElementXPosition] = useState(startTime * pixelToSecondRatio);
-        const isDragging = isElementBeingDragged(id);
+        // Using refs to avoid re-renders on every drag update.
+        const elementXRef = useRef(startTime * pixelToSecondRatio);
+        const elementYRef = useRef(timelineY);
 
+        // Determine if this element is currently being dragged.
+        const isDragging = isElementBeingDragged(id);
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
         const { isItemSelected } = useContext(SelectionContext);
-
         const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
         const { timelineState } = useContext(TimelineContext);
-        const { getEventById, lockOverlapGroup } = useInstrumentRecordingsOperations();
+        const { getGroupById } = useContext(CollisionsContext);
 
-        // Derived values
-        const isSelected = isItemSelected(id);
-        const parent = getEventById(parentId);
+        const parent = getGroupById(parentGroupId);
 
-        // Hooks
+        // Hooks for focus and click handling.
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
-        const { handleClick, handleDoubleClick } = useClickHandlers({
-            handleClickOverlapGroup,
-            parent,
-            recording
-        });
-        const { handleContextMenu } = useContextMenu();
 
+        const toggleSelection = useCallback(() => {
+            const prevData = elementContainerRef.current.attrs['data-recording'];
+            const updatedState = { ...prevData, isSelected: !prevData.isSelected };
+
+            elementContainerRef.current.setAttrs({
+                'data-recording': updatedState
+            });
+            elementContainerRef.current.getLayer().draw();
+        }, []);
+
+        const { handleClick, handleDoubleClick } = useClickHandlers({ parent, recording, toggleSelection });
         const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
             isFocused,
             isSelected,
@@ -86,46 +110,70 @@ const SoundEventElement = React.memo(
             COLORS[index % COLORS.length]
         );
 
-        const onLockSoundEventElement = useCallback(
-            () => lockOverlapGroup({ group: recording }),
-            [lockOverlapGroup, recording]
-        );
+        const onLockSoundEventElement = useCallback(() => {
+            const prevData = elementContainerRef.current.attrs['data-recording'];
+            const updatedState = { ...prevData, locked: !prevData.locked };
+
+            elementContainerRef.current.setAttrs({
+                'data-recording': updatedState
+            });
+            elementContainerRef.current.getLayer().draw();
+        }, []);
 
         const handleDelete = useCallback(() => {
-            if (groupRef.current) {
-                groupRef.current.destroy();
+            if (elementContainerRef.current) {
+                elementContainerRef.current.destroy();
             }
         }, []);
 
         useEffect(() => {
-            setElementXPosition(startTime * pixelToSecondRatio);
+            const newX = startTime * pixelToSecondRatio;
+            if (elementContainerRef.current && elementXRef.current !== newX) {
+                elementContainerRef.current.x(newX);
+                elementXRef.current = newX;
+            }
         }, [startTime]);
 
+        // Update the local Y ref when timelineY changes.
         useEffect(() => {
-            if (groupRef.current && !isFocused) {
-                const currentZIndex = groupRef.current.zIndex();
+            if (elementContainerRef.current) {
+                elementYRef.current = timelineY;
+                // Only update the Konva node's Y if dragging.
+                if (isDragging) {
+                    elementContainerRef.current.y(timelineY);
+                }
+            }
+        }, [timelineY, isDragging]);
 
+        useEffect(() => {
+            if (elementContainerRef.current && !isFocused) {
+                const currentZIndex = elementContainerRef.current.zIndex();
                 if (originalZIndex === null) {
                     setOriginalZIndex(currentZIndex);
                 } else if (originalZIndex !== currentZIndex) {
-                    groupRef.current.zIndex(originalZIndex);
+                    elementContainerRef.current.zIndex(originalZIndex);
                 }
             }
         }, [isFocused, originalZIndex]);
 
         useEffect(() => {
-            if (isFocused && groupRef.current) {
-                groupRef.current.moveToTop();
+            if (isFocused && elementContainerRef.current) {
+                elementContainerRef.current.moveToTop();
             }
         }, [isFocused]);
 
         const dynamicStyle = useMemo(() => {
-            return isOverlapping
-                ? { shadowBlur: 10, shadowColor: 'red' }
-                : { shadowBlur: CONSTANTS.SHADOW.BLUR, shadowColor: 'black' };
-        }, [isOverlapping]);
+            if (!groupRef) {
+                return { stroke: 'black', strokeWidth: 2 };
+            }
+            const calculatedHeight = timelineHeight * childScale;
+            return {
+                height: calculatedHeight,
+                stroke: 'blue',
+                strokeWidth: 4
+            };
+        }, [childScale, groupRef, timelineHeight]);
 
-        // Component Render
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
         const handleContextClick = useCallback((e) => {
@@ -134,18 +182,18 @@ const SoundEventElement = React.memo(
 
         const handleMouseEnterWithCursor = useCallback(
             (e) => {
-                handleMouseEnter(e); // Existing functionality
+                handleMouseEnter(e);
                 const container = e.target.getStage().container();
-                container.style.cursor = 'pointer'; // Change cursor to pointer
+                container.style.cursor = 'pointer';
             },
             [handleMouseEnter]
         );
 
         const handleMouseLeaveWithCursor = useCallback(
             (e) => {
-                restoreZIndex(e); // Existing functionality
+                restoreZIndex(e);
                 const container = e.target.getStage().container();
-                container.style.cursor = 'default'; // Reset cursor to default
+                container.style.cursor = 'default';
             },
             [restoreZIndex]
         );
@@ -153,42 +201,64 @@ const SoundEventElement = React.memo(
         const handleDragStartWithCursor = useCallback(
             (e) => {
                 const container = e.target.getStage().container();
-                container.style.cursor = 'grabbing'; // Change cursor to grabbing when dragging starts
-                handleDragStart(e); // Call the original drag start handler if any additional functionality is needed
+                container.style.cursor = 'grabbing';
+                handleDragStart(e);
             },
             [handleDragStart]
         );
 
+        // On drag move, update the X ref (and Y ref if needed) but let the Y offset remain controlled by timelineY.
+        const handleDragMoveWithCursor = useCallback(
+            (e) => {
+                elementXRef.current = e.target.x();
+                elementYRef.current = e.target.y();
+                handleDragMove(e);
+            },
+            [handleDragMove]
+        );
+
+        // On drag end, update the X ref only—maintaining the old offset logic for Y.
         const handleDragEndWithCursor = useCallback(
             (e) => {
                 const container = e.target.getStage().container();
-                container.style.cursor = 'grab'; // Set cursor to grab after dragging ends
-                handleDragEnd(e); // Call the original drag end handler
+                container.style.cursor = 'grab';
+                elementXRef.current = e.target.x();
+                handleDragEnd(e);
             },
             [handleDragEnd]
         );
 
+        // When not dragging, we want to maintain the old Y offset (0) and let Konva manage X.
+        // When dragging, the Y is set to timelineY.
+        const controlledPositionProps = !isDragging ? { x: elementXRef.current, y: 0 } : {};
+
+        const isNotInGroup = !groupRef;
+        const portalRef = useRef(null);
+
         return (
-            <Portal selector=".top-layer" enabled={isDragging}>
+            <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
-                    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
                     onContextMenu={handleContextClick}
-                    ref={groupRef}
+                    ref={elementContainerRef}
                     key={index}
+                    x={elementXRef.current}
                     y={isDragging ? timelineY : 0}
-                    x={elementXPosition}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-timeline-y={timelineY}
+                    data-group-child={groupRef}
                     draggable={!parent?.locked}
                     dragBoundFunc={dragBoundFunc}
-                    onDragMove={handleDragMove}
                     onDragStart={handleDragStartWithCursor}
+                    onDragMove={handleDragMoveWithCursor}
                     onDragEnd={handleDragEndWithCursor}
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
                     listening={listening}
-                    id={`element-${id}`}
+                    id={`${ELEMENT_ID_PREFIX}${id}`}
+                    data-portal-parent={portalRef?.current}
+                    data-parent-group-id={parentGroupId}
+                    {...controlledPositionProps}
                 >
                     <Rect
                         onMouseEnter={handleMouseEnterWithCursor}
@@ -209,33 +279,34 @@ const SoundEventElement = React.memo(
                         shadowBlur={dynamicShadowBlur}
                         shadowOpacity={CONSTANTS.SHADOW.OPACITY}
                         opacity={CONSTANTS.TRANSPARENCY_VALUE}
-                        {...dynamicStyle} // Use
+                        {...dynamicStyle}
                     />
                     <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
-                    {!parent && (
+                    <Text x={5} y={25} text={`${id}`} fill="black" fontSize={15} listening={false} />
+                    {isNotInGroup && <Lock isLocked={locked} onClick={onLockSoundEventElement} />}
+                    <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
+                    {parentGroupId && (
                         <Text
-                            onClick={onLockSoundEventElement}
-                            x={-10}
-                            y={-10}
-                            text={locked ? '🔒' : '✔️'}
-                            fontSize={18}
-                            fill="white"
+                            x={5}
+                            y={45 + index * 20}
+                            text={`Parent Group ID ${parentGroupId}`}
+                            fill="black"
+                            fontSize={15}
+                            listening={false}
                         />
                     )}
-                    <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
                 </Group>
             </Portal>
         );
     },
-    (prevProps, nextProps) => isEqual(prevProps, nextProps)
+    (prevProps, nextProps) => areEqual(prevProps, nextProps)
 );
 
-// Prop Types and Default Props
 SoundEventElement.propTypes = {
     canvasOffsetY: PropTypes.number.isRequired,
+    groupRef: PropTypes.bool,
     index: PropTypes.number.isRequired,
     isFocused: PropTypes.bool,
-    isOverlapping: PropTypes.bool,
     isTargeted: PropTypes.bool,
     parent: PropTypes.object,
     recording: PropTypes.shape({
@@ -254,8 +325,8 @@ SoundEventElement.propTypes = {
 };
 
 SoundEventElement.defaultProps = {
+    groupRef: false,
     isFocused: false,
-    isOverlapping: false,
     isTargeted: false
 };
 

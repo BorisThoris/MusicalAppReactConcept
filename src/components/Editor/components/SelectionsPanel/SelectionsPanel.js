@@ -1,10 +1,9 @@
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
-import { useSelectionState } from '../../../../hooks/useSelectionState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext, TimelineHeight, Y_OFFSET } from '../../../../providers/TimelineProvider';
@@ -23,17 +22,13 @@ const EventsContainer = styled(FlexContainer)`
 export const SelectionsPanel = () => {
     const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, endTime, selectedValues, startTime, updateSelectedItemById } = useContext(SelectionContext);
+    const { clearSelection, endTime, selectedValues, startTime } = useContext(SelectionContext);
 
-    const { copyEvents } = useContext(CollisionsContext);
+    const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
     const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
-
-    const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
-
-    const { unSelectItem } = useSelectionState({ markersAndTrackerOffset });
 
     const startTimeCorrected = selectedValues[0]?.startTime;
 
@@ -55,7 +50,7 @@ export const SelectionsPanel = () => {
             const elementAbsolutePos = element?.getAbsolutePosition() || { x: 0, y: 0 };
 
             // Get the Konva stage container's DOM offset in the page
-            const stageContainer = element.getStage().container();
+            const stageContainer = stageRef.container();
             const containerRect = stageContainer.getBoundingClientRect();
 
             // Calculate global Y position
@@ -87,10 +82,16 @@ export const SelectionsPanel = () => {
 
     const onDeleteChildRecording = useCallback(
         (event) => {
-            deleteSelections(event);
-            unSelectItem(event);
+            const topLayer = stageRef.findOne('.top-layer'); // Find the top layer using its name
+
+            event.element.destroy(); // Remove the recording element
+            deleteSelections(event); // Update the selections context/state
+
+            if (topLayer) {
+                topLayer.batchDraw(); // Trigger a re-render on the top layer
+            }
         },
-        [deleteSelections, unSelectItem]
+        [deleteSelections, stageRef]
     );
 
     const onPlayEvent = useCallback(
@@ -130,21 +131,11 @@ export const SelectionsPanel = () => {
                         };
 
                         element.setAttr('data-recording', newRecording);
-
-                        updateSelectedItemById(oldRecording.id, {
-                            endTime: newRecording.endTime,
-                            startTime: newRecording.startTime
-                        });
-
-                        const layer = element.getLayer();
-                        if (layer) {
-                            layer.draw();
-                        }
                     }
                 });
             }
         },
-        [selectedValues, updateSelectedItemById]
+        [selectedValues]
     );
 
     if (selectedValues.length > 0) {

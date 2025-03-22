@@ -9,100 +9,79 @@ import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
-import { Ripples } from '../Ripples/Ripples';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
-import { useTimelinePointerEffects } from './useTimelinePointerEffects';
 
-const InstrumentTimeline = React.memo(
-    ({ events, index, instrumentName, markersHeight, overlappingIds, resetOverlaps }) => {
-        const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } =
-            useContext(RecordingsPlayerContext);
-        const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
-        const { handleCloseSelectionsPanel } = useContext(SelectionContext);
-        const { handleContextMenu } = useContextMenu();
-        const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
+const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
+    const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
+    const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
+    const { handleCloseSelectionsPanel } = useContext(SelectionContext);
+    const { handleContextMenu } = useContextMenu();
+    const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
-        const timelineY = TimelineHeight * index + markersAndTrackerOffset;
-        const isMuted = mutedInstruments.includes(instrumentName);
-        const timelineWidth = threeMinuteMs / pixelToSecondRatio;
-        const fillColor = currentPlayingInstrument === instrumentName ? 'green' : 'transparent';
+    const timelineY = TimelineHeight * index + markersAndTrackerOffset;
+    const isMuted = mutedInstruments.includes(instrumentName);
+    const timelineWidth = threeMinuteMs / pixelToSecondRatio;
+    const fillColor = currentPlayingInstrument === instrumentName ? 'green' : 'transparent';
 
-        const { handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
-        const { onMouseMove, onPointerUp, removeRipple, ripples } = useTimelinePointerEffects({
-            index,
-            instrumentName
-        });
+    const { handleMouseEnter, handleMouseLeave } = useCustomCursorContext();
 
-        const timelineRef = React.useRef();
+    const timelineRef = React.useRef();
 
-        useEffect(() => {
-            if (timelineRef.current) {
-                const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
-                if (timelineState.canvasOffsetY !== canvasOffsetY) {
-                    updateTimelineState({ canvasOffsetY, timelineY });
-                }
+    useEffect(() => {
+        if (timelineRef.current) {
+            const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
+            if (timelineState.canvasOffsetY !== canvasOffsetY) {
+                updateTimelineState({ canvasOffsetY, timelineY });
             }
-        }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
+        }
+    }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-        const onTimelinePointerDown = useCallback((e) => {}, []);
+    const onTimelinePointerDown = useCallback((e) => {}, []);
 
-        return (
-            <Group
-                y={timelineY}
-                onMouseLeave={handleMouseLeave}
-                onMouseMove={onMouseMove}
-                onMouseEnter={handleMouseEnter}
-                draggable={false}
-                ref={timelineRef}
-                id={`timeline-${instrumentName}`}
-                data-instrument-name={instrumentName}
-            >
-                <InstrumentTimelinePanelComponent
-                    parentGroupName={instrumentName}
-                    replayInstrumentRecordings={replayInstrumentRecordings}
-                    toggleMute={toggleMute}
-                    instrumentName={instrumentName}
-                />
+    return (
+        <Group
+            y={timelineY}
+            onMouseLeave={handleMouseLeave}
+            onMouseEnter={handleMouseEnter}
+            draggable={false}
+            ref={timelineRef}
+            id={`timeline-${instrumentName}`}
+            data-instrument-name={instrumentName}
+        >
+            <InstrumentTimelinePanelComponent
+                parentGroupName={instrumentName}
+                replayInstrumentRecordings={replayInstrumentRecordings}
+                toggleMute={toggleMute}
+                instrumentName={instrumentName}
+            />
 
-                <Rect
-                    offset={timelineState.panelCompensationOffset}
-                    height={TimelineHeight}
-                    width={calculatedStageWidth}
-                    fill={isMuted ? 'red' : fillColor}
-                    onPointerUp={onPointerUp}
-                    id={`timelineRect-${timelineY}`}
-                    onMouseMove={onMouseMove}
-                    onPointerDown={onTimelinePointerDown}
-                    stroke="black"
-                    strokeWidth={2}
-                    onClick={handleCloseSelectionsPanel}
-                    onContextMenu={handleContextMenu}
-                />
+            <Rect
+                offset={timelineState.panelCompensationOffset}
+                height={TimelineHeight}
+                width={calculatedStageWidth}
+                fill={isMuted ? 'red' : fillColor}
+                id={`timelineRect-${timelineY}`}
+                onPointerDown={onTimelinePointerDown}
+                stroke="black"
+                strokeWidth={2}
+                onClick={handleCloseSelectionsPanel}
+                onContextMenu={handleContextMenu}
+            />
 
-                <TimelineEvents
-                    eventGroups={events}
-                    timelineHeight={TimelineHeight}
-                    timelineY={timelineY}
-                    instrumentName={instrumentName}
-                    overlappingIds={overlappingIds}
-                    resetOverlaps={resetOverlaps}
-                />
+            <TimelineEvents
+                eventGroups={events}
+                timelineHeight={TimelineHeight}
+                timelineY={timelineY}
+                instrumentName={instrumentName}
+            />
 
-                {isLocked && (
-                    <Rect
-                        offset={timelineState.panelCompensationOffset}
-                        height={TimelineHeight}
-                        width={timelineWidth}
-                    />
-                )}
-
-                <Ripples ripples={ripples} removeRipple={removeRipple} />
-            </Group>
-        );
-    },
-    isEqual
-);
+            {isLocked && (
+                <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
+            )}
+        </Group>
+    );
+}, isEqual);
 
 InstrumentTimeline.propTypes = {
     events: PropTypes.arrayOf(
