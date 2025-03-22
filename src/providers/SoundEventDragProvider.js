@@ -16,11 +16,14 @@ export const SoundEventDragProvider = ({ children }) => {
         return Object.values(selectedItems).map(({ id }) => id);
     }, [selectedItems]);
 
-    // Refs for tracking positions and drag requests (following the old Y logic)
-    const previousXRef = useRef(null);
+    // Refs for tracking positions and drag requests
+    // For X, use the "X logic" with the main element's initial X position.
+    const initialXRef = useRef(null);
+    // For Y, we continue using the incremental logic.
     const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
+    // Save each selected element's initial position (we'll only use X for absolute positioning)
     const initialPositionsRef = useRef(new Map());
 
     // ===== Utility Functions =====
@@ -75,7 +78,6 @@ export const SoundEventDragProvider = ({ children }) => {
     };
 
     // ===== Timeline Search Functions =====
-    // These functions use Y comparisons just like in the old code.
     const findClosestTimelineRect = useCallback(
         (element) => {
             const elementBox = element.getClientRect();
@@ -140,7 +142,8 @@ export const SoundEventDragProvider = ({ children }) => {
 
     // ===== Drag Event Handlers =====
 
-    // Drag start: initialize X and Y refs per the old logic.
+    // Drag start: initialize the X ref with the main element's X and store initial positions.
+    // For Y, we continue to use the incremental update.
     const handleDragStart = useCallback(
         (el) => {
             el.evt.stopPropagation();
@@ -151,11 +154,11 @@ export const SoundEventDragProvider = ({ children }) => {
                 clearSelection();
             }
 
-            // Initialize previous positions using the event values (old Y logic)
-            previousXRef.current = el.target.x();
+            // Save the main element's initial X and current Y for incremental updates.
+            initialXRef.current = el.target.x();
             currentYRef.current = el.evt.y;
 
-            // Save initial positions for all selected elements
+            // Save initial positions for all selected elements (we only need X for absolute repositioning)
             const stage = stageRef;
             processSelectedElements(stage, (element) => {
                 initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
@@ -173,7 +176,7 @@ export const SoundEventDragProvider = ({ children }) => {
         [clearSelection, isItemSelected, selectedElementIds, setDragging, stageRef, processSelectedElements]
     );
 
-    // Drag move: use incremental delta calculations as in the old code.
+    // Drag move: update only X using absolute displacement, and update Y incrementally.
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
@@ -185,23 +188,27 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             dragRequestRef.current = requestAnimationFrame(() => {
-                const currentX = e.target.x();
+                // Calculate total X displacement using the new logic
+                const currentMainX = e.target.x();
+                const totalDeltaX = currentMainX - initialXRef.current;
+                // Calculate Y delta incrementally (old logic)
                 const currentY = e.evt.y;
                 const deltaY = currentY - currentYRef.current;
-                const deltaX = previousXRef.current !== null ? currentX - previousXRef.current : 0;
-
-                // Update refs for the next event
-                previousXRef.current = currentX;
-                currentYRef.current = currentY;
 
                 const newHighlightedTimelines = new Set();
 
                 const processElement = (element) => {
-                    // Move the element by the incremental delta (old logic)
-                    element.move({ x: deltaX, y: deltaY });
+                    const { id } = element.attrs;
+                    const initialPos = initialPositionsRef.current.get(id);
+                    if (initialPos) {
+                        // Update X using the absolute displacement from the main element's initial X
+                        const newX = initialPos.x + totalDeltaX;
+                        element.setAttr('x', newX);
+                    }
+                    // Update Y incrementally
+                    element.move({ y: deltaY });
                     forceUpdatePosition(element);
 
-                    // Highlight the closest timeline rectangle based on Y position
                     const closestTimeline = findClosestTimelineRect(element);
                     if (closestTimeline) {
                         newHighlightedTimelines.add(closestTimeline);
@@ -226,9 +233,11 @@ export const SoundEventDragProvider = ({ children }) => {
                     }
                 });
                 highlightedTimelinesRef.current = newHighlightedTimelines;
+                // Update currentY for the next incremental update
+                currentYRef.current = currentY;
             });
         },
-        [stageRef, selectedElementIds.length, forceUpdatePosition, findClosestTimelineRect, processSelectedElements]
+        [stageRef, forceUpdatePosition, findClosestTimelineRect, processSelectedElements, selectedElementIds.length]
     );
 
     // Finalize the drag: update the timeline and start time as before.
@@ -246,21 +255,16 @@ export const SoundEventDragProvider = ({ children }) => {
             const stage = stageRef;
             if (!stage) return;
 
-            if (selectedElementIds.length > 0) {
-                processSelectedElements(stage, finalizeDrag);
-            } else {
-                finalizeDrag(e.target);
-            }
+            processSelectedElements(stage, finalizeDrag);
 
             highlightedTimelinesRef.current.forEach((timeline) => {
                 removeHighlightFromTimeline(timeline);
             });
             highlightedTimelinesRef.current = new Set();
-            previousXRef.current = null;
             setDragging({});
             refreshBeat();
         },
-        [stageRef, selectedElementIds.length, setDragging, refreshBeat, processSelectedElements, finalizeDrag]
+        [stageRef, setDragging, refreshBeat, processSelectedElements, finalizeDrag]
     );
 
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);
