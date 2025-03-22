@@ -1,3 +1,4 @@
+import cloneDeep from 'lodash/cloneDeep';
 import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
@@ -10,24 +11,19 @@ export const SoundEventDragProvider = ({ children }) => {
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
 
-    // Memoize selected element IDs so we don't recalculate on every drag event
+    // Memoize selected element IDs so we don't recalc on every drag event
     const selectedElementIds = useMemo(() => {
         return Object.values(selectedItems).map(({ id }) => id);
     }, [selectedItems]);
 
-    // ----- Refs for tracking positions and drag requests -----
-    // For tracking the main element’s starting position
-    const initialXRef = useRef(null);
-    const initialMainYRef = useRef(null);
-    // For requestAnimationFrame and timeline highlights
+    // Refs for tracking positions and drag requests (following the old Y logic)
+    const previousXRef = useRef(null);
+    const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
-    // Map to store the initial positions of all selected elements
     const initialPositionsRef = useRef(new Map());
 
     // ===== Utility Functions =====
-
-    // Force update the element's position by syncing its attributes
     const forceUpdatePosition = useCallback((element) => {
         element.setAttrs({
             x: element.x(),
@@ -35,16 +31,12 @@ export const SoundEventDragProvider = ({ children }) => {
         });
     }, []);
 
-    // Update the start time (and end time based on event length) for the element's recording
     const updateStartTimeForElement = useCallback(({ element }) => {
-        const recording = { ...element.attrs?.['data-recording'] };
+        const recording = cloneDeep(element.attrs?.['data-recording']);
         const newStartTime = element.x() / pixelToSecondRatio;
         const newEndTime = newStartTime + recording.eventLength;
 
-        // Only update if there is an actual change
-        if (recording.startTime === newStartTime && recording.endTime === newEndTime) {
-            return;
-        }
+        if (recording.startTime === newStartTime && recording.endTime === newEndTime) return;
 
         const updatedRecording = {
             ...recording,
@@ -52,16 +44,12 @@ export const SoundEventDragProvider = ({ children }) => {
             startTime: newStartTime
         };
 
-        // If the element belongs to a group, update the group's recording data too
         const group = element.attrs?.['data-group-child'];
         if (group) {
-            const groupElement = { ...group.attrs?.['data-overlap-group'] };
+            const groupElement = cloneDeep(group.attrs?.['data-overlap-group']);
             const groupElements = { ...groupElement?.elements };
-            if (groupElements) {
-                const foundRecording = groupElements[recording.id];
-                if (foundRecording) {
-                    groupElements[recording.id] = updatedRecording;
-                }
+            if (groupElements && groupElements[recording.id]) {
+                groupElements[recording.id] = updatedRecording;
             }
         }
 
@@ -72,8 +60,6 @@ export const SoundEventDragProvider = ({ children }) => {
     }, []);
 
     // ===== Timeline Highlighting Functions =====
-
-    // Apply a yellow fill to highlight a timeline
     const applyHighlightToTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('yellow');
@@ -81,7 +67,6 @@ export const SoundEventDragProvider = ({ children }) => {
         }
     };
 
-    // Remove the highlight by resetting the fill to white
     const removeHighlightFromTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('white');
@@ -90,8 +75,7 @@ export const SoundEventDragProvider = ({ children }) => {
     };
 
     // ===== Timeline Search Functions =====
-
-    // Finds the closest timeline rectangle based on vertical distance
+    // These functions use Y comparisons just like in the old code.
     const findClosestTimelineRect = useCallback(
         (element) => {
             const elementBox = element.getClientRect();
@@ -99,7 +83,6 @@ export const SoundEventDragProvider = ({ children }) => {
             let minDistance = Infinity;
 
             const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('timelineRect'));
-
             allTimelineElements.forEach((timelineElement) => {
                 const timelineBox = timelineElement.getClientRect();
                 const distance = Math.abs(elementBox.y - timelineBox.y);
@@ -114,16 +97,13 @@ export const SoundEventDragProvider = ({ children }) => {
         [stageRef]
     );
 
-    // Finds the closest timeline event container for an element
     const findClosestTimelineEvents = useCallback(
         (element) => {
-            const stage = stageRef;
             const elementBox = element.getAbsolutePosition();
             let closestTimeline = null;
             let minDistance = Infinity;
 
-            const allTimelineElements = stage.find((node) => node.attrs?.id?.includes('-events'));
-
+            const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('-events'));
             allTimelineElements.forEach((timelineElement) => {
                 const timelineBox = timelineElement.parent.getAbsolutePosition();
                 const distance = Math.abs(elementBox.y - timelineBox.y);
@@ -138,18 +118,14 @@ export const SoundEventDragProvider = ({ children }) => {
         [stageRef]
     );
 
-    // Inserts the element into the timeline by updating its instrument name
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
         const closestTimelineInstrumentName = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown Timeline';
-        const recording = { ...element.attrs['data-recording'] };
+        const recording = cloneDeep(element.attrs['data-recording']);
         recording.instrumentName = closestTimelineInstrumentName;
-
         element.setAttr('data-recording', recording);
     }, []);
 
     // ===== Reusable Function for Processing Selected Elements =====
-    // This function iterates over the memoized selectedElementIds
-    // and applies the provided action callback to each element.
     const processSelectedElements = useCallback(
         (stage, action) => {
             selectedElementIds.forEach((id) => {
@@ -164,6 +140,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
     // ===== Drag Event Handlers =====
 
+    // Drag start: initialize X and Y refs per the old logic.
     const handleDragStart = useCallback(
         (el) => {
             el.evt.stopPropagation();
@@ -174,11 +151,11 @@ export const SoundEventDragProvider = ({ children }) => {
                 clearSelection();
             }
 
-            // Store the main element's initial positions
-            initialXRef.current = el.target.x();
-            initialMainYRef.current = el.target.y();
+            // Initialize previous positions using the event values (old Y logic)
+            previousXRef.current = el.target.x();
+            currentYRef.current = el.evt.y;
 
-            // Store the initial positions for all selected elements
+            // Save initial positions for all selected elements
             const stage = stageRef;
             processSelectedElements(stage, (element) => {
                 initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
@@ -187,7 +164,6 @@ export const SoundEventDragProvider = ({ children }) => {
             const processId = (id) => (id.startsWith(ELEMENT_ID_PREFIX) ? id.split(ELEMENT_ID_PREFIX)[1] : id);
             const newDragging = { [processId(el.target.attrs.id)]: true };
 
-            // Ensure dragging state is set for ALL selected items
             selectedElementIds.forEach((id) => {
                 newDragging[processId(id)] = true;
             });
@@ -197,6 +173,7 @@ export const SoundEventDragProvider = ({ children }) => {
         [clearSelection, isItemSelected, selectedElementIds, setDragging, stageRef, processSelectedElements]
     );
 
+    // Drag move: use incremental delta calculations as in the old code.
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
@@ -208,32 +185,34 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             dragRequestRef.current = requestAnimationFrame(() => {
-                // Calculate total displacement from the main element's initial position
-                const mainCurrentX = e.target.x();
-                const mainCurrentY = e.target.y();
-                const totalDeltaX = mainCurrentX - initialXRef.current;
-                const totalDeltaY = mainCurrentY - initialMainYRef.current;
+                const currentX = e.target.x();
+                const currentY = e.evt.y;
+                const deltaY = currentY - currentYRef.current;
+                const deltaX = previousXRef.current !== null ? currentX - previousXRef.current : 0;
+
+                // Update refs for the next event
+                previousXRef.current = currentX;
+                currentYRef.current = currentY;
 
                 const newHighlightedTimelines = new Set();
 
                 const processElement = (element) => {
-                    const { id } = element.attrs;
-                    const initialPos = initialPositionsRef.current.get(id);
-                    if (initialPos) {
-                        // Set the element's new position based on its own initial position plus the total displacement
-                        const newX = initialPos.x + totalDeltaX;
-                        const newY = initialPos.y + totalDeltaY;
-                        element.setAttrs({ x: newX, y: newY });
-                        forceUpdatePosition(element);
-                    }
+                    // Move the element by the incremental delta (old logic)
+                    element.move({ x: deltaX, y: deltaY });
+                    forceUpdatePosition(element);
 
+                    // Highlight the closest timeline rectangle based on Y position
                     const closestTimeline = findClosestTimelineRect(element);
                     if (closestTimeline) {
                         newHighlightedTimelines.add(closestTimeline);
                     }
                 };
 
-                processSelectedElements(stage, processElement);
+                if (selectedElementIds.length > 0) {
+                    processSelectedElements(stage, processElement);
+                } else {
+                    processElement(e.target);
+                }
 
                 // Update timeline highlights
                 highlightedTimelinesRef.current.forEach((timeline) => {
@@ -249,10 +228,10 @@ export const SoundEventDragProvider = ({ children }) => {
                 highlightedTimelinesRef.current = newHighlightedTimelines;
             });
         },
-        [stageRef, forceUpdatePosition, findClosestTimelineRect, processSelectedElements]
+        [stageRef, selectedElementIds.length, forceUpdatePosition, findClosestTimelineRect, processSelectedElements]
     );
 
-    // Finalize the drag by inserting the element into its closest timeline and updating its time
+    // Finalize the drag: update the timeline and start time as before.
     const finalizeDrag = useCallback(
         (element) => {
             const closestTimeline = findClosestTimelineEvents(element);
@@ -262,7 +241,6 @@ export const SoundEventDragProvider = ({ children }) => {
         [findClosestTimelineEvents, insertElementIntoTimeline, updateStartTimeForElement]
     );
 
-    // Handle drag end: finalize position updates, clear highlights, and reset dragging state
     const handleDragEnd = useCallback(
         (e) => {
             const stage = stageRef;
@@ -278,13 +256,13 @@ export const SoundEventDragProvider = ({ children }) => {
                 removeHighlightFromTimeline(timeline);
             });
             highlightedTimelinesRef.current = new Set();
+            previousXRef.current = null;
             setDragging({});
             refreshBeat();
         },
         [stageRef, selectedElementIds.length, setDragging, refreshBeat, processSelectedElements, finalizeDrag]
     );
 
-    // Utility to check if an element is currently being dragged
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);
 
     // ----- Context Value -----
