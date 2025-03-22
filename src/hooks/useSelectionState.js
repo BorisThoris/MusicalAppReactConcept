@@ -5,30 +5,65 @@ import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
+// Helper function moved outside the hook.
+const getRecordingData = (element) => {
+    if (!element) return null;
+    if (typeof element.getAttr === 'function') {
+        return element.getAttr('data-recording');
+    }
+    if (typeof element === 'string') {
+        try {
+            const parsed = JSON.parse(element);
+            return parsed?.attrs?.['data-recording'] || null;
+        } catch (e) {
+            console.error('Failed to parse element JSON', e);
+            return null;
+        }
+    } else if (typeof element === 'object') {
+        return element.attrs?.['data-recording'] || null;
+    }
+    return null;
+};
+
 export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const { processedItems } = useContext(CollisionsContext);
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Update selection based on intersected elements and y-level.
+    // Build a memoized map of processed items keyed by their recording id.
+    const processedItemsMap = useMemo(() => {
+        const map = new Map();
+        processedItems.forEach((item) => {
+            const recData = item.element?.getAttr('data-recording');
+            if (recData?.id) {
+                map.set(recData.id, item);
+            }
+        });
+        return map;
+    }, [processedItems]);
+
+    // Update selection based on intersected elements and y-level using functional state update.
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
-            const newSelectedItems = intersectedElements.reduce((acc, element) => {
-                acc[element.id] = { ...element };
-                return acc;
-            }, {});
+            setSelectedItems((prevSelectedItems) => {
+                const newSelectedItems = intersectedElements.reduce((acc, element) => {
+                    acc[element.id] = { ...element };
+                    return acc;
+                }, {});
 
-            const currentIds = Object.keys(selectedItems);
-            const newIds = Object.keys(newSelectedItems);
-            const hasChanged = currentIds.length !== newIds.length || currentIds.some((id) => !newIds.includes(id));
+                const currentIds = Object.keys(prevSelectedItems);
+                const newIds = Object.keys(newSelectedItems);
+                const hasChanged = currentIds.length !== newIds.length || currentIds.some((id) => !newIds.includes(id));
 
-            if (hasChanged) {
-                setSelectedItems(newSelectedItems);
-                setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
-            }
+                if (hasChanged) {
+                    setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
+                    return newSelectedItems;
+                }
+                return prevSelectedItems;
+            });
         },
-        [selectedItems, markersAndTrackerOffset]
+        [markersAndTrackerOffset]
     );
 
     // Clears the current selection.
@@ -44,10 +79,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 const newSelectedItems = { ...prevSelectedItems };
 
                 itemsToToggle.forEach(({ id }) => {
-                    const elementData = processedItems.find((item) => {
-                        const recData = item.element?.getAttr('data-recording');
-                        return recData && recData.id === id;
-                    });
+                    const elementData = processedItemsMap.get(id);
                     if (newSelectedItems[id]) {
                         delete newSelectedItems[id];
                     } else if (elementData) {
@@ -62,7 +94,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 return newSelectedItems;
             });
         },
-        [processedItems]
+        [processedItemsMap]
     );
 
     // Returns whether an item is selected.
@@ -100,32 +132,8 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
     }, [selectedItems]);
 
-    const getRecordingData = (element) => {
-        if (!element) return null;
-        if (typeof element.getAttr === 'function') {
-            return element.getAttr('data-recording');
-        }
-        if (typeof element === 'string') {
-            try {
-                const parsed = JSON.parse(element);
-                // Assuming the parsed object holds the attributes under an "attrs" key.
-                return parsed?.attrs?.['data-recording'] || null;
-            } catch (e) {
-                console.error('Failed to parse element JSON', e);
-                return null;
-            }
-        } else if (typeof element === 'object') {
-            // Fallback: maybe the element is a plain object with an "attrs" property.
-            return element.attrs?.['data-recording'] || null;
-        }
-        return null;
-    };
-
     useEffect(() => {
         const layersToDraw = new Set();
-
-        console.log('processedItems', processedItems);
-        console.log('Selections', selectedItems);
 
         processedItems.forEach((item) => {
             if (!item.element) return;
@@ -146,37 +154,22 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             }
         });
 
-        // Draw each unique layer only once at the end
+        // Draw each unique layer only once at the end.
         layersToDraw.forEach((layer) => {
             layer.draw();
         });
     }, [selectedItems, processedItems]);
 
+    // Combine loops to update selections based on processed items.
     useEffect(() => {
         setSelectedItems((prevSelectedItems) => {
             const updatedSelectedItems = {};
-
-            // Preserve selections from previous state if they still match
-            Object.keys(prevSelectedItems).forEach((id) => {
-                const hasMatchingElement = processedItems.some((item) => {
-                    const recData = getRecordingData(item.element);
-                    return recData && recData.id === id && recData.isSelected;
-                });
-                if (hasMatchingElement) {
-                    updatedSelectedItems[id] = prevSelectedItems[id];
-                }
-            });
-
-            // Add any new selections based on current processed items.
             processedItems.forEach((item) => {
                 const recData = getRecordingData(item.element);
-                const id = recData?.id;
-
-                if (id && recData.isSelected) {
-                    updatedSelectedItems[id] = { ...recData, element: item.element };
+                if (recData && recData.id && recData.isSelected) {
+                    updatedSelectedItems[recData.id] = { ...recData, element: item.element };
                 }
             });
-
             return isEqual(prevSelectedItems, updatedSelectedItems) ? prevSelectedItems : updatedSelectedItems;
         });
     }, [processedItems]);
