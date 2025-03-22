@@ -160,5 +160,13 @@ export const findOverlaps = (processedData) => {
         return result;
     }, {});
 
-    return finalGroups;
+    // Sort the final groups by instrumentName alphabetically
+    const sortedFinalGroups = {};
+    Object.keys(finalGroups)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((instrumentName) => {
+            sortedFinalGroups[instrumentName] = finalGroups[instrumentName];
+        });
+
+    return sortedFinalGroups;
 };

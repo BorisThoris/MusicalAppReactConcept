@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Group, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
@@ -22,9 +22,11 @@ export const GroupElement = React.memo(
 
         const groupX = startTime * pixelToSecondRatio || 100;
 
-        const groupEvents = Object.values(elements).sort((a, b) => {
-            return a.startTime - b.startTime;
-        });
+        // Memoize sorted events to avoid re-sorting on every render.
+        const groupEvents = useMemo(() => {
+            return Object.values(elements).sort((a, b) => a.startTime - b.startTime);
+        }, [elements]);
+
         const groupLength = groupEvents.length;
 
         const onLockGroup = useCallback(() => {
@@ -64,26 +66,23 @@ export const GroupElement = React.memo(
                 <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 
                 <Group offsetX={groupX}>
-                    {groupEvents.map((event, index) => {
-                        return (
-                            <SoundEventElement
-                                key={event.id}
-                                timelineHeight={TimelineHeight}
-                                recording={event}
-                                index={index}
-                                timelineY={timelineY}
-                                handleDragEnd={handleDragEnd}
-                                handleDragStart={handleDragStart}
-                                dragBoundFunc={dragBoundFunc}
-                                handleDragMove={handleDragMove}
-                                isElementBeingDragged={isElementBeingDragged}
-                                // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-                                childScale={(index + 1) / groupLength}
-                                groupRef={groupRef.current}
-                                parentGroupId={groupId}
-                            />
-                        );
-                    })}
+                    {groupEvents.map((event, index) => (
+                        <SoundEventElement
+                            key={event.id}
+                            timelineHeight={TimelineHeight}
+                            recording={event}
+                            index={index}
+                            timelineY={timelineY}
+                            handleDragEnd={handleDragEnd}
+                            handleDragStart={handleDragStart}
+                            dragBoundFunc={dragBoundFunc}
+                            handleDragMove={handleDragMove}
+                            isElementBeingDragged={isElementBeingDragged}
+                            childScale={(index + 1) / groupLength}
+                            groupRef={groupRef.current}
+                            parentGroupId={groupId}
+                        />
+                    ))}
                 </Group>
 
                 <Lock isLocked={locked} onClick={onLockGroup} />
