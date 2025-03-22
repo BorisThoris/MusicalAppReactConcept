@@ -8,38 +8,31 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
 
     const updatedOverlapGroups = overlapGroups.map((overlapGroup) => {
         const groupElement = overlapGroup.group;
+        const childElements = Object.values(getProcessedElements(groupElement));
+        const newOverlappingElements = new Map();
 
-        const childElements = Object.values(getProcessedElements(groupElement)); // Ensure it's an array
+        // Array to track which child element overlaps with any other
+        const hasOverlap = new Array(childElements.length).fill(false);
 
-        const newOverlappingElements = new Map(); // Avoid duplicates
-        const newChildElements = [];
-        const processedOrphans = new Set(); // Track elements added to orphanElements
-
-        // Check overlaps for all elements
-        childElements.forEach((currentElementA) => {
-            let hasOverlap = false;
-
-            childElements.forEach((currentElementB) => {
-                if (currentElementA !== currentElementB && isOverlapping(currentElementA, currentElementB)) {
-                    hasOverlap = true;
-
-                    // Add both elements to overlapping elements
-                    newOverlappingElements.set(currentElementA.recording.id, currentElementA.recording);
-                    newOverlappingElements.set(currentElementB.recording.id, currentElementB.recording);
+        // Compare each pair only once
+        for (let i = 0; i < childElements.length; i += 1) {
+            for (let j = i + 1; j < childElements.length; j += 1) {
+                if (isOverlapping(childElements[i], childElements[j])) {
+                    hasOverlap[i] = true;
+                    hasOverlap[j] = true;
+                    newOverlappingElements.set(childElements[i].recording.id, childElements[i].recording);
+                    newOverlappingElements.set(childElements[j].recording.id, childElements[j].recording);
                 }
-            });
-
-            // If no overlap is found, push the element to orphans (if not already added)
-            if (!hasOverlap && !processedOrphans.has(currentElementA.recording.id)) {
-                orphanElements.push(currentElementA);
-                processedOrphans.add(currentElementA.recording.id); // Avoid duplicates in orphans
-            } else if (hasOverlap) {
-                // If overlapping, add to newChildElements
-                newChildElements.push(currentElementA);
             }
-        });
+        }
 
-        // Create a new elements object from overlapping elements
+        // Add elements without any overlap to orphanElements
+        for (let i = 0; i < childElements.length; i += 1) {
+            if (!hasOverlap[i]) {
+                orphanElements.push(childElements[i]);
+            }
+        }
+
         const newElements = Array.from(newOverlappingElements.values()).reduce((acc, element) => {
             acc[element.id] = element;
             return acc;
@@ -68,7 +61,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         const groupsChanged = !prevGroupsRef.current || !isEqual(processedGroups, prevGroupsRef.current);
 
         if (!elementsChanged && !groupsChanged) {
-            return prevResultRef.current; // Return the cached result if no changes
+            return prevResultRef.current; // Return cached result if no changes
         }
 
         const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
@@ -76,7 +69,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         prevElementsRef.current = processedElements;
         prevGroupsRef.current = overlapGroups;
 
-        const allElements = [...processedElements, ...Object.values(orphanElements)];
+        const allElements = [...processedElements, ...orphanElements];
 
         const sortedElements = allElements.sort((a, b) => {
             if (a.recording.instrumentName < b.recording.instrumentName) return -1;
@@ -97,12 +90,14 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return acc;
         }, {});
 
+        // Ensure timeline keys exist in the result
         Object.keys(timelineRefs).forEach((timelineName) => {
             if (!objToSave[timelineName]) {
                 objToSave[timelineName] = {};
             }
         });
 
+        // Process each overlap group and map to new IDs
         overlapGroups.forEach(
             ({
                 elements = {},
@@ -113,13 +108,12 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 locked,
                 startTime
             }) => {
-                const hasElements = Object.keys(elements || {}).length > 0;
+                const hasElements = Object.keys(elements).length > 0;
 
                 if (!id || !hasElements) return;
 
-                objToSave[instrumentName] ??= {};
+                objToSave[instrumentName] = objToSave[instrumentName] || {};
 
-                // Process elements with createEvent and map to new IDs
                 const recreatedElements = Object.fromEntries(
                     Object.values(elements).map((element) => {
                         const newElement = createEvent({ instrumentName: element.instrumentName, recording: element });
@@ -131,7 +125,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                     elements: recreatedElements,
                     endTime,
                     id,
-                    ids: Object.keys(recreatedElements), // Set the new element IDs
+                    ids: Object.keys(recreatedElements),
                     instrumentName,
                     length,
                     locked,
@@ -141,7 +135,6 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         );
 
         prevResultRef.current = objToSave; // Cache the result
-
         return objToSave;
     }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 
