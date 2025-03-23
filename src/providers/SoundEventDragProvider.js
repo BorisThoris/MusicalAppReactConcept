@@ -16,8 +16,9 @@ export const SoundEventDragProvider = ({ children }) => {
         return Object.values(selectedItems).map(({ id }) => id);
     }, [selectedItems]);
 
-    // Refs for tracking positions and drag requests (following the old Y logic)
-    const previousXRef = useRef(null);
+    // ----- Refs for tracking positions and drag requests -----
+    // Removed previousXRef (used in current incremental logic) and replaced with initialXRef
+    const initialXRef = useRef(null); // NEW: stores the main element's initial X (total displacement logic)
     const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
@@ -75,7 +76,6 @@ export const SoundEventDragProvider = ({ children }) => {
     };
 
     // ===== Timeline Search Functions =====
-    // These functions use Y comparisons just like in the old code.
     const findClosestTimelineRect = useCallback(
         (element) => {
             const elementBox = element.getClientRect();
@@ -140,7 +140,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
     // ===== Drag Event Handlers =====
 
-    // Drag start: initialize X and Y refs per the old logic.
+    // Drag start: initialize X and Y refs.
     const handleDragStart = useCallback(
         (el) => {
             el.evt.stopPropagation();
@@ -151,8 +151,9 @@ export const SoundEventDragProvider = ({ children }) => {
                 clearSelection();
             }
 
-            // Initialize previous positions using the event values (old Y logic)
-            previousXRef.current = el.target.x();
+            // NEW: Save the main element's initial X position (for total X displacement)
+            initialXRef.current = el.target.x();
+            // Retain current Y initialization from the event
             currentYRef.current = el.evt.y;
 
             // Save initial positions for all selected elements
@@ -173,7 +174,7 @@ export const SoundEventDragProvider = ({ children }) => {
         [clearSelection, isItemSelected, selectedElementIds, setDragging, stageRef, processSelectedElements]
     );
 
-    // Drag move: use incremental delta calculations as in the old code.
+    // Drag move: update positions using total X displacement (old X logic) and incremental Y displacement.
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
@@ -185,23 +186,30 @@ export const SoundEventDragProvider = ({ children }) => {
             }
 
             dragRequestRef.current = requestAnimationFrame(() => {
+                // Get current X and Y values
                 const currentX = e.target.x();
                 const currentY = e.evt.y;
+                // NEW: Calculate total X displacement from initial position
+                const totalDeltaX = currentX - initialXRef.current;
+                // Y continues to use incremental delta as before
                 const deltaY = currentY - currentYRef.current;
-                const deltaX = previousXRef.current !== null ? currentX - previousXRef.current : 0;
-
-                // Update refs for the next event
-                previousXRef.current = currentX;
+                // Update currentYRef for the next event
                 currentYRef.current = currentY;
 
                 const newHighlightedTimelines = new Set();
 
                 const processElement = (element) => {
-                    // Move the element by the incremental delta (old logic)
-                    element.move({ x: deltaX, y: deltaY });
+                    // For X: update absolutely using initial position + total delta
+                    const initialPos = initialPositionsRef.current.get(element.attrs.id);
+                    if (initialPos) {
+                        const newX = initialPos.x + totalDeltaX;
+                        element.setAttr('x', newX);
+                    }
+                    // For Y: continue using incremental updates
+                    element.move({ y: deltaY });
                     forceUpdatePosition(element);
 
-                    // Highlight the closest timeline rectangle based on Y position
+                    // Highlight timeline based on new position
                     const closestTimeline = findClosestTimelineRect(element);
                     if (closestTimeline) {
                         newHighlightedTimelines.add(closestTimeline);
@@ -256,7 +264,8 @@ export const SoundEventDragProvider = ({ children }) => {
                 removeHighlightFromTimeline(timeline);
             });
             highlightedTimelinesRef.current = new Set();
-            previousXRef.current = null;
+            // Reset the initialXRef if needed (optional)
+            initialXRef.current = null;
             setDragging({});
             refreshBeat();
         },
