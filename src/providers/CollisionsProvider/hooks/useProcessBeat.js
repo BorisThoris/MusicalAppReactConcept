@@ -64,12 +64,24 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return prevResultRef.current; // Return cached result if no changes
         }
 
+        // Process overlap groups
         const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
         prevElementsRef.current = processedElements;
         prevGroupsRef.current = overlapGroups;
 
-        const allElements = [...processedElements, ...orphanElements];
+        // Create a set of element IDs found in any overlap group
+        const groupElementIds = new Set();
+        overlapGroups.forEach((overlapGroup) => {
+            const groupElements = Object.values(overlapGroup.elements);
+            groupElements.forEach((el) => groupElementIds.add(el.id));
+        });
+
+        // Remove elements that are already in an overlap group
+        const uniqueProcessedElements = processedElements.filter((el) => !groupElementIds.has(el.recording.id));
+
+        // Now merge uniqueProcessedElements with orphanElements (which are group children with no overlap)
+        const allElements = [...uniqueProcessedElements, ...orphanElements];
 
         const sortedElements = allElements.sort((a, b) => {
             if (a.recording.instrumentName < b.recording.instrumentName) return -1;

@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
 /**
  * Custom hook to refresh the beat data.

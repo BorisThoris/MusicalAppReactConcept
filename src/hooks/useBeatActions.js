@@ -3,7 +3,7 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 import { findOverlaps } from '../providers/CollisionsProvider/overlapHelpers';
 
 export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage }) => {
-    const { setHasChanged, setOverlapGroups, setSelectedBeat, selectedBeat } = useContext(CollisionsContext);
+    const { setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(CollisionsContext);
 
     const handleSave = useCallback(
         (beatName, overlapGroups) => {
