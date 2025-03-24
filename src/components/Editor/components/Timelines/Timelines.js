@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { Layer, Stage, useStrictMode } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
@@ -21,22 +21,24 @@ const Timelines = React.memo(() => {
     const { playbackStatus } = useContext(RecordingsPlayerContext);
     const { hideActionsMenu } = useContext(PanelContext);
 
+    // Calculate stage width using the current window width.
+    // Note: This value won't update on window resize unless you trigger a re-render.
     const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
     const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
 
     const recordingsArr = useMemo(() => Object.entries(overlapGroups), [overlapGroups]);
-    const EditorHeight = useMemo(() => recordingsArr.length * TimelineHeight + markersHeight || 500, [recordingsArr]);
+    const EditorHeight = useMemo(
+        () => (recordingsArr.length ? recordingsArr.length * TimelineHeight + markersHeight : 500),
+        [recordingsArr]
+    );
 
     useEffect(() => {
         addStageRef(stageRef);
 
-        // Attach event listener to the top layer
         const topLayer = topLayerRef.current;
         if (topLayer) {
             topLayer.on('draw', updateBeatRef);
         }
-
-        // Cleanup event listener
         return () => {
             if (topLayer) {
                 topLayer.off('draw', updateBeatRef);
@@ -47,11 +49,14 @@ const Timelines = React.memo(() => {
 
     useStrictMode(true);
 
-    return (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div onClick={hideActionsMenu}>
-            <PaintingTopBar />
+    // Memoize the click handler to avoid re-creating it on each render.
+    const handleClick = useCallback(() => {
+        hideActionsMenu();
+    }, [hideActionsMenu]);
 
+    return (
+        <button onClick={handleClick}>
+            <PaintingTopBar />
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
                 <Layer ref={topLayerRef} name="top-layer">
                     {recordingsArr.map(([parentGroupName, events], index) => (
@@ -64,16 +69,13 @@ const Timelines = React.memo(() => {
                         />
                     ))}
                 </Layer>
-
                 <Layer>
                     <TimelineTracker furthestEndTime={playbackStatus.currentInstrument || 0} />
                 </Layer>
-
                 <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
-
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>
-        </div>
+        </button>
     );
 });
 
