@@ -29,13 +29,7 @@ export const SelectedEventsList = ({ onClose, onDeleteRecording, onModifyStartTi
 
         return (
             <EventContainer key={uniqueKey}>
-                <EventItem
-                    event={event}
-                    onDelete={onDelete}
-                    onPlay={onPlay}
-                    onClose={onClose}
-                    onModifyStartTime={onModifyStartTime}
-                />
+                <EventItem event={event} onDelete={onDelete} onPlay={onPlay} onModifyStartTime={onModifyStartTime} />
             </EventContainer>
         );
     });

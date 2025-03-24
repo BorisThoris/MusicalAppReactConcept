@@ -82,7 +82,8 @@ export const CollisionsProvider = ({ children }) => {
     );
 
     const copyEvents = useCallback((events) => {
-        const sortedEvents = [...events].sort((ev1, ev2) => ev1.startTime - ev2.startTime);
+        const eventArray = Array.isArray(events) ? events : [events];
+        const sortedEvents = [...eventArray].sort((ev1, ev2) => ev1.startTime - ev2.startTime);
         setCopiedEvents(sortedEvents);
     }, []);
 
