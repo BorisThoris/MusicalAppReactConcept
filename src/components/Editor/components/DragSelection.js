@@ -11,7 +11,7 @@ export const DragSelection = () => {
 
     const selectionRectRef = useRef();
 
-    const { setSelectionBasedOnCoordinates } = useContext(SelectionContext);
+    const { handleCloseSelectionsPanel, setSelectionBasedOnCoordinates } = useContext(SelectionContext);
     const { processedItems, stageRef } = useContext(CollisionsContext);
 
     const { handleCloseMenu } = useContextMenu();
@@ -145,6 +145,7 @@ export const DragSelection = () => {
             if (e.target?.attrs?.id?.includes('timelineRect')) {
                 handleDrag(e, true);
                 handleCloseMenu(e);
+                handleCloseSelectionsPanel();
             }
         };
 
@@ -170,7 +171,16 @@ export const DragSelection = () => {
             stage.off('mousemove touchmove', mouseMoveHandler);
             stage.off('mouseup touchend', mouseUpHandler);
         };
-    }, [handleDrag, hasMoved, dragPos, isDragging, updateSelection, stageRef, handleCloseMenu]);
+    }, [
+        handleDrag,
+        hasMoved,
+        dragPos,
+        isDragging,
+        updateSelection,
+        stageRef,
+        handleCloseMenu,
+        handleCloseSelectionsPanel
+    ]);
 
     const rectProps =
         isDragging && hasMoved()

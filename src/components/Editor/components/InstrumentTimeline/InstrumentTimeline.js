@@ -7,7 +7,6 @@ import threeMinuteMs from '../../../../globalConstants/songLimit';
 import useContextMenu from '../../../../hooks/useContextMenu';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
@@ -15,7 +14,6 @@ import { TimelineEvents } from './TimelineEvents';
 const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
-    const { handleCloseSelectionsPanel } = useContext(SelectionContext);
     const { handleContextMenu } = useContextMenu();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
@@ -65,7 +63,6 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 onPointerDown={onTimelinePointerDown}
                 stroke="black"
                 strokeWidth={2}
-                onClick={handleCloseSelectionsPanel}
                 onContextMenu={handleContextMenu}
             />
 

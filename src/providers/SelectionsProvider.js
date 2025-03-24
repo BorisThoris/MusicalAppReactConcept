@@ -7,6 +7,7 @@ import { TimelineContext } from './TimelineProvider';
 export const SelectionContext = createContext({
     clearSelection: () => {},
     duplicateSelections: (startTime = '') => null,
+    handleCloseSelectionsPanel: () => {},
     isItemSelected: (id) => false,
     selectedItems: {},
     selectedValues: [{}],
