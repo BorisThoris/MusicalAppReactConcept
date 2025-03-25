@@ -8,33 +8,33 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
 
     const updatedOverlapGroups = overlapGroups.map((overlapGroup) => {
         const groupElement = overlapGroup.group;
+        // Get the child elements and sort them (adjust the sort field as needed).
         const childElements = Object.values(getProcessedElements(groupElement));
-        const newOverlappingElements = new Map();
+        childElements.sort((a, b) => a.recording.startTime - b.recording.startTime);
 
-        // Array to track which child element overlaps with any other
-        const hasOverlap = new Array(childElements.length).fill(false);
-
-        // Compare each pair only once
+        const validGroup = [];
         for (let i = 0; i < childElements.length; i += 1) {
-            for (let j = i + 1; j < childElements.length; j += 1) {
-                if (isOverlapping(childElements[i], childElements[j])) {
-                    hasOverlap[i] = true;
-                    hasOverlap[j] = true;
-                    newOverlappingElements.set(childElements[i].recording.id, childElements[i].recording);
-                    newOverlappingElements.set(childElements[j].recording.id, childElements[j].recording);
+            if (i === 0) {
+                // Always include the first element.
+                validGroup.push(childElements[i]);
+            } else {
+                // Check if the current element overlaps with the last valid element.
+                // eslint-disable-next-line no-lonely-if
+                if (isOverlapping(childElements[i], validGroup[validGroup.length - 1])) {
+                    validGroup.push(childElements[i]);
+                } else {
+                    // If the chain is broken, add the current element and every subsequent element as orphans.
+                    for (let j = i; j < childElements.length; j += 1) {
+                        orphanElements.push(childElements[j]);
+                    }
+                    break; // Exit the loop for this group.
                 }
             }
         }
 
-        // Add elements without any overlap to orphanElements
-        for (let i = 0; i < childElements.length; i += 1) {
-            if (!hasOverlap[i]) {
-                orphanElements.push(childElements[i]);
-            }
-        }
-
-        const newElements = Array.from(newOverlappingElements.values()).reduce((acc, element) => {
-            acc[element.id] = element;
+        // Build a new object mapping of valid elements.
+        const newElements = validGroup.reduce((acc, element) => {
+            acc[element.recording.id] = element.recording;
             return acc;
         }, {});
 
@@ -64,23 +64,23 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return prevResultRef.current; // Return cached result if no changes
         }
 
-        // Process overlap groups
+        // Process overlap groups with the refactored helper.
         const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
         prevElementsRef.current = processedElements;
         prevGroupsRef.current = overlapGroups;
 
-        // Create a set of element IDs found in any overlap group
+        // Create a set of element IDs found in any overlap group.
         const groupElementIds = new Set();
         overlapGroups.forEach((overlapGroup) => {
             const groupElements = Object.values(overlapGroup.elements);
             groupElements.forEach((el) => groupElementIds.add(el.id));
         });
 
-        // Remove elements that are already in an overlap group
+        // Remove elements that are already in an overlap group.
         const uniqueProcessedElements = processedElements.filter((el) => !groupElementIds.has(el.recording.id));
 
-        // Now merge uniqueProcessedElements with orphanElements (which are group children with no overlap)
+        // Merge uniqueProcessedElements with orphanElements.
         const allElements = [...uniqueProcessedElements, ...orphanElements];
 
         const sortedElements = allElements.sort((a, b) => {
@@ -102,14 +102,14 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return acc;
         }, {});
 
-        // Ensure timeline keys exist in the result
+        // Ensure timeline keys exist in the result.
         Object.keys(timelineRefs).forEach((timelineName) => {
             if (!objToSave[timelineName]) {
                 objToSave[timelineName] = {};
             }
         });
 
-        // Process each overlap group and map to new IDs
+        // Process each overlap group and map to new IDs.
         overlapGroups.forEach(
             ({
                 elements = {},
@@ -146,7 +146,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             }
         );
 
-        prevResultRef.current = objToSave; // Cache the result
+        prevResultRef.current = objToSave; // Cache the result.
         return objToSave;
     }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 
