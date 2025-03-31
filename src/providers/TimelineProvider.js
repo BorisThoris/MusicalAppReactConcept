@@ -5,7 +5,7 @@ import threeMinuteMs from '../globalConstants/songLimit';
 export const TimelineHeight = 200;
 export const Y_OFFSET = 20;
 export const markersHeight = 50;
-const panelCompensationOffset = { x: -60 };
+export const panelCompensationOffset = { x: -60 };
 export const markersAndTrackerOffset = markersHeight + Y_OFFSET;
 
 const defaultTimelineState = {

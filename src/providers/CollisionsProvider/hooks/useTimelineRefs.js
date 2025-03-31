@@ -162,6 +162,9 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         if (!stageRef?.current) return [];
 
         const groups = getAllGroups();
+
+        console.log('ALL GROUPS', groups);
+
         const seenGroupIds = new Set();
 
         const processedGroups = groups.reduce((acc, group) => {
@@ -181,11 +184,14 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
                 acc.push({
                     group,
+                    node: group,
                     ...groupData,
                     elements: groupElements,
                     rect: { height, width, x, y }
                 });
             }
+
+            console.log('PROCESSED GROUPS', acc);
             return acc;
         }, []);
 

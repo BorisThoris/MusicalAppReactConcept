@@ -1,55 +1,146 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-restricted-syntax */
 
-// Assume utility functions are modularized
+// Helper function: uses Konva’s absolute transform to get the absolute rect from a node.
+const getAbsoluteRect = (node) => {
+    const clientRect = node.getClientRect({ skipTransform: false });
+    // compute the absolute top-left position using the node’s transform
+    const absTransform = node.getAbsolutePosition();
 
-// Utility function for detecting overlaps
+    return {
+        height: clientRect.height,
+        width: clientRect.width,
+        x: absTransform.x,
+        y: absTransform.y
+    };
+};
+
 export const isOverlapping = (elA, elB) => {
-    if (!elA.rect || !elB.rect) return false;
+    // Always use the absolute rect from the node reference.
+    // Assumes element.node exists and is valid.
+    const normRectA = getAbsoluteRect(elA?.node || elA?.element);
+    const normRectB = getAbsoluteRect(elB?.node || elB?.element);
+
+    if (!normRectA || !normRectB) {
+        console.log('No overlap: Missing normalized rectangle data.', {
+            normRectA,
+            normRectB
+        });
+        return false;
+    }
 
     const { endTime: aEndTime, startTime: aStartTime } = elA;
     const { endTime: bEndTime, startTime: bStartTime } = elB;
 
-    const rectA = elA.rect;
-    const rectB = elB.rect;
+    let isRectOverlapping = true;
+    let isTimeOverlapping = true;
 
-    // Check basic rectangle overlap
-    const isRectOverlapping = !(
-        rectA.x > rectB.x + rectB.width ||
-        rectA.x + rectA.width < rectB.x ||
-        rectA.y > rectB.y + rectB.height ||
-        rectA.y + rectA.height < rectB.y
-    );
+    console.log('Normalized Rectangle details:', {
+        normRectA: { height: normRectA.height, width: normRectA.width, x: normRectA.x, y: normRectA.y },
+        normRectB: { height: normRectB.height, width: normRectB.width, x: normRectB.x, y: normRectB.y }
+    });
 
-    // Check time overlap
-    const isTimeOverlapping = !(aEndTime <= bStartTime || bEndTime <= aStartTime);
+    console.log('Time details:', {
+        elementA: { endTime: aEndTime, startTime: aStartTime },
+        elementB: { endTime: bEndTime, startTime: bStartTime }
+    });
+
+    // Standard rectangle overlap check using the normalized absolute values
+    if (normRectA.x > normRectB.x + normRectB.width) {
+        console.log('No overlap: Element A is to the right of Element B.', {
+            elementA_x: normRectA.x,
+            elementB_right: normRectB.x + normRectB.width
+        });
+        isRectOverlapping = false;
+    }
+    if (normRectA.x + normRectA.width < normRectB.x) {
+        console.log('No overlap: Element A is to the left of Element B.', {
+            elementA_right: normRectA.x + normRectA.width,
+            elementB_x: normRectB.x
+        });
+        isRectOverlapping = false;
+    }
+    if (normRectA.y > normRectB.y + normRectB.height) {
+        console.log('No overlap: Element A is below Element B.', {
+            elementA_y: normRectA.y,
+            elementB_bottom: normRectB.y + normRectB.height
+        });
+        isRectOverlapping = false;
+    }
+    if (normRectA.y + normRectA.height < normRectB.y) {
+        console.log('No overlap: Element A is above Element B.', {
+            elementA_bottom: normRectA.y + normRectA.height,
+            elementB_y: normRectB.y
+        });
+        isRectOverlapping = false;
+    }
+
+    // Check time overlap conditions
+    if (aEndTime <= bStartTime) {
+        console.log('No overlap: Element A ends before Element B starts.', {
+            elementA_endTime: aEndTime,
+            elementB_startTime: bStartTime
+        });
+        isTimeOverlapping = false;
+    }
+    if (bEndTime <= aStartTime) {
+        console.log('No overlap: Element B ends before Element A starts.', {
+            elementA_startTime: aStartTime,
+            elementB_endTime: bEndTime
+        });
+        isTimeOverlapping = false;
+    }
 
     return isRectOverlapping && isTimeOverlapping;
+};
+
+// Helper to check if rectA is entirely contained within rectB
+const isRectContained = (rectA, rectB) => {
+    return (
+        rectA.x >= rectB.x &&
+        rectA.y >= rectB.y &&
+        rectA.x + rectA.width <= rectB.x + rectB.width &&
+        rectA.y + rectA.height <= rectB.y + rectB.height
+    );
+};
+
+// Helper to get group data. If the element is a group (has an "elements" property),
+// we now use its stored rect, startTime, and endTime. Otherwise, use its own properties.
+const getGroupData = (element) => {
+    if (element.elements) {
+        // Use the group's stored values (no union computation)
+        return {
+            endTime: element.endTime,
+            rect: element.rect,
+            startTime: element.startTime
+        };
+    }
+    return {
+        endTime: element.endTime,
+        rect: element.rect,
+        startTime: element.startTime
+    };
 };
 
 // Union-Find helper functions
 const initializeUnionFind = (elements) => {
     const parent = {};
     const rank = {};
-
     elements.forEach(({ id }) => {
         parent[id] = id;
         rank[id] = 0;
     });
-
     return { parent, rank };
 };
 
 const find = (parent, id, visited = new Set()) => {
     if (visited.has(id)) {
         console.warn(`Infinite recursion detected for id: ${id}`);
-        return id; // Break the cycle
+        return id;
     }
-
     visited.add(id);
-
     if (parent[id] !== id) {
-        parent[id] = find(parent, parent[id], visited); // Path compression
+        parent[id] = find(parent, parent[id], visited);
     }
     return parent[id];
 };
@@ -57,10 +148,8 @@ const find = (parent, id, visited = new Set()) => {
 const union = (parent, rank, elementA, elementB) => {
     const idA = elementA.id;
     const idB = elementB.id;
-
     const rootA = find(parent, idA);
     const rootB = find(parent, idB);
-
     if (rootA !== rootB) {
         if (rank[rootA] > rank[rootB]) {
             parent[rootB] = rootA;
@@ -73,46 +162,71 @@ const union = (parent, rank, elementA, elementB) => {
     }
 };
 
+// Updated findOverlaps function that uses stored group rect values when groups are involved.
 export const findOverlaps = (processedData) => {
     if (!processedData) return;
 
+    // Helper to return an array of elements (if grouped, return its elements; else wrap in an array)
     const getAllElements = (element) => {
-        if (element.elements) {
-            return Object.values(element.elements);
-        }
-        return [element];
+        return element.elements ? Object.values(element.elements) : [element];
     };
 
-    const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) => {
-        return Object.values(events).map((event) => ({ ...event, instrumentName }));
-    });
+    // Gather all elements (each with instrumentName attached)
+    const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) =>
+        Object.values(events).map((event) => ({ ...event, instrumentName }))
+    );
+
+    console.log('processedData', processedData);
 
     const { parent, rank } = initializeUnionFind(allElements);
 
-    // Detect overlaps and union groups
+    // Compare each pair using group-level stored data.
     allElements.forEach((elementA, idxA) => {
         for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {
             const elementB = allElements[idxB];
 
-            const elementALocked = elementA.locked || false;
-            const elementBLocked = elementB.locked || false;
-            const elementsNotLocked = !elementALocked && !elementBLocked;
+            // Skip if either is locked.
+            // eslint-disable-next-line no-continue
+            if (elementA.locked || elementB.locked) continue;
 
-            const groupA = getAllElements(elementA);
-            const groupB = getAllElements(elementB);
+            const groupDataA = getGroupData(elementA);
+            const groupDataB = getGroupData(elementB);
 
-            const areGroupsOverlapping = groupA.some((elA) => groupB.some((elB) => isOverlapping(elA, elB)));
+            // Use group-level overlap check based solely on stored rect, startTime, and endTime.
+            const overlapCheck = isOverlapping(
+                {
+                    endTime: groupDataA.endTime,
+                    node: elementA.node,
+                    rect: groupDataA.rect,
+                    startTime: groupDataA.startTime // Ensure node is passed for absolute positioning
+                },
+                {
+                    endTime: groupDataB.endTime,
+                    node: elementB.node,
+                    rect: groupDataB.rect,
+                    startTime: groupDataB.startTime // Ensure node is passed for absolute positioning
+                }
+            );
 
-            if (elementsNotLocked && areGroupsOverlapping) {
+            // Also check if one group's rect is entirely contained within the other.
+            let rectContained = false;
+            if (groupDataA.rect && groupDataB.rect) {
+                rectContained =
+                    isRectContained(groupDataA.rect, groupDataB.rect) ||
+                    isRectContained(groupDataB.rect, groupDataA.rect);
+            }
+
+            // If either condition is true, merge the groups.
+            if (overlapCheck || rectContained) {
                 union(parent, rank, elementA, elementB);
             }
         }
     });
 
+    // Build temporary groups from the union-find structure.
     const tempGroups = allElements.reduce((groups, currentElement) => {
         const rootId = find(parent, currentElement.id);
         const actualElements = getAllElements(currentElement);
-
         if (!groups[currentElement.instrumentName]) {
             groups[currentElement.instrumentName] = {};
         }
@@ -124,43 +238,44 @@ export const findOverlaps = (processedData) => {
                 locked: currentElement.locked
             };
         }
-
         actualElements.forEach((actualElement) => {
             groups[currentElement.instrumentName][rootId].ids.add(actualElement.id);
             groups[currentElement.instrumentName][rootId].elements[actualElement.id] = actualElement;
         });
-
         return groups;
     }, {});
 
+    // Build final groups, computing overall start/end times, lengths, and keeping the stored group rect.
     const finalGroups = Object.entries(tempGroups).reduce((result, [instrumentName, groups]) => {
         result[instrumentName] = Object.entries(groups).reduce((acc, [rootId, group]) => {
             const idsArray = Array.from(group.ids);
-
             if (idsArray.length === 1) {
                 const [singleId] = idsArray;
                 acc[singleId] = group.elements[singleId];
             } else {
-                const startTime = Math.min(...idsArray.map((id) => group.elements[id].startTime));
-                const endTime = Math.max(...idsArray.map((id) => group.elements[id].endTime));
+                // When groups are merged, we now preserve the stored rect from the group.
+                // (Assumes that when a group is created, its rect property is properly set.)
+                const startTime = Math.min(...Object.values(group.elements).map((el) => el.startTime));
+                const endTime = Math.max(...Object.values(group.elements).map((el) => el.endTime));
                 const length = endTime - startTime;
-
+                // Use the stored rect from the first element in the group (or any other agreed-upon source)
+                const storedRect = group.elements[idsArray[0]].rect;
                 acc[rootId] = {
                     ...group,
                     endTime,
                     id: rootId,
                     instrumentName,
                     length,
+                    rect: storedRect,
                     startTime
                 };
             }
             return acc;
         }, {});
-
         return result;
     }, {});
 
-    // Sort the final groups by instrumentName alphabetically
+    // Optionally sort the final groups by instrumentName alphabetically.
     const sortedFinalGroups = {};
     Object.keys(finalGroups)
         .sort((a, b) => a.localeCompare(b))

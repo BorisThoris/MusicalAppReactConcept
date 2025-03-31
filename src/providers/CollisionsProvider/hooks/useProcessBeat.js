@@ -5,46 +5,96 @@ import { isOverlapping } from '../overlapHelpers';
 
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
+    const newOverlapGroups = [];
 
-    const updatedOverlapGroups = overlapGroups.map((overlapGroup) => {
+    // Combine child elements from all overlap groups
+    let allChildElements = [];
+    overlapGroups.forEach((overlapGroup) => {
         const groupElement = overlapGroup.group;
-        // Get the child elements and sort them (adjust the sort field as needed).
         const childElements = Object.values(getProcessedElements(groupElement));
-        childElements.sort((a, b) => a.recording.startTime - b.recording.startTime);
-
-        const validGroup = [];
-        for (let i = 0; i < childElements.length; i += 1) {
-            if (i === 0) {
-                // Always include the first element.
-                validGroup.push(childElements[i]);
-            } else {
-                // Check if the current element overlaps with the last valid element.
-                // eslint-disable-next-line no-lonely-if
-                if (isOverlapping(childElements[i], validGroup[validGroup.length - 1])) {
-                    validGroup.push(childElements[i]);
-                } else {
-                    // If the chain is broken, add the current element and every subsequent element as orphans.
-                    for (let j = i; j < childElements.length; j += 1) {
-                        orphanElements.push(childElements[j]);
-                    }
-                    break; // Exit the loop for this group.
-                }
-            }
+        if (childElements.length) {
+            allChildElements = allChildElements.concat(childElements);
         }
-
-        // Build a new object mapping of valid elements.
-        const newElements = validGroup.reduce((acc, element) => {
-            acc[element.recording.id] = element.recording;
-            return acc;
-        }, {});
-
-        return {
-            ...overlapGroup,
-            elements: newElements
-        };
     });
 
-    return { orphanElements, overlapGroups: updatedOverlapGroups };
+    if (!allChildElements.length) {
+        return { orphanElements, overlapGroups: [] };
+    }
+
+    // Initialize union-find: each element’s id points to itself.
+    const parent = {};
+    allChildElements.forEach((el) => {
+        parent[el.recording.id] = el.recording.id;
+    });
+
+    const find = (id) => {
+        if (parent[id] !== id) {
+            parent[id] = find(parent[id]);
+        }
+        return parent[id];
+    };
+
+    const union = (idA, idB) => {
+        const rootA = find(idA);
+        const rootB = find(idB);
+        if (rootA !== rootB) {
+            parent[rootB] = rootA;
+        }
+    };
+
+    // Check every pair of elements – they will merge if overlapping.
+    for (let i = 0; i < allChildElements.length; i += 1) {
+        for (let j = i + 1; j < allChildElements.length; j += 1) {
+            if (isOverlapping(allChildElements[i], allChildElements[j])) {
+                union(allChildElements[i].recording.id, allChildElements[j].recording.id);
+            }
+        }
+    }
+
+    // Group elements by their union-find root.
+    const groupsMap = {};
+    allChildElements.forEach((el) => {
+        const root = find(el.recording.id);
+        if (!groupsMap[root]) {
+            groupsMap[root] = [];
+        }
+        groupsMap[root].push(el);
+    });
+
+    // For each union-find group:
+    // - If more than one element exists, create a merged overlap group.
+    // - Otherwise, treat the single element as an orphan.
+    Object.values(groupsMap).forEach((groupArray) => {
+        if (groupArray.length > 1) {
+            // Compute merged group properties.
+            const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
+            const endTime = Math.max(...groupArray.map((el) => el.recording.endTime));
+            const length = endTime - startTime;
+            // Use the first element’s id as a fallback new id.
+            const newId = groupArray[0].recording.id;
+            const { instrumentName } = groupArray[0].recording;
+            const { rect } = groupArray[0].recording;
+
+            newOverlapGroups.push({
+                elements: groupArray.reduce((acc, el) => {
+                    acc[el.recording.id] = el.recording;
+                    return acc;
+                }, {}),
+                endTime,
+                group: null, // original group is no longer used
+                id: newId,
+                instrumentName,
+                length,
+                node: groupArray[0].element,
+                rect,
+                startTime // retain representative node from the first element
+            });
+        } else {
+            orphanElements.push(groupArray[0]);
+        }
+    });
+
+    return { orphanElements, overlapGroups: newOverlapGroups };
 };
 
 export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timelineRefs }) => {
@@ -64,7 +114,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return prevResultRef.current; // Return cached result if no changes
         }
 
-        // Process overlap groups with the refactored helper.
+        // Process overlap groups with the union-find helper.
         const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
         prevElementsRef.current = processedElements;
@@ -89,6 +139,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return a.recording.id - b.recording.id;
         });
 
+        // Process individual (non-group) elements.
         const objToSave = sortedElements.reduce((acc, { element, recording }) => {
             const newRec = createEvent({ instrumentName: recording.instrumentName, recording });
 
@@ -96,7 +147,8 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
 
             acc[recording.instrumentName][recording.id] = {
                 ...newRec,
-                rect: element.getClientRect()
+                node: element,
+                rect: element.getClientRect() // retain the original element as node
             };
 
             return acc;
@@ -118,10 +170,11 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 instrumentName = 'FALL BACK TIMELINE VALUE',
                 length,
                 locked,
-                startTime
+                node,
+                rect,
+                startTime // representative node from the union-find grouping
             }) => {
                 const hasElements = Object.keys(elements).length > 0;
-
                 if (!id || !hasElements) return;
 
                 objToSave[instrumentName] = objToSave[instrumentName] || {};
@@ -141,7 +194,9 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                     instrumentName,
                     length,
                     locked,
-                    startTime
+                    node,
+                    rect,
+                    startTime // attach the representative node for the group
                 };
             }
         );
