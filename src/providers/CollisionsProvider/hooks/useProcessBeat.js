@@ -5,28 +5,34 @@ import { isOverlapping } from '../overlapHelpers';
 
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
-    const newOverlapGroups = [];
+    const mergedOverlapGroups = [];
 
-    // Combine child elements from all overlap groups
-    let allChildElements = [];
-    overlapGroups.forEach((overlapGroup) => {
-        const groupElement = overlapGroup.group;
-        const childElements = Object.values(getProcessedElements(groupElement));
-        if (childElements.length) {
-            allChildElements = allChildElements.concat(childElements);
-        }
+    // 1. Gather all child elements and record each element’s locked state.
+    //    Each element’s locked state comes from its parent group.
+    const allChildElements = [];
+    const lockedMap = {}; // Map from recording id -> locked boolean
+
+    overlapGroups.forEach(({ group, locked }) => {
+        const children = Object.values(getProcessedElements(group));
+        children.forEach((el) => {
+            allChildElements.push(el);
+            // Persist the locked state of the originating overlapGroup.
+            lockedMap[el.recording.id] = locked || false;
+        });
     });
 
+    // If there are no elements, exit early.
     if (!allChildElements.length) {
         return { orphanElements, overlapGroups: [] };
     }
 
-    // Initialize union-find: each element’s id points to itself.
+    // 2. Set up union-find for all elements.
     const parent = {};
     allChildElements.forEach((el) => {
         parent[el.recording.id] = el.recording.id;
     });
 
+    // Find with path compression.
     const find = (id) => {
         if (parent[id] !== id) {
             parent[id] = find(parent[id]);
@@ -34,15 +40,20 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         return parent[id];
     };
 
+    // Union only if both elements have the same locked state.
     const union = (idA, idB) => {
-        const rootA = find(idA);
-        const rootB = find(idB);
-        if (rootA !== rootB) {
-            parent[rootB] = rootA;
+        const repA = find(idA);
+        const repB = find(idB);
+        // If one element is locked and the other isn’t, do not merge.
+        if (lockedMap[repA] !== lockedMap[repB]) return;
+        if (repA !== repB) {
+            parent[repB] = repA;
+            // No need to update lockedMap since both are equal.
         }
     };
 
-    // Check every pair of elements – they will merge if overlapping.
+    // 3. For every pair, if they overlap, attempt a union.
+    //    Overlap is determined by the global isOverlapping(el1, el2) function.
     for (let i = 0; i < allChildElements.length; i += 1) {
         for (let j = i + 1; j < allChildElements.length; j += 1) {
             if (isOverlapping(allChildElements[i], allChildElements[j])) {
@@ -51,50 +62,47 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         }
     }
 
-    // Group elements by their union-find root.
-    const groupsMap = {};
+    // 4. Group elements by their union-find representative.
+    const groupsByRoot = {};
     allChildElements.forEach((el) => {
-        const root = find(el.recording.id);
-        if (!groupsMap[root]) {
-            groupsMap[root] = [];
-        }
-        groupsMap[root].push(el);
+        const rep = find(el.recording.id);
+        if (!groupsByRoot[rep]) groupsByRoot[rep] = [];
+        groupsByRoot[rep].push(el);
     });
 
-    // For each union-find group:
-    // - If more than one element exists, create a merged overlap group.
-    // - Otherwise, treat the single element as an orphan.
-    Object.values(groupsMap).forEach((groupArray) => {
+    // 5. For each group: if more than one element, merge them; else treat as orphan.
+    Object.values(groupsByRoot).forEach((groupArray) => {
         if (groupArray.length > 1) {
-            // Compute merged group properties.
             const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
             const endTime = Math.max(...groupArray.map((el) => el.recording.endTime));
-            const length = endTime - startTime;
-            // Use the first element’s id as a fallback new id.
             const newId = groupArray[0].recording.id;
-            const { instrumentName } = groupArray[0].recording;
-            const { rect } = groupArray[0].recording;
+            const { instrumentName, rect } = groupArray[0].recording;
 
-            newOverlapGroups.push({
+            // Determine the locked state from the union-find representative.
+            const groupLocked = lockedMap[find(newId)];
+
+            mergedOverlapGroups.push({
                 elements: groupArray.reduce((acc, el) => {
                     acc[el.recording.id] = el.recording;
                     return acc;
                 }, {}),
                 endTime,
-                group: null, // original group is no longer used
+                group: null,
                 id: newId,
                 instrumentName,
-                length,
+                length: endTime - startTime,
+                // Original group is no longer used.
+                locked: groupLocked,
                 node: groupArray[0].element,
                 rect,
-                startTime // retain representative node from the first element
+                startTime
             });
         } else {
             orphanElements.push(groupArray[0]);
         }
     });
 
-    return { orphanElements, overlapGroups: newOverlapGroups };
+    return { orphanElements, overlapGroups: mergedOverlapGroups };
 };
 
 export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timelineRefs }) => {

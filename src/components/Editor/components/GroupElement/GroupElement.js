@@ -20,20 +20,20 @@ export const GroupElement = React.memo(
         const groupRef = useRef();
         const { elements, id, locked, startTime } = groupData;
 
+        // Calculate the initial X position of the group based on its start time.
         const groupX = startTime * pixelToSecondRatio || 100;
 
-        // Memoize sorted events to avoid re-sorting on every render.
+        // Sort the group events to maintain a consistent order.
         const groupEvents = useMemo(() => {
             return Object.values(elements).sort((a, b) => a.startTime - b.startTime);
         }, [elements]);
 
         const groupLength = groupEvents.length;
 
+        // Toggle the group's locked state.
         const onLockGroup = useCallback(() => {
             if (!groupRef.current) return;
-
             const prevData = groupRef.current.attrs['data-overlap-group'];
-
             groupRef.current.setAttrs({
                 'data-overlap-group': { ...prevData, locked: !prevData.locked }
             });
@@ -42,16 +42,17 @@ export const GroupElement = React.memo(
 
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
 
+        // Optional: Function to toggle selection state (if needed)
         const toggleSelection = useCallback(() => {
             const prevData = groupRef.current.attrs['data-data-overlap-group'];
             const updatedState = { ...prevData, isSelected: true };
-
             groupRef.current.setAttrs({
                 'data-recording': updatedState
             });
             groupRef.current.getLayer().draw();
         }, []);
 
+        // Optional: Click handler (if you want to add additional click behavior)
         const onGroupClick = useCallback(() => {}, []);
 
         return (
@@ -62,6 +63,12 @@ export const GroupElement = React.memo(
                 data-group-id={groupId}
                 id={groupId}
                 onClick={onGroupClick}
+                // Make the group draggable only if it is locked.
+                draggable={locked}
+                // Attach drag handlers from the drag provider if the group is locked.
+                onDragStart={locked ? handleDragStart : undefined}
+                onDragMove={locked ? handleDragMove : undefined}
+                onDragEnd={locked ? handleDragEnd : undefined}
             >
                 <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 

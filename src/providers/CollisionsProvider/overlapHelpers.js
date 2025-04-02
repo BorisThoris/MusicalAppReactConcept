@@ -22,10 +22,6 @@ export const isOverlapping = (elA, elB) => {
     const normRectB = getAbsoluteRect(elB?.node || elB?.element);
 
     if (!normRectA || !normRectB) {
-        console.log('No overlap: Missing normalized rectangle data.', {
-            normRectA,
-            normRectB
-        });
         return false;
     }
 
@@ -35,59 +31,25 @@ export const isOverlapping = (elA, elB) => {
     let isRectOverlapping = true;
     let isTimeOverlapping = true;
 
-    console.log('Normalized Rectangle details:', {
-        normRectA: { height: normRectA.height, width: normRectA.width, x: normRectA.x, y: normRectA.y },
-        normRectB: { height: normRectB.height, width: normRectB.width, x: normRectB.x, y: normRectB.y }
-    });
-
-    console.log('Time details:', {
-        elementA: { endTime: aEndTime, startTime: aStartTime },
-        elementB: { endTime: bEndTime, startTime: bStartTime }
-    });
-
     // Standard rectangle overlap check using the normalized absolute values
     if (normRectA.x > normRectB.x + normRectB.width) {
-        console.log('No overlap: Element A is to the right of Element B.', {
-            elementA_x: normRectA.x,
-            elementB_right: normRectB.x + normRectB.width
-        });
         isRectOverlapping = false;
     }
     if (normRectA.x + normRectA.width < normRectB.x) {
-        console.log('No overlap: Element A is to the left of Element B.', {
-            elementA_right: normRectA.x + normRectA.width,
-            elementB_x: normRectB.x
-        });
         isRectOverlapping = false;
     }
     if (normRectA.y > normRectB.y + normRectB.height) {
-        console.log('No overlap: Element A is below Element B.', {
-            elementA_y: normRectA.y,
-            elementB_bottom: normRectB.y + normRectB.height
-        });
         isRectOverlapping = false;
     }
     if (normRectA.y + normRectA.height < normRectB.y) {
-        console.log('No overlap: Element A is above Element B.', {
-            elementA_bottom: normRectA.y + normRectA.height,
-            elementB_y: normRectB.y
-        });
         isRectOverlapping = false;
     }
 
     // Check time overlap conditions
     if (aEndTime <= bStartTime) {
-        console.log('No overlap: Element A ends before Element B starts.', {
-            elementA_endTime: aEndTime,
-            elementB_startTime: bStartTime
-        });
         isTimeOverlapping = false;
     }
     if (bEndTime <= aStartTime) {
-        console.log('No overlap: Element B ends before Element A starts.', {
-            elementA_startTime: aStartTime,
-            elementB_endTime: bEndTime
-        });
         isTimeOverlapping = false;
     }
 
@@ -175,8 +137,6 @@ export const findOverlaps = (processedData) => {
     const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) =>
         Object.values(events).map((event) => ({ ...event, instrumentName }))
     );
-
-    console.log('processedData', processedData);
 
     const { parent, rank } = initializeUnionFind(allElements);
 

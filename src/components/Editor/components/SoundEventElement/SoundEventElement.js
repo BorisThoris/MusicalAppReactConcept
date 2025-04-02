@@ -88,6 +88,7 @@ const SoundEventElement = React.memo(
         const { getGroupById } = useContext(CollisionsContext);
 
         const parent = getGroupById(parentGroupId);
+        const parentData = parent?.attrs['data-overlap-group'];
 
         // Hooks for focus and click handling.
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(focusedEvent, setFocusedEvent, id);
@@ -247,7 +248,7 @@ const SoundEventElement = React.memo(
                     data-recording={recording}
                     data-timeline-y={timelineY}
                     data-group-child={groupRef}
-                    draggable={!parent?.locked}
+                    draggable={!parentData?.locked}
                     dragBoundFunc={dragBoundFunc}
                     onDragStart={handleDragStartWithCursor}
                     onDragMove={handleDragMoveWithCursor}
