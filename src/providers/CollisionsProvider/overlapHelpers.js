@@ -3,8 +3,19 @@
 
 // Helper function: uses Konva’s absolute transform to get the absolute rect from a node.
 const getAbsoluteRect = (node) => {
+    // Check if node exists. If not, return a fallback rectangle.
+    if (!node) {
+        return {
+            height: 0,
+            width: 0,
+            x: 0,
+            y: 0
+        };
+    }
+
+    // If node exists, calculate the absolute rectangle.
     const clientRect = node.getClientRect({ skipTransform: false });
-    // compute the absolute top-left position using the node’s transform
+    // Compute the absolute top-left position using the node’s transform.
     const absTransform = node.getAbsolutePosition();
 
     return {
