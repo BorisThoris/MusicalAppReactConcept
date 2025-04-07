@@ -11,8 +11,7 @@ import SoundEventElement from '../SoundEventElement/SoundEventElement';
 export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
     const { timelineState } = useContext(TimelineContext);
     const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
-    const { dragBoundFunc, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } =
-        useContext(SoundEventDragContext);
+    const { handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } = useContext(SoundEventDragContext);
     const { paintEvent, paintingTarget } = usePaintings();
 
     const timelineRef = useRef();
@@ -64,7 +63,6 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                 timelineY={event.timelineY}
                 handleDragEnd={handleDragEnd}
                 handleDragStart={handleDragStart}
-                dragBoundFunc={dragBoundFunc}
                 handleDragMove={handleDragMove}
                 isElementBeingDragged={isElementBeingDragged}
             />
@@ -97,7 +95,6 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                             timelineY={timelineY}
                             handleDragEnd={handleDragEnd}
                             handleDragStart={handleDragStart}
-                            dragBoundFunc={dragBoundFunc}
                             handleDragMove={handleDragMove}
                             isElementBeingDragged={isElementBeingDragged}
                         />
@@ -111,7 +108,6 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
                         timelineY={timelineY}
                         handleDragEnd={handleDragEnd}
                         handleDragStart={handleDragStart}
-                        dragBoundFunc={dragBoundFunc}
                         handleDragMove={handleDragMove}
                         isElementBeingDragged={isElementBeingDragged}
                     />

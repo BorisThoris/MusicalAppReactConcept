@@ -55,7 +55,6 @@ const areEqual = (prevProps, nextProps) => {
 const SoundEventElement = React.memo(
     ({
         childScale,
-        dragBoundFunc,
         groupRef,
         handleDragEnd,
         handleDragMove,
@@ -107,8 +106,7 @@ const SoundEventElement = React.memo(
         const { dynamicColorStops, dynamicShadowBlur, dynamicStroke } = useDynamicStyles(
             isFocused,
             isSelected,
-            false,
-            COLORS[index % COLORS.length]
+            parentData?.locked
         );
 
         const onLockSoundEventElement = useCallback(() => {
@@ -249,7 +247,6 @@ const SoundEventElement = React.memo(
                     data-timeline-y={timelineY}
                     data-group-child={groupRef}
                     draggable={!parentData?.locked}
-                    dragBoundFunc={dragBoundFunc}
                     onDragStart={handleDragStartWithCursor}
                     onDragMove={handleDragMoveWithCursor}
                     onDragEnd={handleDragEndWithCursor}

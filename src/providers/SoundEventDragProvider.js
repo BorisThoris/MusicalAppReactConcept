@@ -39,64 +39,74 @@ export const SoundEventDragProvider = ({ children }) => {
      * For a group (a node with a data-overlap-group attribute), it updates its own timing data,
      * and then iterates through all child elements (which have data-recording) to update each one.
      */
-    const updateStartTimeForElement = useCallback(({ element }) => {
-        // Case 1: Individual element.
-        if (element.attrs['data-recording']) {
-            // Use absolute x so that if the element is inside a group it uses the stage position.
-            const absoluteX = element.getAbsolutePosition().x;
-            const recording = { ...element.attrs['data-recording'] };
-            const newStartTime = absoluteX / pixelToSecondRatio;
-            const newEndTime = newStartTime + recording.eventLength;
+    const updateStartTimeForElement = useCallback(
+        ({ designatedStartTime = null, element }) => {
+            // Case 1: Individual element with a 'data-recording' attribute.
+            if (element.attrs['data-recording']) {
+                // If a designated start time is provided, use that, otherwise calculate from element.x()
+                const newStartTime =
+                    designatedStartTime !== null ? designatedStartTime : element.x() / pixelToSecondRatio;
 
-            if (recording.startTime === newStartTime && recording.endTime === newEndTime) return;
+                const recording = { ...element.attrs['data-recording'] };
+                const newEndTime = newStartTime + recording.eventLength;
 
-            const updatedRecording = {
-                ...recording,
-                endTime: newEndTime,
-                startTime: newStartTime
-            };
+                // Early exit if the values are unchanged
+                if (recording.startTime === newStartTime && recording.endTime === newEndTime) return;
 
-            // If this element belongs to a group, update the corresponding group data.
-            const group = element.attrs['data-group-child'];
-            if (group) {
-                const groupData = { ...group.attrs['data-overlap-group'] };
-                if (groupData && groupData.elements && groupData.elements[recording.id]) {
-                    groupData.elements[recording.id] = updatedRecording;
-                    group.setAttr('data-overlap-group', groupData);
-                }
+                const updatedRecording = {
+                    ...recording,
+                    endTime: newEndTime,
+                    startTime: newStartTime
+                };
+
+                element.setAttr('data-recording', updatedRecording);
+                console.log(
+                    `Updated element: ${element.attrs.id}, new start time: ${newStartTime}, new end time: ${newEndTime}`
+                );
             }
+            // Case 2: Group element with a 'data-overlap-group' attribute.
+            else if (element.attrs['data-overlap-group']) {
+                const groupData = { ...element.attrs['data-overlap-group'] };
 
-            element.setAttr('data-recording', updatedRecording);
-            console.log(
-                `Updated element: ${element.attrs.id}, new start time: ${newStartTime}, new end time: ${newEndTime}`
-            );
-        }
-        // Case 2: Group element.
-        else if (element.attrs['data-overlap-group']) {
-            // Update the group's own timing.
-            const newGroupStartTime = element.x() / pixelToSecondRatio;
-            const groupData = { ...element.attrs['data-overlap-group'] };
-            groupData.startTime = newGroupStartTime;
-            groupData.endTime = newGroupStartTime + groupData.length;
-            element.setAttr('data-overlap-group', groupData);
-            console.log(
-                `Updated group element: ${element.attrs.id}, new start time: ${newGroupStartTime}, new end time: ${
-                    newGroupStartTime + groupData.length
-                }`
-            );
+                // Determine the new start time for the group:
+                const newGroupStartTime =
+                    designatedStartTime !== null ? designatedStartTime : element.x() / pixelToSecondRatio;
 
-            const elements = element.attrs['data-overlap-group'];
+                // Calculate the offset – the amount by which the group's start time is changing.
+                const offset = newGroupStartTime - groupData.startTime;
 
-            // Find and update each child node by invoking updateStartTimeForElement.
-            const groupChildren = element.find((node) => node.attrs && node.attrs['data-recording']);
+                // Update the group's own timing.
+                groupData.startTime = newGroupStartTime;
+                groupData.endTime = newGroupStartTime + groupData.length;
+                element.setAttr('data-overlap-group', groupData);
+                console.log(
+                    `Updated group element: ${element.attrs.id}, new start time: ${newGroupStartTime}, new end time: ${groupData.endTime}`
+                );
 
-            console.log('groupChildren', groupChildren);
+                // Update each child element.
+                // Here we assume that groupData.elements is an object containing the child nodes.
+                const groupChildren = Object.values(groupData.elements);
+                console.log('groupChildren', groupChildren);
 
-            groupChildren.forEach((child) => {
-                updateStartTimeForElement({ element: child });
-            });
-        }
-    }, []);
+                groupChildren.forEach((child) => {
+                    // Determine the child's current start time:
+                    // - If the child has a data-recording attribute, use its stored startTime.
+                    // - Otherwise, calculate it based on its x coordinate.
+                    const currentChildStartTime =
+                        child.node.attrs['data-recording'] && child.node.attrs['data-recording'].startTime
+                            ? child.node.attrs['data-recording'].startTime
+                            : child.node.x() / pixelToSecondRatio;
+
+                    // The new designated start time for the child is adjusted by the group's offset.
+                    const newChildStartTime = currentChildStartTime + offset;
+
+                    // Recursively update the child element with the new designated start time.
+                    updateStartTimeForElement({ designatedStartTime: newChildStartTime, element: child.node });
+                });
+            }
+        },
+        [] // dependencies as needed
+    );
 
     // ----- Timeline Highlighting Functions -----
     const applyHighlightToTimeline = (timeline) => {
@@ -185,24 +195,32 @@ export const SoundEventDragProvider = ({ children }) => {
         [selectedElementIds]
     );
 
+    const processId = (id) => {
+        if (id.startsWith(ELEMENT_ID_PREFIX)) {
+            return `element-${id.split(ELEMENT_ID_PREFIX)[1]}`;
+        }
+        if (id.startsWith('group-element-')) {
+            return `group-${id.split('group-element-')[1]}`;
+        }
+        return id;
+    };
+
     // ----- Drag Event Handlers -----
 
     // Drag start: initialize X and Y refs.
     const handleDragStart = useCallback(
-        (el) => {
-            el.evt.stopPropagation();
-            el.target.moveToTop();
+        (event) => {
+            event.evt.stopPropagation();
+            event.target.moveToTop();
 
-            // Check for either type using data-recording or data-overlap-group.
-            const itemId = el.target.attrs['data-recording']?.id || el.target.attrs['data-overlap-group']?.id;
+            // Determine which type is being dragged.
+            const itemId = event.target.attrs['data-recording']?.id || event.target.attrs['data-overlap-group']?.id;
             if (itemId && !isItemSelected(itemId)) {
                 clearSelection();
             }
 
-            // Save the main element's initial X position.
-            initialXRef.current = el.target.x();
-            // Retain current Y initialization from the event.
-            currentYRef.current = el.evt.y;
+            initialXRef.current = event.target.x();
+            currentYRef.current = event.evt.y;
 
             // Save initial positions for all selected elements.
             const stage = stageRef;
@@ -210,25 +228,15 @@ export const SoundEventDragProvider = ({ children }) => {
                 initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
             });
 
-            const processId = (id) => {
-                if (id.startsWith(ELEMENT_ID_PREFIX)) {
-                    return id.split(ELEMENT_ID_PREFIX)[1];
-                }
-                if (id.startsWith('group-element-')) {
-                    return id.split('group-element-')[1];
-                }
-                return id;
-            };
-
-            const newDragging = { [processId(el.target.attrs.id)]: true };
-
+            // Use processId to create a unique key.
+            const newDragging = { [processId(event.target.attrs.id)]: true };
             selectedElementIds.forEach((id) => {
                 newDragging[processId(id)] = true;
             });
 
             setDragging((prevDragging) => ({ ...prevDragging, ...newDragging }));
         },
-        [clearSelection, isItemSelected, selectedElementIds, setDragging, stageRef, processSelectedElements]
+        [isItemSelected, stageRef, processSelectedElements, selectedElementIds, setDragging, clearSelection]
     );
 
     // Drag move: update positions using total X displacement and incremental Y displacement.
