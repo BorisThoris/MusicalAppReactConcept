@@ -15,7 +15,6 @@ import { Lock } from '../Lock/Lock';
 import { useCursorEffects } from './hooks/useCursorEffects';
 import { useUnifiedDynamicStyles } from './hooks/useDynamicStyles';
 import { useEventFocus } from './hooks/useEventFocus';
-import usePositionSync from './hooks/usePositionSync';
 import { useClickHandlers } from './useEventClickHandlers';
 
 // Constants
@@ -92,14 +91,6 @@ const SoundEventElement = React.memo(
         // Use our custom focus hook
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(id);
 
-        // Sync the element's position
-        const { elementXRef } = usePositionSync({
-            elementContainerRef,
-            isDragging: isElementBeingDragged(id),
-            startTime,
-            timelineY
-        });
-
         // Use the click hook for all click-related behaviors.
         const { handleClick, handleContextMenu, handleDelete, handleDoubleClick, handleLock } = useClickHandlers({
             elementContainerRef,
@@ -129,30 +120,29 @@ const SoundEventElement = React.memo(
 
         // Controlled positioning when not dragging.
         const isDragging = isElementBeingDragged(id);
-        const controlledPositionProps = !isDragging ? { x: elementXRef.current, y: 0 } : {};
+        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         // Determine if the element is not part of a group.
         const isNotInGroup = !groupRef;
 
         // Ensure proper z-index handling when focus changes.
         useEffect(() => {
-            if (elementContainerRef.current && !isFocused) {
-                const currentZIndex = elementContainerRef.current.zIndex();
+            if (portalRef.current && !isFocused) {
+                const currentZIndex = portalRef.current.zIndex();
                 if (originalZIndex === null) {
                     setOriginalZIndex(currentZIndex);
                 } else if (originalZIndex !== currentZIndex) {
-                    elementContainerRef.current.zIndex(originalZIndex);
+                    portalRef.current.zIndex(originalZIndex);
                 }
             }
         }, [isFocused, originalZIndex]);
 
         useEffect(() => {
-            if (isFocused && elementContainerRef.current) {
-                elementContainerRef.current.moveToTop();
+            if (isFocused && portalRef.current) {
+                portalRef.current.moveToTop();
+                console.log('hello?');
             }
         }, [isFocused]);
-
-        console.log('ISFOCUSED', isFocused);
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
@@ -160,7 +150,7 @@ const SoundEventElement = React.memo(
                     onContextMenu={handleContextMenu}
                     ref={elementContainerRef}
                     key={index}
-                    x={elementXRef.current}
+                    x={startTime * pixelToSecondRatio}
                     y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
