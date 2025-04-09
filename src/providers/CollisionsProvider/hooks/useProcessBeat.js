@@ -3,7 +3,11 @@ import { useCallback, useRef } from 'react';
 import { createEvent } from '../../../globalHelpers/createSound';
 import { isOverlapping } from '../overlapHelpers';
 
-// This function groups overlapping elements and ensures each merged group retains its representative DOM node.
+/**
+ * Groups overlapping elements and ensures each merged group retains its representative DOM node.
+ * This updated version now uses instrumentName/layer to determine if two elements even qualify for grouping,
+ * and it only compares horizontal (X) overlap (ignoring the Y axis).
+ */
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
     const mergedOverlapGroups = [];
@@ -16,7 +20,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         const children = Object.values(getProcessedElements(group));
         children.forEach((el) => {
             allChildElements.push(el);
-            // Persist the locked state from the original overlapGroup.
+            // Persist the locked state from the original overlap group.
             lockedMap[el.recording.id] = locked || false;
         });
     });
@@ -49,9 +53,13 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         }
     };
 
-    // 3. For every pair, if they overlap, attempt a union.
+    // 3. For every pair, compare only if they share the same instrumentName.
     for (let i = 0; i < allChildElements.length; i += 1) {
         for (let j = i + 1; j < allChildElements.length; j += 1) {
+            if (allChildElements[i].recording.instrumentName !== allChildElements[j].recording.instrumentName) {
+                // eslint-disable-next-line no-continue
+                continue;
+            }
             if (isOverlapping(allChildElements[i], allChildElements[j])) {
                 union(allChildElements[i].recording.id, allChildElements[j].recording.id);
             }
@@ -66,7 +74,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         groupsByRoot[rep].push(el);
     });
 
-    // 5. For each group: if more than one element, merge them and persist the representative node.
+    // 5. For each group: if more than one element, merge them and preserve a representative node.
     Object.values(groupsByRoot).forEach((groupArray) => {
         if (groupArray.length > 1) {
             const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
@@ -91,7 +99,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
                 instrumentName,
                 length: endTime - startTime,
                 locked: groupLocked,
-                // Persist the node of the first element in the group.
+                // Preserve the node of the first element in the group.
                 node: groupArray[0].element,
                 rect,
                 startTime
@@ -104,6 +112,10 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     return { orphanElements, overlapGroups: mergedOverlapGroups };
 };
 
+/**
+ * Custom hook to process beat elements and groups.
+ * It calculates overlaps, caches results, and organizes events by instrument (layer).
+ */
 export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timelineRefs }) => {
     const prevElementsRef = useRef(null);
     const prevGroupsRef = useRef(null);
@@ -121,7 +133,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return prevResultRef.current; // Return cached result if no changes.
         }
 
-        // Process overlap groups with the union-find helper.
+        // Process overlap groups using the updated union-find helper.
         const { orphanElements, overlapGroups } = verifyAndSortOverlapGroup(processedGroups, getProcessedElements);
 
         prevElementsRef.current = processedElements;
@@ -204,7 +216,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                     instrumentName,
                     length,
                     locked,
-                    node, // Persist the group’s representative node.
+                    node, // Preserve the group’s representative node.
                     rect,
                     startTime
                 };

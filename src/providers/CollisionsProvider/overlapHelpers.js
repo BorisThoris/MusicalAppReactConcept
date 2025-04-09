@@ -1,7 +1,10 @@
+/* eslint-disable no-continue */
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-restricted-syntax */
 
-// Helper function: uses Konva’s absolute transform to get the absolute rect from a node.
+/**
+ * Helper function that uses Konva’s absolute transform to compute the absolute rectangle from a node.
+ */
 const getAbsoluteRect = (node) => {
     if (!node) {
         return { height: 0, width: 0, x: 0, y: 0 };
@@ -16,40 +19,49 @@ const getAbsoluteRect = (node) => {
     };
 };
 
-// Returns true if both the rectangle and time intervals of two elements overlap.
+/**
+ * Returns true if both the time intervals overlap and the horizontal (X) portions of their rectangles overlap.
+ * The function immediately returns false if the instrumentNames differ.
+ */
 export const isOverlapping = (elA, elB) => {
+    // Ensure elements belong to the same instrument/layer.
+    if (elA.recording.instrumentName !== elB.recording.instrumentName) return false;
+
     const normRectA = getAbsoluteRect(elA?.node || elA?.element);
     const normRectB = getAbsoluteRect(elB?.node || elB?.element);
 
-    // Directly compute rectangle overlap.
+    // Only compute horizontal rectangle overlap (ignore Y axis).
     const isRectOverlapping = !(
-        normRectA.x > normRectB.x + normRectB.width ||
-        normRectA.x + normRectA.width < normRectB.x ||
-        normRectA.y > normRectB.y + normRectB.height ||
-        normRectA.y + normRectA.height < normRectB.y
+        normRectA.x > normRectB.x + normRectB.width || normRectA.x + normRectA.width < normRectB.x
     );
 
-    // Directly compute time overlap.
+    // Compute time interval overlap.
     const isTimeOverlapping = !(elA.endTime <= elB.startTime || elB.endTime <= elA.startTime);
 
     return isRectOverlapping && isTimeOverlapping;
 };
 
-// Checks if rectA is entirely contained within rectB.
+/**
+ * Checks if rectA is entirely contained within rectB.
+ */
 const isRectContained = (rectA, rectB) =>
     rectA.x >= rectB.x &&
     rectA.y >= rectB.y &&
     rectA.x + rectA.width <= rectB.x + rectB.width &&
     rectA.y + rectA.height <= rectB.y + rectB.height;
 
-// Simply returns stored group data.
+/**
+ * Returns key group data from an element.
+ */
 const getGroupData = (element) => ({
     endTime: element.endTime,
     rect: element.rect,
     startTime: element.startTime
 });
 
-// --- Union-Find helper functions ---
+/**
+ * Initializes union-find data structures for elements.
+ */
 const initializeUnionFind = (elements) => {
     const parent = {};
     const rank = {};
@@ -60,6 +72,9 @@ const initializeUnionFind = (elements) => {
     return { parent, rank };
 };
 
+/**
+ * Union-Find "find" function with path compression.
+ */
 const find = (parent, id, visited = new Set()) => {
     if (visited.has(id)) {
         console.warn(`Infinite recursion detected for id: ${id}`);
@@ -72,6 +87,9 @@ const find = (parent, id, visited = new Set()) => {
     return parent[id];
 };
 
+/**
+ * Union-Find "union" function that merges two sets.
+ */
 const union = (parent, rank, elementA, elementB) => {
     const rootA = find(parent, elementA.id);
     const rootB = find(parent, elementB.id);
@@ -87,7 +105,10 @@ const union = (parent, rank, elementA, elementB) => {
     }
 };
 
-// Main function to find overlapping groups.
+/**
+ * Main function to find overlapping groups.
+ * This version ensures only events with the same instrumentName are merged and uses the adjusted overlap check.
+ */
 export const findOverlaps = (processedData) => {
     if (!processedData) return;
 
@@ -109,7 +130,6 @@ export const findOverlaps = (processedData) => {
             const elementB = allElements[idxB];
 
             // Skip if either element is locked.
-            // eslint-disable-next-line no-continue
             if (elementA.locked || elementB.locked) continue;
 
             // Precompute group data for elementB.
@@ -119,12 +139,14 @@ export const findOverlaps = (processedData) => {
                 {
                     endTime: groupDataA.endTime,
                     node: elementA.node,
+                    recording: { instrumentName: elementA.instrumentName },
                     rect: groupDataA.rect,
                     startTime: groupDataA.startTime
                 },
                 {
                     endTime: groupDataB.endTime,
                     node: elementB.node,
+                    recording: { instrumentName: elementB.instrumentName },
                     rect: groupDataB.rect,
                     startTime: groupDataB.startTime
                 }
