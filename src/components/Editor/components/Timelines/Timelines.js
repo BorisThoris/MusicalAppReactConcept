@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import { Layer, Stage, useStrictMode } from 'react-konva';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
@@ -32,7 +32,7 @@ const Timelines = React.memo(() => {
         [recordingsArr]
     );
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         addStageRef(stageRef);
 
         const topLayer = topLayerRef.current;

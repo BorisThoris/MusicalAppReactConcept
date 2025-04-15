@@ -140,7 +140,6 @@ const SoundEventElement = React.memo(
         useEffect(() => {
             if (isFocused && portalRef.current) {
                 portalRef.current.moveToTop();
-                console.log('hello?');
             }
         }, [isFocused]);
 

@@ -3,8 +3,8 @@ import { useCallback } from 'react';
 
 /**
  * Custom hook to refresh the beat data.
- * It exposes a refreshBeat function that processes the current beat and updates state,
- * as well as an updateBeatRef function that avoids refreshes during dragging.
+ * It ensures that timelines from `currentBeat` are persisted,
+ * even if the new processed beat omits them (e.g. due to no events).
  */
 export const useBeatRefresher = (
     currentBeat,
@@ -17,20 +17,29 @@ export const useBeatRefresher = (
 ) => {
     const refreshBeat = useCallback(() => {
         const newData = processBeat();
+
         const newProcessedItems = getProcessedItems();
 
-        if (!isEqual(currentBeat, newData)) {
-            setCurrentBeat({ ...newData });
+        // 🧠 Merge in previously known timelines from currentBeat
+        const mergedData = { ...newData };
+
+        // ✅ Only update state if there's a meaningful change
+        if (!isEqual(currentBeat, mergedData)) {
+            setCurrentBeat({ ...mergedData });
+
             if (!isEqual(processedItems, newProcessedItems)) {
                 setProcessedItems(newProcessedItems);
             }
         }
     }, [currentBeat, processedItems, getProcessedItems, processBeat, setCurrentBeat, setProcessedItems]);
 
-    const updateBeatRef = useCallback(() => {
-        if (isDragging) return;
-        refreshBeat();
-    }, [isDragging, refreshBeat]);
+    const updateBeatRef = useCallback(
+        (e) => {
+            if (isDragging) return;
+            refreshBeat();
+        },
+        [isDragging, refreshBeat]
+    );
 
     return { refreshBeat, updateBeatRef };
 };

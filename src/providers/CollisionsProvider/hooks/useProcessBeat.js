@@ -173,13 +173,6 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             return acc;
         }, {});
 
-        // Ensure timeline keys exist in the result.
-        Object.keys(timelineRefs).forEach((timelineName) => {
-            if (!objToSave[timelineName]) {
-                objToSave[timelineName] = {};
-            }
-        });
-
         // Process each overlap group, preserving the representative node.
         overlapGroups.forEach(
             ({
@@ -223,7 +216,15 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             }
         );
 
-        prevResultRef.current = objToSave; // Cache the result.
+        // Final patch: ensure all timelines exist
+        Object.keys(timelineRefs.current).forEach((instrumentName) => {
+            if (!objToSave[instrumentName]) {
+                objToSave[instrumentName] = {};
+            }
+        });
+
+        prevResultRef.current = objToSave;
+
         return objToSave;
     }, [getProcessedElements, getProcessedGroups, timelineRefs]);
 

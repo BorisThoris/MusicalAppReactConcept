@@ -30,7 +30,6 @@ export const CollisionsProvider = ({ children }) => {
     const {
         addStageRef,
         addTimelineRef,
-        deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
         getGroupById,
@@ -88,7 +87,7 @@ export const CollisionsProvider = ({ children }) => {
     }, []);
 
     // Use extracted timeline manager hook
-    const { addTimeline } = useTimelineManager(overlapGroups, setOverlapGroups);
+    const { addTimeline } = useTimelineManager(setOverlapGroups);
 
     /** * OVERLAP GROUPS CALCULATION ** */
     const prevBeat = prevProcessBeatResultRef.current;
@@ -122,7 +121,6 @@ export const CollisionsProvider = ({ children }) => {
             clearLocalStorage,
             copiedEvents,
             copyEvents,
-            deleteAllElements,
             deleteAllTimelines,
             dragging,
             findAllSoundEventElements,
@@ -168,7 +166,6 @@ export const CollisionsProvider = ({ children }) => {
             clearLocalStorage,
             copiedEvents,
             copyEvents,
-            deleteAllElements,
             deleteAllTimelines,
             dragging,
             findAllSoundEventElements,

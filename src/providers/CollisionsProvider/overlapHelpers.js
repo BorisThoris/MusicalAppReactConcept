@@ -116,6 +116,7 @@ export const findOverlaps = (processedData) => {
     const getAllElements = (element) => (element.elements ? Object.values(element.elements) : [element]);
 
     // Gather all elements and annotate each with its instrument name.
+    // NOTE: instruments with no events will result in an empty array here.
     const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) =>
         Object.values(events).map((event) => ({ ...event, instrumentName }))
     );
@@ -223,6 +224,15 @@ export const findOverlaps = (processedData) => {
         .forEach((instrumentName) => {
             sortedFinalGroups[instrumentName] = finalGroups[instrumentName];
         });
+
+    // Ensure that instrument layers/names with no events
+    // (i.e. those present in processedData but missing in sortedFinalGroups)
+    // are persisted as empty objects.
+    Object.keys(processedData).forEach((instrumentName) => {
+        if (!(instrumentName in sortedFinalGroups)) {
+            sortedFinalGroups[instrumentName] = {};
+        }
+    });
 
     return sortedFinalGroups;
 };

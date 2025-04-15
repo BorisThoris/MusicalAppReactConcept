@@ -4,7 +4,7 @@ import { useCallback } from 'react';
  * Custom hook to manage timeline operations.
  * In this case, it encapsulates the logic for adding a new timeline.
  */
-export const useTimelineManager = (overlapGroups, setOverlapGroups) => {
+export const useTimelineManager = (setOverlapGroups) => {
     const addTimeline = useCallback(
         (passedName) => {
             setOverlapGroups((prevGroups) => {
