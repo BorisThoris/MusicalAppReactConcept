@@ -1,4 +1,5 @@
 import Konva from 'konva';
+import get from 'lodash/get';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Layer, Rect } from 'react-konva';
 import useContextMenu from '../../../hooks/useContextMenu';
@@ -52,22 +53,36 @@ export const DragSelection = () => {
             };
 
             const intersectedElements = processedElements.flatMap((elementData) => {
-                const { element, groupData, height, locked, recording, timelineY, type, width, x, y } = elementData;
+                const { element, height, recording, timelineY, width, x, y } = elementData;
                 const elementRect = { height, width, x, y };
 
-                if (type === 'group' && groupData) {
+                const groupData = get(element, 'attrs.data-group-child.current.attrs.data-overlap-group', null);
+
+                if (groupData) {
+                    const { locked } = groupData;
+                    const rect = element?.attrs['data-group-child']?.current.getClientRect();
+
                     const groupElements = Object.values(groupData.elements);
 
                     if (locked) {
-                        return groupElements.map((groupElement) => ({
-                            ...groupElement,
-                            element,
-                            endX: groupElement.rect.x + groupElement.rect.width,
-                            endY: groupElement.rect.y + groupElement.rect.height,
-                            startX: groupElement.rect.x,
-                            startY: groupElement.rect.y,
-                            timelineY
-                        }));
+                        const isGroupIntersected = Konva.Util.haveIntersection(selectionRect, {
+                            height: rect.height,
+                            width: rect.width,
+                            x: rect.x,
+                            y: rect.y
+                        });
+
+                        if (isGroupIntersected) {
+                            return groupElements.map((groupElement) => ({
+                                ...groupElement,
+                                element,
+                                endX: groupElement.rect.x + groupElement.rect.width,
+                                endY: groupElement.rect.y + groupElement.rect.height,
+                                startX: groupElement.rect.x,
+                                startY: groupElement.rect.y,
+                                timelineY
+                            }));
+                        }
                     }
 
                     // Otherwise, only add intersecting elements

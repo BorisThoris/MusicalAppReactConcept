@@ -89,7 +89,7 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
 };
 
 export const copyEvent = (event, targetInstrumentName, startOffset) => {
-    const newEvent = { ...event, eventInstance: null, locked: true };
+    const newEvent = { ...event, eventInstance: null };
     const adjustedStartTime = event.startTime + startOffset;
 
     return createEvent({

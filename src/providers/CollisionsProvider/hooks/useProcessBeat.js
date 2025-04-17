@@ -80,7 +80,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
             const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
             const endTime = Math.max(...groupArray.map((el) => el.recording.endTime));
             const newId = groupArray[0].recording.id;
-            const { instrumentName, rect } = groupArray[0].recording;
+            const { instrumentName } = groupArray[0].recording;
 
             // Get the locked state from the union-find representative.
             const groupLocked = lockedMap[find(newId)];
@@ -99,9 +99,6 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
                 instrumentName,
                 length: endTime - startTime,
                 locked: groupLocked,
-                // Preserve the node of the first element in the group.
-                node: groupArray[0].element,
-                rect,
                 startTime
             });
         } else {
@@ -174,6 +171,9 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
         }, {});
 
         // Process each overlap group, preserving the representative node.
+
+        console.log('OVERLAP GORUPS', overlapGroups);
+
         overlapGroups.forEach(
             ({
                 elements = {},

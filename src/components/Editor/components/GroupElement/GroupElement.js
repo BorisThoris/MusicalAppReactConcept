@@ -14,13 +14,11 @@ export const GroupElement = React.memo(
         const portalRef = useRef(null);
         const { elements, id, locked, startTime } = groupData;
 
-        // Calculate the initial X position of the group based on its start time.
-        const groupX = startTime * pixelToSecondRatio || 100;
-
         // Sort the group events to maintain a consistent order.
-        const groupEvents = useMemo(() => {
-            return Object.values(elements).sort((a, b) => a.startTime - b.startTime);
-        }, [elements]);
+        const groupEvents = useMemo(
+            () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
+            [elements]
+        );
 
         const groupLength = groupEvents.length;
 
@@ -36,30 +34,29 @@ export const GroupElement = React.memo(
 
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
 
-        // Optional: Click handler (if you want to add additional click behavior)
-        const onGroupClick = useCallback(() => {}, []);
-
-        // Use the global dragging state for this group by passing the raw group ID.
+        // Determine dragging state
         const isDragging = isElementBeingDragged(String(id));
+
+        // Controlled positioning when not dragging
+        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
-                    x={groupX}
-                    data-overlap-group={groupData}
                     y={isDragging ? timelineY : 0}
                     ref={groupRef}
+                    data-overlap-group={groupData}
                     data-group-id={groupId}
                     id={groupId}
-                    onClick={onGroupClick}
                     draggable={locked}
                     onDragStart={locked ? handleDragStart : undefined}
                     onDragMove={locked ? handleDragMove : undefined}
                     onDragEnd={locked ? handleDragEnd : undefined}
+                    {...controlledPositionProps}
                 >
                     <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 
-                    <Group offsetX={groupX}>
+                    <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (
                             <SoundEventElement
                                 key={event.id}

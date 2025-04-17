@@ -149,7 +149,6 @@ const SoundEventElement = React.memo(
                     onContextMenu={handleContextMenu}
                     ref={elementContainerRef}
                     key={index}
-                    x={startTime * pixelToSecondRatio}
                     y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
