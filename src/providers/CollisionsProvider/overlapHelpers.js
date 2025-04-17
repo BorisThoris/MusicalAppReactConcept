@@ -199,15 +199,15 @@ export const findOverlaps = (processedData) => {
             } else {
                 const startTime = Math.min(...Object.values(group.elements).map((el) => el.startTime));
                 const endTime = Math.max(...Object.values(group.elements).map((el) => el.endTime));
-                const length = endTime - startTime;
+                const eventLength = endTime - startTime;
                 // Use the stored rect from the first element (or any agreed-upon source) in the group.
                 const storedRect = group.elements[idsArray[0]].rect;
                 acc[rootId] = {
                     ...group,
                     endTime,
+                    eventLength,
                     id: rootId,
                     instrumentName,
-                    length,
                     rect: storedRect,
                     startTime
                 };

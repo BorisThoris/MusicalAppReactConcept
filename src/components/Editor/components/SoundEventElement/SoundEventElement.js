@@ -152,7 +152,6 @@ const SoundEventElement = React.memo(
                     y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
-                    data-timeline-y={timelineY}
                     data-group-child={groupRef}
                     draggable={!parentData?.locked}
                     onDragStart={handleDragStartWithCursor}

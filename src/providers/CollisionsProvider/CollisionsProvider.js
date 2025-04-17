@@ -85,8 +85,6 @@ export const CollisionsProvider = ({ children }) => {
 
         const overlaps = findOverlaps({ copiedEvents: list });
 
-        console.log('list', overlaps);
-
         setCopiedEvents(Object.values(overlaps.copiedEvents));
     }, []);
 

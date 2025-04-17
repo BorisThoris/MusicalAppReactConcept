@@ -89,7 +89,7 @@ const PasteButton = ({ copiedEvents, menuPosition }) => {
                         x: relativeStartX,
                         y: closestTimeline
                             ? getElementScreenPosition(closestTimeline).y + markersAndTrackerOffset - menuPosition.y
-                            : event.element.attrs['data-timeline-y'] - markersAndTrackerOffset
+                            : event.rect.y - markersAndTrackerOffset
                     }}
                     width={eventWidth}
                 />

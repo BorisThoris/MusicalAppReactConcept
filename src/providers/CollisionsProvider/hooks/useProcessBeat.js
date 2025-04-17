@@ -94,10 +94,10 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
                     return acc;
                 }, {}),
                 endTime,
+                eventLength: endTime - startTime,
                 group: null,
                 id: newId,
                 instrumentName,
-                length: endTime - startTime,
                 locked: groupLocked,
                 startTime
             });
@@ -204,12 +204,12 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 objToSave[instrumentName][id] = {
                     elements: recreatedElements,
                     endTime,
+                    eventLength: length,
                     id,
                     ids: Object.keys(recreatedElements),
                     instrumentName,
-                    length,
                     locked,
-                    node, // Preserve the group’s representative node.
+                    node,
                     rect,
                     startTime
                 };

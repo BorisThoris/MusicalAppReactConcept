@@ -81,7 +81,6 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
         id: mainEvent.id,
         instrumentName: mainEvent.instrumentName,
         isSelected: recording.isSelected || false,
-        length: endTime - startTime,
         locked: recording.locked || false,
         parentId,
         startTime: parseFloat(startTime.toFixed(2))
