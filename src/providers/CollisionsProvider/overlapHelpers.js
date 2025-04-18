@@ -109,130 +109,137 @@ const union = (parent, rank, elementA, elementB) => {
  * Main function to find overlapping groups.
  * This version ensures only events with the same instrumentName are merged and uses the adjusted overlap check.
  */
-export const findOverlaps = (processedData) => {
-    if (!processedData) return;
+// Returns an array of actual elements (unwrapping grouped elements)
+function getAllElements(element) {
+    return element.elements ? Object.values(element.elements) : [element];
+}
 
-    // Returns an array of elements (if grouped, returns its elements; else wraps the element in an array).
-    const getAllElements = (element) => (element.elements ? Object.values(element.elements) : [element]);
-
-    // Gather all elements and annotate each with its instrument name.
-    // NOTE: instruments with no events will result in an empty array here.
-    const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) =>
+// Flattens processedData into a single array of annotated elements
+function collectAllElements(processedData) {
+    return Object.entries(processedData).flatMap(([instrumentName, events]) =>
         Object.values(events).map((event) => ({ ...event, instrumentName }))
     );
+}
 
-    const { parent, rank } = initializeUnionFind(allElements);
+// Iterate through each pair of elements and union overlapping or contained ones
+function mergeOverlapGroups(allElements, parent, rank) {
+    const len = allElements.length;
 
-    // Compare each pair using group-level data.
-    allElements.forEach((elementA, idxA) => {
-        // Precompute group data for elementA.
-        const groupDataA = getGroupData(elementA);
-        for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {
-            const elementB = allElements[idxB];
+    for (let i = 0; i < len; i += 1) {
+        const elemA = allElements[i];
+        if (elemA.locked) continue;
 
-            // Skip if either element is locked.
-            if (elementA.locked || elementB.locked) continue;
+        const dataA = getGroupData(elemA);
+        for (let j = i + 1; j < len; j += 1) {
+            const elemB = allElements[j];
+            if (elemB.locked) continue;
 
-            // Precompute group data for elementB.
-            const groupDataB = getGroupData(elementB);
-
-            const overlapCheck = isOverlapping(
-                {
-                    endTime: groupDataA.endTime,
-                    node: elementA.node,
-                    recording: { instrumentName: elementA.instrumentName },
-                    rect: groupDataA.rect,
-                    startTime: groupDataA.startTime
-                },
-                {
-                    endTime: groupDataB.endTime,
-                    node: elementB.node,
-                    recording: { instrumentName: elementB.instrumentName },
-                    rect: groupDataB.rect,
-                    startTime: groupDataB.startTime
-                }
+            const dataB = getGroupData(elemB);
+            const overlap = isOverlapping(
+                { ...dataA, recording: { instrumentName: elemA.instrumentName } },
+                { ...dataB, recording: { instrumentName: elemB.instrumentName } }
             );
 
-            let rectContained = false;
-            if (groupDataA.rect && groupDataB.rect) {
-                rectContained =
-                    isRectContained(groupDataA.rect, groupDataB.rect) ||
-                    isRectContained(groupDataB.rect, groupDataA.rect);
+            let contained = false;
+            if (dataA.rect && dataB.rect) {
+                contained = isRectContained(dataA.rect, dataB.rect) || isRectContained(dataB.rect, dataA.rect);
             }
 
-            // Merge groups if either the overlap or containment condition holds.
-            if (overlapCheck || rectContained) {
-                union(parent, rank, elementA, elementB);
+            if (overlap || contained) {
+                union(parent, rank, elemA, elemB);
             }
         }
-    });
+    }
+}
 
-    // Build temporary groups from the union-find structure.
-    const tempGroups = allElements.reduce((groups, currentElement) => {
-        const rootId = find(parent, currentElement.id);
-        const actualElements = getAllElements(currentElement);
-        if (!groups[currentElement.instrumentName]) {
-            groups[currentElement.instrumentName] = {};
+// Build groups keyed by instrument and root ID, aggregating elements and metadata
+function buildTempGroups(allElements, parent) {
+    return allElements.reduce((groups, elem) => {
+        const root = find(parent, elem.id);
+        const actuals = getAllElements(elem);
+        const inst = elem.instrumentName;
+
+        groups[inst] = groups[inst] || {};
+        if (!groups[inst][root]) {
+            groups[inst][root] = { elements: {}, ids: new Set(), isSelected: elem.selected, locked: elem.locked };
         }
-        if (!groups[currentElement.instrumentName][rootId]) {
-            groups[currentElement.instrumentName][rootId] = {
-                elements: {},
-                ids: new Set(),
-                isSelected: currentElement.selected,
-                locked: currentElement.locked
-            };
-        }
-        actualElements.forEach((actualElement) => {
-            groups[currentElement.instrumentName][rootId].ids.add(actualElement.id);
-            groups[currentElement.instrumentName][rootId].elements[actualElement.id] = actualElement;
+
+        actuals.forEach((a) => {
+            groups[inst][root].ids.add(a.id);
+            groups[inst][root].elements[a.id] = a;
         });
+
         return groups;
     }, {});
+}
 
-    // Build final groups by computing overall start/end times, lengths, and preserving the stored group rect.
-    const finalGroups = Object.entries(tempGroups).reduce((result, [instrumentName, groups]) => {
-        result[instrumentName] = Object.entries(groups).reduce((acc, [rootId, group]) => {
-            const idsArray = Array.from(group.ids);
-            if (idsArray.length === 1) {
-                const [singleId] = idsArray;
-                acc[singleId] = group.elements[singleId];
+// Compute final merged groups and singletons with aggregated times and rects
+function buildFinalGroups(tempGroups) {
+    const result = {};
+
+    Object.entries(tempGroups).forEach(([inst, groups]) => {
+        result[inst] = {};
+
+        Object.entries(groups).forEach(([root, group]) => {
+            const ids = Array.from(group.ids);
+
+            if (ids.length === 1) {
+                const single = group.elements[ids[0]];
+                result[inst][ids[0]] = single;
             } else {
-                const startTime = Math.min(...Object.values(group.elements).map((el) => el.startTime));
-                const endTime = Math.max(...Object.values(group.elements).map((el) => el.endTime));
+                const times = Object.values(group.elements).map((el) => ({ end: el.endTime, start: el.startTime }));
+                const startTime = Math.min(...times.map((t) => t.start));
+                const endTime = Math.max(...times.map((t) => t.end));
                 const eventLength = endTime - startTime;
-                // Use the stored rect from the first element (or any agreed-upon source) in the group.
-                const storedRect = group.elements[idsArray[0]].rect;
-                acc[rootId] = {
+                const { rect } = group.elements[ids[0]];
+
+                result[inst][root] = {
                     ...group,
                     endTime,
                     eventLength,
-                    id: rootId,
-                    instrumentName,
-                    rect: storedRect,
+                    id: root,
+                    instrumentName: inst,
+                    rect,
                     startTime
                 };
             }
-            return acc;
-        }, {});
-        return result;
-    }, {});
-
-    // Optionally sort final groups by instrumentName alphabetically.
-    const sortedFinalGroups = {};
-    Object.keys(finalGroups)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((instrumentName) => {
-            sortedFinalGroups[instrumentName] = finalGroups[instrumentName];
         });
-
-    // Ensure that instrument layers/names with no events
-    // (i.e. those present in processedData but missing in sortedFinalGroups)
-    // are persisted as empty objects.
-    Object.keys(processedData).forEach((instrumentName) => {
-        if (!(instrumentName in sortedFinalGroups)) {
-            sortedFinalGroups[instrumentName] = {};
-        }
     });
 
-    return sortedFinalGroups;
-};
+    return result;
+}
+
+// Ensure instruments with no events are present as empty objects
+function ensureAllInstruments(groups, processedData) {
+    Object.keys(processedData).forEach((inst) => {
+        if (!groups[inst]) groups[inst] = {};
+    });
+    return groups;
+}
+
+export function procesOverlaps(allElements) {
+    const { parent, rank } = initializeUnionFind(allElements);
+
+    mergeOverlapGroups(allElements, parent, rank);
+
+    const temp = buildTempGroups(allElements, parent);
+    const merged = buildFinalGroups(temp);
+    const sorted = Object.keys(merged)
+        .sort((a, b) => a.localeCompare(b))
+        .reduce((acc, inst) => {
+            acc[inst] = merged[inst];
+            return acc;
+        }, {});
+
+    return sorted;
+}
+
+// Main API
+export function findOverlaps(processedData) {
+    if (!processedData) return {};
+
+    const allElements = collectAllElements(processedData);
+    const sorted = procesOverlaps(allElements);
+
+    return ensureAllInstruments(sorted, processedData);
+}

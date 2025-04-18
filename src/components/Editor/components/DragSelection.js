@@ -59,54 +59,46 @@ export const DragSelection = () => {
                 const groupData = get(element, 'attrs.data-group-child.current.attrs.data-overlap-group', null);
 
                 if (groupData) {
-                    const { locked } = groupData;
-                    const rect = element?.attrs['data-group-child']?.current.getClientRect();
-
+                    const { locked, rect } = groupData;
+                    const groupRect = rect;
                     const groupElements = Object.values(groupData.elements);
 
+                    // If the group is locked, include all its children if the group intersects
                     if (locked) {
-                        const isGroupIntersected = Konva.Util.haveIntersection(selectionRect, {
-                            height: rect.height,
-                            width: rect.width,
-                            x: rect.x,
-                            y: rect.y
-                        });
-
-                        if (isGroupIntersected) {
-                            return groupElements.map((groupElement) => ({
-                                ...groupElement,
+                        if (Konva.Util.haveIntersection(selectionRect, groupRect)) {
+                            return groupElements.map((child) => ({
+                                ...child,
                                 element,
-                                endX: groupElement.rect.x + groupElement.rect.width,
-                                endY: groupElement.rect.y + groupElement.rect.height,
-                                startX: groupElement.rect.x,
-                                startY: groupElement.rect.y,
+                                endX: groupRect.x + child.rect.x + child.rect.width,
+                                endY: groupRect.y + child.rect.y + child.rect.height,
+                                // shift each child from group-local to stage-global coords
+                                startX: groupRect.x + child.rect.x,
+                                startY: groupRect.y + child.rect.y,
                                 timelineY
                             }));
                         }
+                        return [];
                     }
 
-                    // Otherwise, only add intersecting elements
+                    // If unlocked, only include those children whose global rects intersect
                     return groupElements
-                        .filter((groupElement) =>
-                            Konva.Util.haveIntersection(selectionRect, {
-                                height: groupElement.rect.height,
-                                width: groupElement.rect.width,
-                                x: groupElement.rect.x,
-                                y: groupElement.rect.y
-                            })
-                        )
-                        .map((groupElement) => ({
-                            ...groupElement,
+                        .filter((child) => {
+                            console.log('CHILD HERE', child);
+
+                            return Konva.Util.haveIntersection(selectionRect, child.rect);
+                        })
+                        .map((child) => ({
+                            ...child,
                             element,
-                            endX: groupElement.rect.x + groupElement.rect.width,
-                            endY: groupElement.rect.y + groupElement.rect.height,
-                            startX: groupElement.rect.x,
-                            startY: groupElement.rect.y,
+                            endX: groupRect.x + child.rect.x + child.rect.width,
+                            endY: groupRect.y + child.rect.y + child.rect.height,
+                            startX: groupRect.x + child.rect.x,
+                            startY: groupRect.y + child.rect.y,
                             timelineY
                         }));
                 }
 
-                // Handle regular elements
+                // Regular (non-grouped) elements
                 if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
                     return [
                         {
@@ -126,7 +118,10 @@ export const DragSelection = () => {
 
             if (intersectedElements.length > 0) {
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
-                setSelectionBasedOnCoordinates({ intersectedElements, yLevel: maxYLevel });
+                setSelectionBasedOnCoordinates({
+                    intersectedElements,
+                    yLevel: maxYLevel
+                });
             }
         },
         [processedElements, setSelectionBasedOnCoordinates]

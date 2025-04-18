@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { recreateEvents } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useBeatRefresher } from './hooks/useBeatRefresher';
 import { useBeats } from './hooks/useBeats';
@@ -10,7 +11,7 @@ import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineManager } from './hooks/useTimelineManager';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
-import { findOverlaps } from './overlapHelpers';
+import { findOverlaps, procesOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
@@ -83,9 +84,10 @@ export const CollisionsProvider = ({ children }) => {
     const copyEvents = useCallback((events) => {
         const list = Array.isArray(events) ? events : [events];
 
-        const overlaps = findOverlaps({ copiedEvents: list });
+        const overlaps = recreateEvents(procesOverlaps(list));
+        const eventGroups = Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
 
-        setCopiedEvents(Object.values(overlaps.copiedEvents));
+        setCopiedEvents(eventGroups);
     }, []);
 
     // Use extracted timeline manager hook
