@@ -83,8 +83,6 @@ export const DragSelection = () => {
                     // If unlocked, only include those children whose global rects intersect
                     return groupElements
                         .filter((child) => {
-                            console.log('CHILD HERE', child);
-
                             return Konva.Util.haveIntersection(selectionRect, child.rect);
                         })
                         .map((child) => ({

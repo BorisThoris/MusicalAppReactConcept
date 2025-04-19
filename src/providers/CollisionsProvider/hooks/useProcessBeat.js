@@ -5,21 +5,24 @@ import { isOverlapping } from '../overlapHelpers';
 
 /**
  * Groups overlapping elements and ensures each merged group retains its representative DOM node
- * and up-to-date bounding rectangle.
+ * and up-to-date bounding rectangle. Prevents merging between different locked groups.
  */
 const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
     const mergedOverlapGroups = [];
 
-    // 1. Gather all child elements and record each element’s locked state.
+    // 1. Gather all child elements and record each element’s locked state and original group index.
     const allChildElements = [];
     const lockedMap = {}; // Maps recording id -> locked boolean
+    const originalGroupMap = {}; // Maps recording id -> original overlapGroups index
 
-    overlapGroups.forEach(({ group, locked }) => {
+    overlapGroups.forEach(({ group, locked }, idx) => {
+        const grpId = idx;
         const children = Object.values(getProcessedElements(group));
         children.forEach((el) => {
             allChildElements.push(el);
-            lockedMap[el.recording.id] = locked || false;
+            lockedMap[el.recording.id] = Boolean(locked);
+            originalGroupMap[el.recording.id] = grpId;
         });
     });
 
@@ -41,7 +44,13 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const union = (idA, idB) => {
         const repA = find(idA);
         const repB = find(idB);
+
+        // never mix locked with unlocked
         if (lockedMap[repA] !== lockedMap[repB]) return;
+
+        // if both are locked but from different original groups, don't merge
+        if (lockedMap[repA] && lockedMap[repB] && originalGroupMap[idA] !== originalGroupMap[idB]) return;
+
         if (repA !== repB) parent[repB] = repA;
     };
 
@@ -50,6 +59,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         for (let j = i + 1; j < allChildElements.length; j += 1) {
             const a = allChildElements[i];
             const b = allChildElements[j];
+            // only consider same instrument
             // eslint-disable-next-line no-continue
             if (a.recording.instrumentName !== b.recording.instrumentName) continue;
             if (isOverlapping(a, b)) union(a.recording.id, b.recording.id);

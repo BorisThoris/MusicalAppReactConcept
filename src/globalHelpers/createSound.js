@@ -104,7 +104,7 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
 
 export const copyEvent = (event, targetInstrumentName, startOffset) => {
     // simply delegate to createEvent; it will handle overlap-groups automatically
-    const recording = { ...event, eventInstance: null };
+    const recording = { ...event, eventInstance: null, locked: true };
     const start = event.startTime + startOffset;
     return createEvent({
         instrumentName: targetInstrumentName,
