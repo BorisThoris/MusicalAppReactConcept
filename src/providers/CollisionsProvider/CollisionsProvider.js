@@ -11,7 +11,7 @@ import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineManager } from './hooks/useTimelineManager';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
-import { findOverlaps, procesOverlaps } from './overlapHelpers';
+import { findOverlaps, processOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
@@ -84,7 +84,7 @@ export const CollisionsProvider = ({ children }) => {
     const copyEvents = useCallback((events) => {
         const list = Array.isArray(events) ? events : [events];
 
-        const overlaps = recreateEvents(procesOverlaps(list));
+        const overlaps = recreateEvents(processOverlaps(list));
         const eventGroups = Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
 
         setCopiedEvents(eventGroups);

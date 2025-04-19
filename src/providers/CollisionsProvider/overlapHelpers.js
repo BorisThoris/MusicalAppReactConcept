@@ -217,7 +217,7 @@ function ensureAllInstruments(groups, processedData) {
     return groups;
 }
 
-export function procesOverlaps(allElements) {
+export function processOverlaps(allElements) {
     const { parent, rank } = initializeUnionFind(allElements);
 
     mergeOverlapGroups(allElements, parent, rank);
@@ -239,7 +239,7 @@ export function findOverlaps(processedData) {
     if (!processedData) return {};
 
     const allElements = collectAllElements(processedData);
-    const sorted = procesOverlaps(allElements);
+    const sorted = processOverlaps(allElements);
 
     return ensureAllInstruments(sorted, processedData);
 }
