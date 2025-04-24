@@ -11,10 +11,13 @@ export const SoundEventDragProvider = ({ children }) => {
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
 
+    console.log('selectedItems', selectedItems);
+
     // Convert selectedItems to raw IDs array
     const selectedElementIds = useMemo(
         () =>
             Object.values(selectedItems).map(({ element, id, type }) => {
+                console.log('element', element);
                 const isGroup = element.attrs['data-overlap-group'];
                 const prefix = isGroup ? GROUP_ELEMENT_ID_PREFIX : ELEMENT_ID_PREFIX;
                 const computedType = isGroup ? 'group' : 'element';

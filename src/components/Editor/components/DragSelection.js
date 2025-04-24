@@ -66,16 +66,7 @@ export const DragSelection = () => {
                     // If the group is locked, include all its children if the group intersects
                     if (locked) {
                         if (Konva.Util.haveIntersection(selectionRect, groupRect)) {
-                            return groupElements.map((child) => ({
-                                ...child,
-                                element,
-                                endX: groupRect.x + child.rect.x + child.rect.width,
-                                endY: groupRect.y + child.rect.y + child.rect.height,
-                                // shift each child from group-local to stage-global coords
-                                startX: groupRect.x + child.rect.x,
-                                startY: groupRect.y + child.rect.y,
-                                timelineY
-                            }));
+                            return [{ ...elementData, type: 'group' }];
                         }
                         return [];
                     }

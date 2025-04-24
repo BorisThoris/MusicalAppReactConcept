@@ -17,7 +17,7 @@ const EventContainer = styled.div`
 // Recursive function to render event items
 
 // Component to display selected events list
-export const SelectedEventsList = ({ onClose, onDeleteRecording, onModifyStartTime, onPlayEvent, selectedValues }) => {
+export const SelectedEventsList = ({ onDeleteRecording, onModifyStartTime, onPlayEvent, selectedValues }) => {
     return selectedValues.map((event, index) => {
         const { endTime, eventInstance, id, startTime } = event;
 

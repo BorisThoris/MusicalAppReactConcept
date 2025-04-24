@@ -123,9 +123,6 @@ const SoundEventElement = React.memo(
         const isDragging = isElementBeingDragged(formattedId);
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
-        console.log('');
-        console.log('isDragging', formattedId, isDragging);
-
         // Determine if the element is not part of a group.
         const isNotInGroup = !groupRef;
 
