@@ -119,7 +119,8 @@ const SoundEventElement = React.memo(
         const handleDragEndWithCursor = withCursor('grab', handleDragEnd);
 
         // Controlled positioning when not dragging.
-        const isDragging = isElementBeingDragged(id);
+        const formattedId = `${ELEMENT_ID_PREFIX}${id}`;
+        const isDragging = isElementBeingDragged(formattedId);
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         // Determine if the element is not part of a group.
