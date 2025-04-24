@@ -13,7 +13,14 @@ export const SoundEventDragProvider = ({ children }) => {
 
     // Convert selectedItems to raw IDs array
     const selectedElementIds = useMemo(
-        () => Object.values(selectedItems).map(({ id, type }) => ({ id, type })),
+        () =>
+            Object.values(selectedItems).map(({ element, id, type }) => {
+                const isGroup = element.attrs['data-overlap-group'];
+                const prefix = isGroup ? GROUP_ELEMENT_ID_PREFIX : ELEMENT_ID_PREFIX;
+                const computedType = isGroup ? 'group' : 'element';
+
+                return { id: `${prefix}${id}`, type: computedType };
+            }),
         [selectedItems]
     );
 
@@ -135,18 +142,16 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const processSelectedElements = useCallback(
         (stage, action) => {
-            selectedElementIds.forEach(({ id, type }) => {
-                const prefix = type === 'group' ? GROUP_ELEMENT_ID_PREFIX : ELEMENT_ID_PREFIX;
-                const selector = `#${prefix}${id}`;
-                const node = stage.findOne(selector);
+            selectedElementIds.forEach(({ id }) => {
+                const node = stage.findOne((currentNode) => {
+                    return currentNode.attrs.id === id;
+                });
+
                 if (node) action(node);
             });
         },
         [selectedElementIds]
     );
-
-    const processId = (rawId) =>
-        rawId.replace(ELEMENT_ID_PREFIX, 'element-').replace(GROUP_ELEMENT_ID_PREFIX, 'group-');
 
     const handleDragStart = useCallback(
         (event) => {
@@ -187,11 +192,12 @@ export const SoundEventDragProvider = ({ children }) => {
             // Prepare dragging state
             const newDragging = {};
             const itemId = `${prefix}${rawId}`;
-            newDragging[processId(itemId)] = true;
+
+            newDragging[itemId] = true;
 
             if (!isGroupDrag) {
                 selectedElementIds.forEach(({ id }) => {
-                    newDragging[processId(id)] = true;
+                    newDragging[id] = true;
                 });
             }
 
@@ -208,6 +214,7 @@ export const SoundEventDragProvider = ({ children }) => {
             if (!idAttr.startsWith(ELEMENT_ID_PREFIX) && !isGroup) return;
 
             if (dragRequestRef.current) cancelAnimationFrame(dragRequestRef.current);
+
             dragRequestRef.current = requestAnimationFrame(() => {
                 const curX = e.target.x();
                 const curY = e.evt.y;
@@ -279,6 +286,7 @@ export const SoundEventDragProvider = ({ children }) => {
         [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, stageRef, setDragging]
     );
 
+    console.log('DRAGGING', dragging);
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);
 
     const value = useMemo(
