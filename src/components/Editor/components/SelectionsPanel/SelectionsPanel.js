@@ -9,6 +9,7 @@ import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext, TimelineHeight, Y_OFFSET } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
 import { PanelWrapper } from '../Panel/PanelWrapper';
+import { getElementsToModify, updateElementStartTime } from '../Panel/recordingHelpers';
 import TimeControl from '../Panel/TimeControl';
 import { SelectedEventsList } from './SelectedEventsList';
 
@@ -22,13 +23,11 @@ const EventsContainer = styled(FlexContainer)`
 export const SelectionsPanel = () => {
     const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
-    const { clearSelection, endTime, selectedValues, startTime } = useContext(SelectionContext);
+    const { clearSelection, deleteSelections, endTime, selectedValues, startTime } = useContext(SelectionContext);
 
     const { copyEvents, stageRef } = useContext(CollisionsContext);
-    const { deleteSelections } = useContext(SelectionContext);
-    const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
-    const handlePlayEvent = useCallback((eventInstance) => playEventInstance(eventInstance), []);
+    const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
     const startTimeCorrected = selectedValues[0]?.startTime;
 
@@ -80,27 +79,6 @@ export const SelectionsPanel = () => {
         clearSelection();
     }, [clearSelection, closePanel]);
 
-    const onDeleteChildRecording = useCallback(
-        (event) => {
-            const topLayer = stageRef.findOne('.top-layer'); // Find the top layer using its name
-
-            event.element.destroy(); // Remove the recording element
-            deleteSelections(event); // Update the selections context/state
-
-            if (topLayer) {
-                topLayer.batchDraw(); // Trigger a re-render on the top layer
-            }
-        },
-        [deleteSelections, stageRef]
-    );
-
-    const onPlayEvent = useCallback(
-        (eventInstance) => {
-            handlePlayEvent(eventInstance);
-        },
-        [handlePlayEvent]
-    );
-
     const onTrashClick = useCallback(() => {
         deleteSelections(selectedValues);
     }, [selectedValues, deleteSelections]);
@@ -109,31 +87,20 @@ export const SelectionsPanel = () => {
         copyEvents(Object.values(selectedValues));
     }, [selectedValues, copyEvents]);
 
-    const onModifyStartTime = useCallback(
-        ({ delta, id }) => {
-            if (selectedValues && typeof selectedValues === 'object') {
-                const updatedValues = { ...selectedValues };
+    const handleModifyStartTime = useCallback(
+        ({ delta, id: filterId }) => {
+            // 1) collect every element (flat) we might need to shift
+            const allEls = getElementsToModify(selectedValues);
 
-                Object.entries(updatedValues).forEach(([key, { element }]) => {
-                    const oldRecording = element.attrs['data-recording'];
+            // 2) if an id filter was passed, drop the rest
+            const toShift = allEls.filter((el) => {
+                if (!filterId) return true;
+                const rec = el.attrs['data-recording'];
+                return rec?.id === filterId;
+            });
 
-                    if (id && oldRecording.id !== id) {
-                        return;
-                    }
-
-                    if (element) {
-                        element.move({ x: delta * pixelToSecondRatio, y: 0 });
-
-                        const newRecording = {
-                            ...oldRecording,
-                            endTime: oldRecording.endTime + delta,
-                            startTime: oldRecording.startTime + delta
-                        };
-
-                        element.setAttr('data-recording', newRecording);
-                    }
-                });
-            }
+            // 3) shift each one
+            toShift.forEach((el) => updateElementStartTime(el, delta));
         },
         [selectedValues]
     );
@@ -148,16 +115,10 @@ export const SelectionsPanel = () => {
                     <TrashIcon onClick={onTrashClick}>🗑️</TrashIcon>
                 </FlexContainer>
 
-                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={onModifyStartTime} />
+                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={handleModifyStartTime} />
 
                 <EventsContainer>
-                    <SelectedEventsList
-                        selectedValues={selectedValues}
-                        onDeleteRecording={onDeleteChildRecording}
-                        onPlayEvent={onPlayEvent}
-                        onClose={handleClose}
-                        onModifyStartTime={onModifyStartTime}
-                    />
+                    <SelectedEventsList selectedValues={selectedValues} />
                 </EventsContainer>
             </PanelWrapper>
         );

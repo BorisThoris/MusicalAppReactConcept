@@ -56,35 +56,16 @@ export const DragSelection = () => {
                 const { element, height, recording, timelineY, width, x, y } = elementData;
                 const elementRect = { height, width, x, y };
 
+                const parentGroupEl = get(element, 'attrs.data-group-child.current', null);
                 const groupData = get(element, 'attrs.data-group-child.current.attrs.data-overlap-group', null);
 
                 if (groupData) {
-                    const { locked, rect } = groupData;
-                    const groupRect = rect;
-                    const groupElements = Object.values(groupData.elements);
+                    const { rect } = groupData;
 
-                    // If the group is locked, include all its children if the group intersects
-                    if (locked) {
-                        if (Konva.Util.haveIntersection(selectionRect, groupRect)) {
-                            return [{ ...elementData, type: 'group' }];
-                        }
-                        return [];
+                    if (Konva.Util.haveIntersection(selectionRect, rect)) {
+                        return [{ ...groupData, element: parentGroupEl, id: parentGroupEl.attrs.id, type: 'group' }];
                     }
-
-                    // If unlocked, only include those children whose global rects intersect
-                    return groupElements
-                        .filter((child) => {
-                            return Konva.Util.haveIntersection(selectionRect, child.rect);
-                        })
-                        .map((child) => ({
-                            ...child,
-                            element,
-                            endX: groupRect.x + child.rect.x + child.rect.width,
-                            endY: groupRect.y + child.rect.y + child.rect.height,
-                            startX: groupRect.x + child.rect.x,
-                            startY: groupRect.y + child.rect.y,
-                            timelineY
-                        }));
+                    return [];
                 }
 
                 // Regular (non-grouped) elements

@@ -61,7 +61,7 @@ export const createEvent = ({ instrumentName, parentId = null, passedStartTime =
         startTime: passedStartTime ?? recording.startTime
     });
 
-    const { endTime, id, name, params, startTime } = sound;
+    const { endTime, id, startTime } = sound;
     const length = endTime - startTime;
 
     // base event object

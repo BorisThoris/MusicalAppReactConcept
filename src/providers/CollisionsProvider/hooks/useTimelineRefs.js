@@ -119,9 +119,10 @@ export const useTimelineRefs = ({ setHasChanged }) => {
 
     const getProcessedItems = useCallback(() => {
         const elements = findAllSoundEventElements();
+        const groups = getAllGroups();
         const seen = new Set();
 
-        return elements
+        const processedElements = elements
             .map((el) => {
                 const id = el.id();
                 if (seen.has(id) || !el.getClientRect) return null;
@@ -144,7 +145,24 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                 };
             })
             .filter(Boolean);
-    }, [findAllSoundEventElements]);
+
+        const processedGroups = groups
+            .filter((group) => group.hasChildren())
+            .map((group) => {
+                const { height, width, x, y } = group.getClientRect();
+
+                return {
+                    element: group,
+                    node: group,
+                    ...group.getAttr('data-overlap-group'),
+                    elements: group.find((n) => n.id().startsWith(ELEMENT_ID_PREFIX)),
+                    rect: { height, width, x, y },
+                    type: 'group'
+                };
+            });
+        // ...processedGroups
+        return [...processedElements];
+    }, [findAllSoundEventElements, getAllGroups]);
 
     const clearElements = useCallback((elements) => {
         elements.forEach((el) => {

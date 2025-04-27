@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 import { EventItem } from '../Panel/EventItem';
+import GroupItem from '../Panel/GroupItem';
 
 // Styled components
 const EventContainer = styled.div`
@@ -17,23 +18,23 @@ const EventContainer = styled.div`
 // Recursive function to render event items
 
 // Component to display selected events list
-export const SelectedEventsList = ({ onDeleteRecording, onModifyStartTime, onPlayEvent, selectedValues }) => {
-    return selectedValues.map((event, index) => {
-        const { endTime, eventInstance, id, startTime } = event;
-
-        const onDelete = () => onDeleteRecording(event);
-        const onPlay = () => onPlayEvent(eventInstance);
+export const SelectedEventsList = ({ selectedValues }) =>
+    selectedValues.map((event, index) => {
+        const { elements, endTime, eventInstance, id, startTime } = event;
 
         // Ensure the key is unique
         const uniqueKey = id || `${eventInstance}-${startTime}-${endTime}-${index}`;
 
+        if (elements) {
+            return <GroupItem event={event} key={uniqueKey} />;
+        }
+
         return (
             <EventContainer key={uniqueKey}>
-                <EventItem event={event} onDelete={onDelete} onPlay={onPlay} onModifyStartTime={onModifyStartTime} />
+                <EventItem event={event} />
             </EventContainer>
         );
     });
-};
 
 SelectedEventsList.propTypes = {
     onClose: PropTypes.func.isRequired,

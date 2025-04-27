@@ -4,7 +4,7 @@ import { CopyIcon, Header, PlayIcon, TrashIcon } from './Panel.styles';
 
 export const EventHeader = ({ onCopy, onDelete, onPlay }) => (
     <Header>
-        <PlayIcon onClick={onPlay}>▶</PlayIcon>
+        {onPlay && <PlayIcon onClick={onPlay}>▶</PlayIcon>}
         <CopyIcon onClick={onCopy}>Copy</CopyIcon>
         <TrashIcon onClick={onDelete}>🗑️</TrashIcon>
     </Header>

@@ -100,7 +100,6 @@ export const CollisionsProvider = ({ children }) => {
         const newOverlapGroups = findOverlaps(currentBeat);
         setOverlapGroups(newOverlapGroups);
 
-        console.log('OVERLAP GROUPS: ', newOverlapGroups);
         prevProcessBeatResultRef.current = currentBeat;
     }
 
@@ -131,7 +130,6 @@ export const CollisionsProvider = ({ children }) => {
             furthestEndTime,
             getGroupById,
             getProcessedElements,
-            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
@@ -176,7 +174,6 @@ export const CollisionsProvider = ({ children }) => {
             furthestEndTime,
             getGroupById,
             getProcessedElements,
-            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,

@@ -40,8 +40,6 @@ export const GroupElement = React.memo(
         // Controlled positioning when not dragging
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
-        console.log('isDragging', groupId, isDragging);
-
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group

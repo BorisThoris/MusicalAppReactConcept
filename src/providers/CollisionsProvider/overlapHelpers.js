@@ -184,6 +184,8 @@ export function processOverlaps(allElements) {
  * runs processOverlaps, and re‑inserts empty instruments.
  */
 export function findOverlaps(processedData) {
+    console.log('processedData', processedData);
+
     if (!processedData) {
         return {};
     }

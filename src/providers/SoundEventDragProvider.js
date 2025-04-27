@@ -9,15 +9,12 @@ export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
-    const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
-
-    console.log('selectedItems', selectedItems);
+    const { selectedItems } = useContext(SelectionContext);
 
     // Convert selectedItems to raw IDs array
     const selectedElementIds = useMemo(
         () =>
-            Object.values(selectedItems).map(({ element, id, type }) => {
-                console.log('element', element);
+            Object.values(selectedItems).map(({ element, id }) => {
                 const isGroup = element.attrs['data-overlap-group'];
                 const prefix = isGroup ? GROUP_ELEMENT_ID_PREFIX : ELEMENT_ID_PREFIX;
                 const computedType = isGroup ? 'group' : 'element';
@@ -61,12 +58,12 @@ export const SoundEventDragProvider = ({ children }) => {
             let closest = null;
             let minDist = Infinity;
             const all = stageRef.find((n) => n.attrs?.id?.includes('-events'));
-            all.forEach((node) => {
-                const box = node.parent.getAbsolutePosition();
+            all.forEach((el) => {
+                const box = el.parent.getAbsolutePosition();
                 const d = Math.abs(pos.y - box.y);
                 if (d < minDist) {
                     minDist = d;
-                    closest = node;
+                    closest = el;
                 }
             });
             return closest;
@@ -80,12 +77,12 @@ export const SoundEventDragProvider = ({ children }) => {
             let closest = null;
             let minDist = Infinity;
             const all = stageRef.find((n) => n.attrs?.id?.includes('timelineRect'));
-            all.forEach((node) => {
-                const box = node.getClientRect();
+            all.forEach((el) => {
+                const box = el.getClientRect();
                 const d = Math.abs(boxEl.y - box.y);
                 if (d < minDist) {
                     minDist = d;
-                    closest = node;
+                    closest = el;
                 }
             });
             return closest;
@@ -130,13 +127,13 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 Object.values(grp.elements).forEach((child) => {
                     const currentChildStart =
-                        child.node.attrs['data-recording']?.startTime ?? child.node.x() / pixelToSecondRatio;
+                        child.element.attrs['data-recording']?.startTime ?? child.element.x() / pixelToSecondRatio;
                     const newChildStart = currentChildStart + offset;
 
-                    updateStartTimeForElement({ designatedStartTime: newChildStart, element: child.node });
+                    updateStartTimeForElement({ designatedStartTime: newChildStart, element: child.element });
 
-                    const tl = findClosestTimelineEvents(child.node);
-                    insertElementIntoTimeline({ closestTimeline: tl, element: child.node });
+                    const tl = findClosestTimelineEvents(child.element);
+                    insertElementIntoTimeline({ closestTimeline: tl, element: child.element });
                 });
             }
         },
@@ -146,11 +143,11 @@ export const SoundEventDragProvider = ({ children }) => {
     const processSelectedElements = useCallback(
         (stage, action) => {
             selectedElementIds.forEach(({ id }) => {
-                const node = stage.findOne((currentNode) => {
+                const element = stage.findOne((currentNode) => {
                     return currentNode.attrs.id === id;
                 });
 
-                if (node) action(node);
+                if (element) action(element);
             });
         },
         [selectedElementIds]
@@ -226,12 +223,12 @@ export const SoundEventDragProvider = ({ children }) => {
                 currentYRef.current = curY;
 
                 const newHighlights = new Set();
-                const mover = (node) => {
-                    const init = initialPositionsRef.current.get(node.attrs.id);
-                    if (init) node.setAttr('x', init.x + totalDX);
-                    node.move({ y: dY });
-                    forceUpdatePosition(node);
-                    const tl = findClosestTimelineRect(node);
+                const mover = (element) => {
+                    const init = initialPositionsRef.current.get(element.attrs.id);
+                    if (init) element.setAttr('x', init.x + totalDX);
+                    element.move({ y: dY });
+                    forceUpdatePosition(element);
+                    const tl = findClosestTimelineRect(element);
                     if (tl) newHighlights.add(tl);
                 };
 
@@ -257,10 +254,10 @@ export const SoundEventDragProvider = ({ children }) => {
     );
 
     const finalizeDrag = useCallback(
-        (node) => {
-            const tl = findClosestTimelineEvents(node);
-            insertElementIntoTimeline({ closestTimeline: tl, element: node });
-            updateStartTimeForElement({ element: node });
+        (element) => {
+            const tl = findClosestTimelineEvents(element);
+            insertElementIntoTimeline({ closestTimeline: tl, element });
+            updateStartTimeForElement({ element });
         },
         [findClosestTimelineEvents, insertElementIntoTimeline, updateStartTimeForElement]
     );
@@ -289,7 +286,6 @@ export const SoundEventDragProvider = ({ children }) => {
         [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, stageRef, setDragging]
     );
 
-    console.log('DRAGGING', dragging);
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);
 
     const value = useMemo(

@@ -35,8 +35,10 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const processedItemsMap = useMemo(() => {
         const map = new Map();
         processedItems.forEach((item) => {
-            const recData = item.element?.getAttr('data-recording');
-            if (recData?.id) {
+            const recording = item.element?.getAttr('data-recording');
+
+            if (recording) {
+                const recData = recording;
                 map.set(recData.id, item);
             }
         });
@@ -65,6 +67,8 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         },
         [markersAndTrackerOffset]
     );
+
+    console.log('Selected items:', processedItems);
 
     // Clears the current selection.
     const clearSelection = useCallback(() => {

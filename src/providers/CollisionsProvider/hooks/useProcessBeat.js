@@ -88,20 +88,20 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
             const elements = groupArray.reduce((acc, el) => {
                 acc[el.recording.id] = {
                     ...el.recording,
-                    node: el.element,
+                    element: el.element,
                     rect: el.element.getClientRect()
                 };
                 return acc;
             }, {});
 
             mergedOverlapGroups.push({
+                element: rep.element,
                 elements,
                 endTime,
                 eventLength: endTime - startTime,
                 id: newId,
                 instrumentName,
                 locked: groupLocked,
-                node: rep.element,
                 rect: rep.element.getClientRect(),
                 startTime
             });
@@ -153,7 +153,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
             acc[recording.instrumentName] = acc[recording.instrumentName] || {};
             acc[recording.instrumentName][recording.id] = {
                 ...newRec,
-                node: element,
+                element,
                 rect: element.getClientRect()
             };
             return acc;
@@ -161,7 +161,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
 
         // Overlap groups
         overlapGroups.forEach((group) => {
-            const { elements, endTime, eventLength, id, instrumentName, locked, node, startTime } = group;
+            const { element, elements, endTime, eventLength, id, instrumentName, locked, startTime } = group;
             objToSave[instrumentName] = objToSave[instrumentName] || {};
 
             // Recreate child events with fresh rects
@@ -170,13 +170,14 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 // eslint-disable-next-line no-param-reassign
                 map[newChild.id] = {
                     ...newChild,
-                    node: child.node,
-                    rect: child.node.getClientRect()
+                    element: child.element,
+                    rect: child.element.getClientRect()
                 };
                 return map;
             }, {});
 
             objToSave[instrumentName][id] = {
+                element,
                 elements: recreatedElements,
                 endTime,
                 eventLength,
@@ -184,8 +185,8 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 ids: Object.keys(recreatedElements),
                 instrumentName,
                 locked,
-                node,
-                rect: node.getClientRect(),
+                node: element,
+                rect: element.getClientRect(),
                 startTime
             };
         });
