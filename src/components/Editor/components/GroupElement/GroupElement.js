@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useMemo, useRef } from 'react';
-import { Group, Text } from 'react-konva';
+import { Group, Rect, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
@@ -12,7 +12,7 @@ export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { elements, id, locked, startTime } = groupData;
+        const { elements, eventLength, id, isSelected, locked, startTime } = groupData;
 
         // Sort the group events to maintain a consistent order.
         const groupEvents = useMemo(
@@ -40,6 +40,8 @@ export const GroupElement = React.memo(
         // Controlled positioning when not dragging
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
+        const lengthBasedWidth = eventLength * pixelToSecondRatio;
+
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
@@ -54,6 +56,15 @@ export const GroupElement = React.memo(
                     onDragEnd={locked ? handleDragEnd : undefined}
                     {...controlledPositionProps}
                 >
+                    <Rect
+                        x={0}
+                        y={0}
+                        width={lengthBasedWidth + 100}
+                        height={TimelineHeight}
+                        fill={isSelected ? 'red' : 'transparent'}
+                        // Spread our unified dynamic styles.
+                    />
+
                     <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 
                     <Group offsetX={startTime * pixelToSecondRatio}>

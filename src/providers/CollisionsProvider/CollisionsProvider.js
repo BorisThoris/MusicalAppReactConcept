@@ -113,6 +113,8 @@ export const CollisionsProvider = ({ children }) => {
         }
     }, [openLoadPanel, overlapGroups]);
 
+    // console.log('OVERLAP GROUPS', overlapGroups);
+
     /** * CONTEXT VALUE ** */
     const contextValue = useMemo(
         () => ({

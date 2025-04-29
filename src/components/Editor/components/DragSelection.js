@@ -1,5 +1,4 @@
 import Konva from 'konva';
-import get from 'lodash/get';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Layer, Rect } from 'react-konva';
 import useContextMenu from '../../../hooks/useContextMenu';
@@ -16,13 +15,9 @@ export const DragSelection = () => {
     const { processedItems, stageRef } = useContext(CollisionsContext);
 
     const { handleCloseMenu } = useContextMenu();
-    const processedElements = processedItems;
 
     const hasMoved = useCallback(() => {
-        if (!dragPos.start || !dragPos.end) {
-            return false;
-        }
-
+        if (!dragPos.start || !dragPos.end) return false;
         return dragPos.start.x !== dragPos.end.x || dragPos.start.y !== dragPos.end.y;
     }, [dragPos.start, dragPos.end]);
 
@@ -39,7 +34,7 @@ export const DragSelection = () => {
             });
             node.getLayer().batchDraw();
         }
-    }, [dragPos.end, dragPos.start, isDragging]);
+    }, [dragPos, isDragging]);
 
     const updateSelection = useCallback(
         ({ end, start }) => {
@@ -52,65 +47,78 @@ export const DragSelection = () => {
                 y: Math.min(start.y, end.y)
             };
 
-            const intersectedElements = processedElements.flatMap((elementData) => {
-                const { element, height, recording, timelineY, width, x, y } = elementData;
-                const elementRect = { height, width, x, y };
+            const intersectedElements = processedItems.flatMap((item) => {
+                const isGroup = !!item.group;
+                const isElement = !!item.recording;
 
-                const parentGroupEl = get(element, 'attrs.data-group-child.current', null);
-                const groupData = get(element, 'attrs.data-group-child.current.attrs.data-overlap-group', null);
+                if (isGroup) {
+                    const groupRect = item.clientRect ?? item.group?.rect;
+                    if (groupRect && Konva.Util.haveIntersection(selectionRect, groupRect)) {
+                        const { rect } = item.group;
 
-                if (groupData) {
-                    const { rect } = groupData;
-
-                    if (Konva.Util.haveIntersection(selectionRect, rect)) {
-                        return [{ ...groupData, element: parentGroupEl, id: parentGroupEl.attrs.id, type: 'group' }];
+                        return [
+                            {
+                                ...item.group,
+                                element: item.element,
+                                endX: (rect?.x ?? item.x) + (rect?.width ?? item.width),
+                                endY: (rect?.y ?? item.y) + (rect?.height ?? item.height),
+                                startX: rect?.x ?? item.x,
+                                startY: rect?.y ?? item.y
+                            }
+                        ];
                     }
                     return [];
                 }
 
-                // Regular (non-grouped) elements
-                if (Konva.Util.haveIntersection(selectionRect, elementRect)) {
-                    return [
-                        {
-                            ...recording,
-                            element,
-                            endX: x + width,
-                            endY: y + height,
-                            startX: x,
-                            startY: y,
-                            timelineY
-                        }
-                    ];
+                if (isElement) {
+                    const elementRect = item.clientRect ?? {
+                        height: item.height,
+                        width: item.width,
+                        x: item.x,
+                        y: item.y
+                    };
+                    if (elementRect && Konva.Util.haveIntersection(selectionRect, elementRect)) {
+                        return [
+                            {
+                                ...item.recording,
+                                element: item.element,
+                                endX: item.x + item.width,
+                                endY: item.y + item.height,
+                                startX: item.x,
+                                startY: item.y
+                            }
+                        ];
+                    }
                 }
 
                 return [];
             });
 
             if (intersectedElements.length > 0) {
-                const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY));
+                const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY ?? 0));
                 setSelectionBasedOnCoordinates({
                     intersectedElements,
                     yLevel: maxYLevel
                 });
             }
         },
-        [processedElements, setSelectionBasedOnCoordinates]
+        [processedItems, setSelectionBasedOnCoordinates]
     );
 
     const handleDrag = useCallback(
         (event, isStart) => {
-            const pointerPosition = event.target.getStage().getPointerPosition();
-            if (!pointerPosition) return;
+            const pointer = event.target.getStage().getPointerPosition();
+            if (!pointer) return;
 
-            const { x, y } = pointerPosition;
-            setDragPos((prevPos) => {
-                const newPos = isStart ? { end: prevPos.end, start: { x, y } } : { ...prevPos, end: { x, y } };
+            const { x, y } = pointer;
+            setDragPos((prev) => {
+                const newPos = isStart ? { end: prev.end, start: { x, y } } : { ...prev, end: { x, y } };
 
                 if (!isStart && newPos.start) updateSelection(newPos);
                 return newPos;
             });
             if (isStart) setIsDragging(true);
-            if (!isStart) updateSelectionRect(); // Update selection rect during drag
+            if (!isStart) updateSelectionRect();
         },
         [updateSelection, updateSelectionRect]
     );
@@ -120,7 +128,6 @@ export const DragSelection = () => {
 
         const stage = stageRef;
 
-        // Handlers
         const mouseDownHandler = (e) => {
             if (e.target?.attrs?.id?.includes('timelineRect')) {
                 handleDrag(e, true);
@@ -130,9 +137,7 @@ export const DragSelection = () => {
         };
 
         const mouseMoveHandler = (e) => {
-            if (isDragging) {
-                handleDrag(e, false);
-            }
+            if (isDragging) handleDrag(e, false);
         };
 
         const mouseUpHandler = () => {
@@ -140,46 +145,33 @@ export const DragSelection = () => {
             setDragPos({ end: null, start: null });
         };
 
-        // Add event listeners
         stage.on('mousedown touchstart', mouseDownHandler);
         stage.on('mousemove touchmove', mouseMoveHandler);
         stage.on('mouseup touchend', mouseUpHandler);
 
-        // Cleanup function to remove event listeners
         return () => {
             stage.off('mousedown touchstart', mouseDownHandler);
             stage.off('mousemove touchmove', mouseMoveHandler);
             stage.off('mouseup touchend', mouseUpHandler);
         };
-    }, [
-        handleDrag,
-        hasMoved,
-        dragPos,
-        isDragging,
-        updateSelection,
-        stageRef,
-        handleCloseMenu,
-        handleCloseSelectionsPanel
-    ]);
+    }, [handleDrag, handleCloseMenu, handleCloseSelectionsPanel, isDragging, stageRef]);
 
     const rectProps =
         isDragging && hasMoved()
             ? {
                   fill: 'rgba(0,0,255,0.5)',
-                  height: Math.abs(dragPos.end.y - dragPos.start.y),
+                  height: Math.abs(dragPos.start.y - dragPos.end.y),
                   stroke: 'blue',
                   strokeWidth: 1,
-                  width: Math.abs(dragPos.end.x - dragPos.start.x),
+                  width: Math.abs(dragPos.start.x - dragPos.end.x),
                   x: Math.min(dragPos.start.x, dragPos.end.x),
                   y: Math.min(dragPos.start.y, dragPos.end.y)
               }
             : null;
 
-    return (
-        rectProps && (
-            <Layer>
-                <Rect {...rectProps} ref={selectionRectRef} />
-            </Layer>
-        )
-    );
+    return rectProps ? (
+        <Layer>
+            <Rect {...rectProps} ref={selectionRectRef} />
+        </Layer>
+    ) : null;
 };

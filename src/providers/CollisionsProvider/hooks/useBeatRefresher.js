@@ -17,15 +17,11 @@ export const useBeatRefresher = (
 ) => {
     const refreshBeat = useCallback(() => {
         const newData = processBeat();
-
         const newProcessedItems = getProcessedItems();
 
-        // 🧠 Merge in previously known timelines from currentBeat
-        const mergedData = { ...newData };
-
         // ✅ Only update state if there's a meaningful change
-        if (!isEqual(currentBeat, mergedData)) {
-            setCurrentBeat({ ...mergedData });
+        if (!isEqual(currentBeat, newData)) {
+            setCurrentBeat({ ...newData });
 
             if (!isEqual(processedItems, newProcessedItems)) {
                 setProcessedItems(newProcessedItems);

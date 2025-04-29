@@ -8,19 +8,20 @@ const EMPTY_SELECTION = {};
 // Helper function moved outside the hook.
 const getRecordingData = (element) => {
     if (!element) return null;
+
     if (typeof element.getAttr === 'function') {
-        return element.getAttr('data-recording');
+        return element.getAttr('data-recording') || element.getAttr('data-overlap-group') || null;
     }
     if (typeof element === 'string') {
         try {
             const parsed = JSON.parse(element);
-            return parsed?.attrs?.['data-recording'] || null;
+            return parsed?.attrs?.['data-recording'] || parsed?.attrs?.['data-overlap-group'] || null;
         } catch (e) {
             console.error('Failed to parse element JSON', e);
             return null;
         }
     } else if (typeof element === 'object') {
-        return element.attrs?.['data-recording'] || null;
+        return element.attrs?.['data-recording'] || element.attrs?.['data-overlap-group'] || null;
     }
     return null;
 };
@@ -35,8 +36,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const processedItemsMap = useMemo(() => {
         const map = new Map();
         processedItems.forEach((item) => {
-            const recording = item.element?.getAttr('data-recording');
-
+            const recording = item.element?.getAttr('data-recording') || item.element?.getAttr('data-overlap-group');
             if (recording) {
                 const recData = recording;
                 map.set(recData.id, item);
@@ -68,9 +68,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         [markersAndTrackerOffset]
     );
 
-    console.log('Selected items:', processedItems);
-
-    // Clears the current selection.
     const clearSelection = useCallback(() => {
         setSelectedItems({});
     }, []);
@@ -87,7 +84,9 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                     if (newSelectedItems[id]) {
                         delete newSelectedItems[id];
                     } else if (elementData) {
-                        const recData = elementData.element.getAttr('data-recording') || elementData.recording;
+                        const recData =
+                            elementData.element.getAttr('data-recording') ||
+                            elementData.element.getAttr('data-overlap-group');
                         newSelectedItems[id] = {
                             ...recData,
                             element: elementData.element
@@ -141,16 +140,21 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
         processedItems.forEach((item) => {
             if (!item.element) return;
-            const recordingData = item.element.getAttr('data-recording');
-            const id = recordingData?.id;
-            const currentlySelected = recordingData?.isSelected || false;
+
+            const recData = item.element.getAttr('data-recording') || item.element.getAttr('data-overlap-group');
+            const id = recData?.id;
+            const currentlySelected = recData?.isSelected || false;
             const shouldSelect = !!(id && selectedItems[id]);
 
             if (currentlySelected !== shouldSelect) {
-                item.element.setAttr('data-recording', {
-                    ...recordingData,
+                const attrName =
+                    recData && item.element.getAttr('data-recording') ? 'data-recording' : 'data-overlap-group';
+
+                item.element.setAttr(attrName, {
+                    ...recData,
                     isSelected: shouldSelect
                 });
+
                 const layer = item.element.getLayer();
                 if (layer) {
                     layersToDraw.add(layer);
@@ -177,6 +181,8 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             return isEqual(prevSelectedItems, updatedSelectedItems) ? prevSelectedItems : updatedSelectedItems;
         });
     }, [processedItems]);
+
+    console.log(selectedItems, 'selectedItems');
 
     return {
         clearSelection,

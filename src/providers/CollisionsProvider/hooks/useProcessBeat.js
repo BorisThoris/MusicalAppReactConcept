@@ -7,7 +7,8 @@ import { isOverlapping } from '../overlapHelpers';
  * Groups overlapping elements and ensures each merged group retains its representative DOM node
  * and up-to-date bounding rectangle. Prevents merging between different locked groups.
  */
-const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
+
+export const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
     const orphanElements = [];
     const mergedOverlapGroups = [];
 
@@ -59,9 +60,10 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         for (let j = i + 1; j < allChildElements.length; j += 1) {
             const a = allChildElements[i];
             const b = allChildElements[j];
-            // only consider same instrument
-            // eslint-disable-next-line no-continue
-            if (a.recording.instrumentName !== b.recording.instrumentName) continue;
+            // Only consider same instrument
+            if (a.recording.instrumentName !== b.recording.instrumentName) {
+                break;
+            }
             if (isOverlapping(a, b)) union(a.recording.id, b.recording.id);
         }
     }
@@ -74,7 +76,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
         groupsByRoot[rep].push(el);
     });
 
-    // 5. Build merged groups with nodes and rects
+    // 5. Build merged groups with nodes, rects, and persist isSelected
     Object.values(groupsByRoot).forEach((groupArray) => {
         if (groupArray.length > 1) {
             const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
@@ -83,6 +85,11 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
             const { instrumentName } = groupArray[0].recording;
             const groupLocked = lockedMap[find(newId)];
             const rep = groupArray[0];
+
+            // Preserve previous group selection state
+            const previousGroupIdx = originalGroupMap[newId];
+            const previousGroup = overlapGroups[previousGroupIdx];
+            const groupIsSelected = previousGroup?.isSelected || false;
 
             // Build group elements with up-to-date rects
             const elements = groupArray.reduce((acc, el) => {
@@ -101,6 +108,7 @@ const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) => {
                 eventLength: endTime - startTime,
                 id: newId,
                 instrumentName,
+                isSelected: groupIsSelected,
                 locked: groupLocked,
                 rect: rep.element.getClientRect(),
                 startTime
@@ -161,7 +169,8 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
 
         // Overlap groups
         overlapGroups.forEach((group) => {
-            const { element, elements, endTime, eventLength, id, instrumentName, locked, startTime } = group;
+            const { element, elements, endTime, eventLength, id, instrumentName, isSelected, locked, startTime } =
+                group;
             objToSave[instrumentName] = objToSave[instrumentName] || {};
 
             // Recreate child events with fresh rects
@@ -184,6 +193,7 @@ export const useProcessBeat = ({ getProcessedElements, getProcessedGroups, timel
                 id,
                 ids: Object.keys(recreatedElements),
                 instrumentName,
+                isSelected,
                 locked,
                 node: element,
                 rect: element.getClientRect(),

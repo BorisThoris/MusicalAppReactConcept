@@ -137,7 +137,6 @@ export const useTimelineRefs = ({ setHasChanged }) => {
                     id,
                     instrumentName: get(el, "attrs['data-recording'].instrumentName", null),
                     recording: get(el, "attrs['data-recording']", {}),
-                    timelineY: get(el, 'attrs.timelineY', 0),
                     type: 'element',
                     width,
                     x,
@@ -149,19 +148,41 @@ export const useTimelineRefs = ({ setHasChanged }) => {
         const processedGroups = groups
             .filter((group) => group.hasChildren())
             .map((group) => {
+                const id = group.id();
+                if (seen.has(id) || !group.getClientRect) return null;
+
                 const { height, width, x, y } = group.getClientRect();
+                seen.add(id);
 
                 return {
+                    clientRect: { height, width, x, y },
                     element: group,
-                    node: group,
-                    ...group.getAttr('data-overlap-group'),
-                    elements: group.find((n) => n.id().startsWith(ELEMENT_ID_PREFIX)),
-                    rect: { height, width, x, y },
-                    type: 'group'
+                    group: group.getAttr('data-overlap-group') || {},
+                    height,
+                    id,
+                    instrumentName: group.getAttr('data-overlap-group')?.instrumentName || null,
+                    type: 'group',
+                    width,
+                    x,
+                    y
                 };
-            });
-        // ...processedGroups
-        return [...processedElements];
+            })
+            .filter(Boolean);
+
+        // --- Now, filter out any elements that are inside a group ---
+        const groupElementIds = new Set();
+        processedGroups.forEach((group) => {
+            const groupData = group.group;
+            if (groupData?.elements) {
+                Object.keys(groupData.elements).forEach((elementId) => {
+                    groupElementIds.add(elementId);
+                });
+            }
+        });
+
+        const filteredElements = processedElements.filter((el) => !groupElementIds.has(el.recording?.id));
+
+        return [...filteredElements, ...processedGroups];
     }, [findAllSoundEventElements, getAllGroups]);
 
     const clearElements = useCallback((elements) => {
