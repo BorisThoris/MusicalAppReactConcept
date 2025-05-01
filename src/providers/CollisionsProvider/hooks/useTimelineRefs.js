@@ -104,11 +104,13 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             if (seen.has(group.id()) || !group.hasChildren()) return acc;
 
             const { height, width, x, y } = group.getClientRect();
+            const elements = group.find((n) => n.id().startsWith(ELEMENT_ID_PREFIX));
+
             acc.push({
                 group,
                 node: group,
                 ...group.getAttr('data-overlap-group'),
-                elements: group.find((n) => n.id().startsWith(ELEMENT_ID_PREFIX)),
+                elements,
                 rect: { height, width, x, y }
             });
 
@@ -118,11 +120,25 @@ export const useTimelineRefs = ({ setHasChanged }) => {
     }, [getAllGroups]);
 
     const getProcessedItems = useCallback(() => {
-        const elements = findAllSoundEventElements();
-        const groups = getAllGroups();
+        const groups = getProcessedGroups(); // already processed
         const seen = new Set();
 
+        // Collect all grouped recording IDs
+        const groupElementIds = new Set();
+        groups.forEach((group) => {
+            group.elements.forEach((el) => {
+                const id = get(el, "attrs['data-recording'].id");
+                if (id) groupElementIds.add(id);
+            });
+        });
+
+        // Process ungrouped elements
+        const elements = findAllSoundEventElements();
         const processedElements = elements
+            .filter((el) => {
+                const recordingId = get(el, "attrs['data-recording'].id");
+                return recordingId && !groupElementIds.has(recordingId);
+            })
             .map((el) => {
                 const id = el.id();
                 if (seen.has(id) || !el.getClientRect) return null;
@@ -145,22 +161,23 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             })
             .filter(Boolean);
 
+        // Process groups with the same return shape as before
         const processedGroups = groups
-            .filter((group) => group.hasChildren())
             .map((group) => {
-                const id = group.id();
-                if (seen.has(id) || !group.getClientRect) return null;
+                const { node } = group;
+                const id = node.id();
+                if (seen.has(id) || !node.getClientRect) return null;
 
-                const { height, width, x, y } = group.getClientRect();
+                const { height, width, x, y } = node.getClientRect();
                 seen.add(id);
 
                 return {
                     clientRect: { height, width, x, y },
-                    element: group,
-                    group: group.getAttr('data-overlap-group') || {},
+                    element: node,
+                    group: node.getAttr('data-overlap-group') || {},
                     height,
                     id,
-                    instrumentName: group.getAttr('data-overlap-group')?.instrumentName || null,
+                    instrumentName: node.getAttr('data-overlap-group')?.instrumentName || null,
                     type: 'group',
                     width,
                     x,
@@ -169,21 +186,8 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             })
             .filter(Boolean);
 
-        // --- Now, filter out any elements that are inside a group ---
-        const groupElementIds = new Set();
-        processedGroups.forEach((group) => {
-            const groupData = group.group;
-            if (groupData?.elements) {
-                Object.keys(groupData.elements).forEach((elementId) => {
-                    groupElementIds.add(elementId);
-                });
-            }
-        });
-
-        const filteredElements = processedElements.filter((el) => !groupElementIds.has(el.recording?.id));
-
-        return [...filteredElements, ...processedGroups];
-    }, [findAllSoundEventElements, getAllGroups]);
+        return [...processedElements, ...processedGroups];
+    }, [getProcessedGroups, findAllSoundEventElements]);
 
     const clearElements = useCallback((elements) => {
         elements.forEach((el) => {

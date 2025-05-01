@@ -5,7 +5,6 @@ import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
-// Helper function moved outside the hook.
 const getRecordingData = (element) => {
     if (!element) return null;
 
@@ -32,20 +31,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Build a memoized map of processed items keyed by their recording id.
-    const processedItemsMap = useMemo(() => {
-        const map = new Map();
-        processedItems.forEach((item) => {
-            const recording = item.element?.getAttr('data-recording') || item.element?.getAttr('data-overlap-group');
-            if (recording) {
-                const recData = recording;
-                map.set(recData.id, item);
-            }
-        });
-        return map;
-    }, [processedItems]);
-
-    // Update selection based on intersected elements and y-level using functional state update.
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
             setSelectedItems((prevSelectedItems) => {
@@ -72,7 +57,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         setSelectedItems({});
     }, []);
 
-    // Toggles the selection state for provided item(s) using the data-recording attr.
     const toggleItem = useCallback(
         (input) => {
             setSelectedItems((prevSelectedItems) => {
@@ -80,7 +64,12 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 const newSelectedItems = { ...prevSelectedItems };
 
                 itemsToToggle.forEach(({ id }) => {
-                    const elementData = processedItemsMap.get(id);
+                    const elementData = processedItems.find((item) => {
+                        const recData =
+                            item.element?.getAttr('data-recording') || item.element?.getAttr('data-overlap-group');
+                        return recData?.id === id;
+                    });
+
                     if (newSelectedItems[id]) {
                         delete newSelectedItems[id];
                     } else if (elementData) {
@@ -97,13 +86,11 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
                 return newSelectedItems;
             });
         },
-        [processedItemsMap]
+        [processedItems]
     );
 
-    // Returns whether an item is selected.
     const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
 
-    // Deletes selected events and cleans up the associated elements.
     const deleteSelections = useCallback((selectedEvents) => {
         const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
         setSelectedItems((prevSelectedItems) => {
@@ -116,7 +103,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         });
     }, []);
 
-    // Updates a selected item by its id with new values.
     const updateSelectedItemById = useCallback((id, updates) => {
         setSelectedItems((prevSelectedValues) => {
             if (!prevSelectedValues[id]) return prevSelectedValues;
@@ -130,7 +116,6 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         });
     }, []);
 
-    // Memoized selection state for consistent reference.
     const memoizedSelectedItems = useMemo(() => {
         return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
     }, [selectedItems]);
@@ -162,27 +147,34 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             }
         });
 
-        // Draw each unique layer only once at the end.
         layersToDraw.forEach((layer) => {
             layer.draw();
         });
     }, [selectedItems, processedItems]);
 
-    // Combine loops to update selections based on processed items.
     useEffect(() => {
         setSelectedItems((prevSelectedItems) => {
             const updatedSelectedItems = {};
+
             processedItems.forEach((item) => {
                 const recData = getRecordingData(item.element);
                 if (recData && recData.id && recData.isSelected) {
                     updatedSelectedItems[recData.id] = { ...recData, element: item.element };
                 }
+
+                const group = item.element?.attrs['data-overlap-group'];
+                if (group?.elements) {
+                    Object.values(group.elements).forEach((child) => {
+                        if (child?.id && child.isSelected) {
+                            updatedSelectedItems[child.id] = { ...child, element: child.element };
+                        }
+                    });
+                }
             });
+
             return isEqual(prevSelectedItems, updatedSelectedItems) ? prevSelectedItems : updatedSelectedItems;
         });
     }, [processedItems]);
-
-    console.log(selectedItems, 'selectedItems');
 
     return {
         clearSelection,
