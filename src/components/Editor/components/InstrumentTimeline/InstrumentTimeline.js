@@ -35,8 +35,6 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
         }
     }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
 
-    const onTimelinePointerDown = useCallback((e) => {}, []);
-
     return (
         <Group
             y={timelineY}
@@ -60,7 +58,6 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 width={calculatedStageWidth}
                 fill={isMuted ? 'red' : fillColor}
                 id={`timelineRect-${timelineY}`}
-                onPointerDown={onTimelinePointerDown}
                 stroke="black"
                 strokeWidth={2}
                 onContextMenu={handleContextMenu}

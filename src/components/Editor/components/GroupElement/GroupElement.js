@@ -42,18 +42,21 @@ export const GroupElement = React.memo(
 
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
+        const isDraggable = isSelected || locked;
+
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
                     y={isDragging ? timelineY : 0}
                     ref={groupRef}
                     data-overlap-group={groupData}
+                    name={groupId}
                     data-group-id={groupId}
                     id={groupId}
-                    draggable={locked}
-                    onDragStart={locked ? handleDragStart : undefined}
-                    onDragMove={locked ? handleDragMove : undefined}
-                    onDragEnd={locked ? handleDragEnd : undefined}
+                    draggable={isDraggable}
+                    onDragStart={isDraggable && handleDragStart}
+                    onDragMove={isDraggable && handleDragMove}
+                    onDragEnd={isDraggable && handleDragEnd}
                     {...controlledPositionProps}
                 >
                     <Rect

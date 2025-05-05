@@ -24,11 +24,12 @@ export const useClickHandlers = ({ elementContainerRef, parent, recording }) => 
             const overlapGroup = parent?.attrs?.['data-overlap-group'];
             const locked = overlapGroup?.locked ?? false;
 
-            toggleSelection();
-
             if (isParentPresent && locked) {
                 console.log('Parent group is locked; click event handled accordingly.');
+                return;
             }
+
+            toggleSelection();
         },
         [parent, toggleSelection]
     );

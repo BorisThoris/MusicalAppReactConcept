@@ -1,8 +1,9 @@
 // SoundEventElement.jsx
 // @ts-nocheck
+import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
 // External/Internal Dependencies
 import { ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
@@ -86,7 +87,7 @@ const SoundEventElement = React.memo(
 
         // Retrieve parent group data if it exists
         const parent = getGroupById(parentGroupId);
-        const parentData = parent?.attrs['data-overlap-group'];
+        const parentData = groupRef?.current?.attrs['data-overlap-group'];
 
         // Use our custom focus hook
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(id);
@@ -98,35 +99,34 @@ const SoundEventElement = React.memo(
             recording
         });
 
+        const shouldSelect = isSelected || parentData?.isSelected;
+
         // Get the unified dynamic styles.
         // This hook unifies both the focus/selection based styles and the layout-based styles.
         const unifiedDynamicStyles = useUnifiedDynamicStyles({
             childScale,
             groupRef,
             isFocused,
-            isSelected,
+            isSelected: shouldSelect,
             timelineHeight
         });
         const { withCursor } = useCursorEffects();
 
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-        // Enhance event callbacks with cursor effects.
         const handleMouseEnterWithCursor = withCursor('pointer', handleMouseEnter);
         const handleMouseLeaveWithCursor = withCursor('default', restoreZIndex);
         const handleDragStartWithCursor = withCursor('grabbing', handleDragStart);
         const handleDragMoveWithCursor = withCursor('grabbing', handleDragMove);
         const handleDragEndWithCursor = withCursor('grab', handleDragEnd);
 
-        // Controlled positioning when not dragging.
         const formattedId = `${ELEMENT_ID_PREFIX}${id}`;
         const isDragging = isElementBeingDragged(formattedId);
+
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
-        // Determine if the element is not part of a group.
         const isNotInGroup = !groupRef;
 
-        // Ensure proper z-index handling when focus changes.
         useEffect(() => {
             if (portalRef.current && !isFocused) {
                 const currentZIndex = portalRef.current.zIndex();
@@ -144,8 +144,12 @@ const SoundEventElement = React.memo(
             }
         }, [isFocused]);
 
+        const portalTarget = '.top-layer';
+        const shouldDrag = !parentData?.locked && !parentData?.isSelected;
+        const shouldUsePortal = isDragging && !(groupRef && locked);
+
         return (
-            <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
+            <Portal selector={portalTarget} enabled={shouldUsePortal} outerRef={portalRef}>
                 <Group
                     onContextMenu={handleContextMenu}
                     ref={elementContainerRef}
@@ -154,14 +158,14 @@ const SoundEventElement = React.memo(
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                     data-recording={recording}
                     data-group-child={groupRef}
-                    draggable={!parentData?.locked}
+                    draggable={shouldDrag}
                     onDragStart={handleDragStartWithCursor}
                     onDragMove={handleDragMoveWithCursor}
                     onDragEnd={handleDragEndWithCursor}
                     onClick={handleClick}
                     onDblClick={handleDoubleClick}
                     listening={listening}
-                    id={`${ELEMENT_ID_PREFIX}${id}`}
+                    id={formattedId}
                     data-portal-parent={portalRef?.current}
                     data-parent-group-id={parentGroupId}
                     {...controlledPositionProps}
@@ -173,15 +177,26 @@ const SoundEventElement = React.memo(
                         x={0}
                         y={0}
                         width={lengthBasedWidth}
-                        // Spread our unified dynamic styles.
                         {...unifiedDynamicStyles}
                         cornerRadius={CONSTANTS.CORNER_RADIUS}
                         shadowOffset={CONSTANTS.SHADOW.OFFSET}
                         shadowOpacity={CONSTANTS.SHADOW.OPACITY}
                         opacity={CONSTANTS.TRANSPARENCY_VALUE}
                     />
-                    <Text x={5} y={5} text={name} fill="black" fontSize={15} listening={false} />
-                    <Text x={5} y={25} text={`${id}`} fill="black" fontSize={15} listening={false} />
+                    <Text
+                        x={5}
+                        y={5}
+                        text={name}
+                        fontSize={CONSTANTS.TEXT_STYLE.fontSize}
+                        fill={CONSTANTS.TEXT_STYLE.fill}
+                    />
+                    <Text
+                        x={5}
+                        y={25}
+                        text={`${id}`}
+                        fontSize={CONSTANTS.TEXT_STYLE.fontSize}
+                        fill={CONSTANTS.TEXT_STYLE.fill}
+                    />
                     {isNotInGroup && <Lock isLocked={locked} onClick={handleLock} />}
                     <Circle x={lengthBasedWidth - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
                     {parentGroupId && (
@@ -189,16 +204,15 @@ const SoundEventElement = React.memo(
                             x={5}
                             y={45 + index * 20}
                             text={`Parent Group ID ${parentGroupId}`}
-                            fill="black"
-                            fontSize={15}
-                            listening={false}
+                            fontSize={CONSTANTS.TEXT_STYLE.fontSize}
+                            fill={CONSTANTS.TEXT_STYLE.fill}
                         />
                     )}
                 </Group>
             </Portal>
         );
     },
-    (prevProps, nextProps) => areEqual(prevProps, nextProps)
+    areEqual
 );
 
 SoundEventElement.propTypes = {
@@ -212,10 +226,8 @@ SoundEventElement.propTypes = {
     listening: PropTypes.bool.isRequired,
     parentGroupId: PropTypes.string,
     recording: PropTypes.shape({
-        eventInstance: PropTypes.object.isRequired,
         eventLength: PropTypes.number.isRequired,
         id: PropTypes.number.isRequired,
-        instrumentName: PropTypes.string.isRequired,
         isSelected: PropTypes.bool,
         locked: PropTypes.bool,
         name: PropTypes.string.isRequired,
