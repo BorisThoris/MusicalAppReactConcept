@@ -106,6 +106,8 @@ export const useTimelineRefs = ({ setHasChanged }) => {
             const { height, width, x, y } = group.getClientRect();
             const elements = group.find((n) => n.id().startsWith(ELEMENT_ID_PREFIX));
 
+            console.log('elements', elements);
+
             acc.push({
                 group,
                 node: group,

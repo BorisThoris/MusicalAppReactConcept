@@ -3,7 +3,7 @@
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
 // External/Internal Dependencies
 import { ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
@@ -70,7 +70,7 @@ const SoundEventElement = React.memo(
         timelineY
     }) => {
         // Destructure recording properties
-        const { eventLength, id, isSelected, locked, name, startTime } = recording;
+        const { eventLength, id, locked, name, startTime } = recording;
 
         // Refs
         const elementContainerRef = useRef();
@@ -81,7 +81,7 @@ const SoundEventElement = React.memo(
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
-        const { isItemSelected } = useContext(SelectionContext);
+        const { isItemSelected, toggleItem } = useContext(SelectionContext);
         const { timelineState } = useContext(TimelineContext);
         const { getGroupById } = useContext(CollisionsContext);
 
@@ -96,10 +96,13 @@ const SoundEventElement = React.memo(
         const { handleClick, handleContextMenu, handleDelete, handleDoubleClick, handleLock } = useClickHandlers({
             elementContainerRef,
             parent,
-            recording
+            recording,
+            toggleItem
         });
 
-        const shouldSelect = isSelected || parentData?.isSelected;
+        const isSelected = isItemSelected(id);
+
+        const shouldSelect = isSelected;
 
         // Get the unified dynamic styles.
         // This hook unifies both the focus/selection based styles and the layout-based styles.
@@ -148,6 +151,10 @@ const SoundEventElement = React.memo(
         const shouldDrag = !parentData?.locked && !parentData?.isSelected;
         const shouldUsePortal = isDragging && !(groupRef && locked);
 
+        const selectedRecording = useMemo(() => {
+            return { ...recording, isSelected: shouldSelect };
+        }, [recording, shouldSelect]);
+
         return (
             <Portal selector={portalTarget} enabled={shouldUsePortal} outerRef={portalRef}>
                 <Group
@@ -156,7 +163,7 @@ const SoundEventElement = React.memo(
                     key={index}
                     y={isDragging ? timelineY : 0}
                     offset={isDragging ? timelineState.panelCompensationOffset : undefined}
-                    data-recording={recording}
+                    data-recording={selectedRecording}
                     data-group-child={groupRef}
                     draggable={shouldDrag}
                     onDragStart={handleDragStartWithCursor}

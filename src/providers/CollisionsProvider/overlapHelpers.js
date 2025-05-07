@@ -77,24 +77,25 @@ function buildGroupsFromUF(elems, uf) {
 
     const result = {};
     Object.entries(temp).forEach(([root, group]) => {
-        const ids = Array.from(group.ids);
+        const ids = Array.from(group.ids).sort();
         if (ids.length === 1) {
-            result[ids[0]] = group.elements[ids[0]];
+            const single = ids[0];
+
+            result[single] = group.elements[single];
         } else {
-            const times = ids.map((id) => {
-                const e = group.elements[id];
-                return { end: e.endTime, start: e.startTime };
-            });
-            const startTime = Math.min(...times.map((t) => t.start));
-            const endTime = Math.max(...times.map((t) => t.end));
-            result[root] = {
+            const mergedId = ids.join('-');
+            const times = ids.map((id) => ({ end: group.elements[id].endTime, start: group.elements[id].startTime }));
+            const start = Math.min(...times.map((t) => t.start));
+            const end = Math.max(...times.map((t) => t.end));
+
+            result[mergedId] = {
                 ...group,
-                endTime,
-                eventLength: endTime - startTime,
-                id: root,
+                endTime: end,
+                eventLength: end - start,
+                id: mergedId,
                 instrumentName: group.elements[ids[0]].instrumentName,
                 rect: group.elements[ids[0]].rect,
-                startTime
+                startTime: start
             };
         }
     });

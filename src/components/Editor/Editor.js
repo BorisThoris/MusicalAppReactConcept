@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import styled from 'styled-components';
+import { BeatPlayer } from '../../hooks/beats/BeatPlayer';
 import {
     INSTRUMENT_LAYER_PANEL_ID,
     INSTRUMENTS_PANEL_ID,
@@ -53,6 +54,7 @@ const Editor = () => {
 
             <StyledEditorWrapper>
                 <StyledTimeline>
+                    <BeatPlayer />
                     <TimelinesHeader />
                     <Timelines />
                 </StyledTimeline>

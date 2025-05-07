@@ -1,20 +1,8 @@
 import { useCallback } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 
-export const useClickHandlers = ({ elementContainerRef, parent, recording }) => {
+export const useClickHandlers = ({ elementContainerRef, parent, recording, toggleItem }) => {
     const { eventInstance } = recording;
-
-    // Toggle selection state.
-    const toggleSelection = useCallback(() => {
-        if (elementContainerRef.current) {
-            const prevData = elementContainerRef.current.attrs['data-recording'];
-            const updatedState = { ...prevData, isSelected: !prevData.isSelected };
-            elementContainerRef.current.setAttrs({
-                'data-recording': updatedState
-            });
-            elementContainerRef.current.getLayer().draw();
-        }
-    }, [elementContainerRef]);
 
     // Handle a regular click event.
     const handleClick = useCallback(
@@ -29,9 +17,9 @@ export const useClickHandlers = ({ elementContainerRef, parent, recording }) => 
                 return;
             }
 
-            toggleSelection();
+            toggleItem(elementContainerRef.current.attrs['data-recording']);
         },
-        [parent, toggleSelection]
+        [elementContainerRef, parent, toggleItem]
     );
 
     // Handle double-click events.

@@ -52,22 +52,46 @@ export const DragSelection = () => {
                 const isElement = !!item.recording;
 
                 if (isGroup) {
-                    const groupRect = item.clientRect ?? item.group?.rect;
-                    if (groupRect && Konva.Util.haveIntersection(selectionRect, groupRect)) {
-                        const { rect } = item.group;
+                    const groupRect = item.clientRect ?? item.group.rect;
 
-                        return [
-                            {
-                                ...item.group,
-                                element: item.element,
-                                endX: (rect?.x ?? item.x) + (rect?.width ?? item.width),
-                                endY: (rect?.y ?? item.y) + (rect?.height ?? item.height),
-                                startX: rect?.x ?? item.x,
-                                startY: rect?.y ?? item.y
-                            }
-                        ];
+                    if (item.group.locked) {
+                        if (groupRect && Konva.Util.haveIntersection(selectionRect, groupRect)) {
+                            const { rect } = item.group;
+                            return [
+                                {
+                                    ...item.group,
+                                    element: item.element,
+                                    endX: (rect?.x ?? item.x) + (rect?.width ?? item.width),
+                                    endY: (rect?.y ?? item.y) + (rect?.height ?? item.height),
+                                    startX: rect?.x ?? item.x,
+                                    startY: rect?.y ?? item.y
+                                }
+                            ];
+                        }
+                        return [];
                     }
-                    return [];
+
+                    return (Object.values(item.group?.elements) || [])
+                        .map((child) => {
+                            const childRect = child.rect ?? {
+                                height: child.height,
+                                width: child.width,
+                                x: child.x,
+                                y: child.y
+                            };
+                            if (Konva.Util.haveIntersection(selectionRect, childRect)) {
+                                return {
+                                    ...child,
+                                    element: item.element,
+                                    endX: childRect.x + childRect.width,
+                                    endY: childRect.y + childRect.height,
+                                    startX: childRect.x,
+                                    startY: childRect.y
+                                };
+                            }
+                            return null;
+                        })
+                        .filter(Boolean);
                 }
 
                 if (isElement) {
