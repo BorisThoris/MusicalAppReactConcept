@@ -12,30 +12,39 @@ export const useTrackerAnimation = (
 ) => {
     const animationRef = useRef(null);
 
+    const startTimeRef = useRef(null);
+    const initialPosRef = useRef(0);
+
     useEffect(() => {
         if (!playbackStatus.isPlaying) {
-            cancelAnimationFrame(animationRef.current);
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
+            startTimeRef.current = null;
         }
     }, [playbackStatus.isPlaying]);
 
     const moveTracker = useCallback(() => {
         if (!trackerRef.current) return;
 
-        const startTimestamp = performance.now() - trackerPosition / pixelToSecondRatio;
+        // On start/resume, capture now + where we began
+        if (startTimeRef.current === null) {
+            startTimeRef.current = performance.now();
+            initialPosRef.current = trackerPosition;
+        }
 
         const animate = (currentTime) => {
             if (!trackerRef.current || !playbackStatus.isPlaying) return;
 
-            const elapsedTime = (currentTime - startTimestamp) / 1000;
-            const newTrackerPosition = Math.min(
-                trackerPosition + elapsedTime * pixelToSecondRatio,
-                totalDurationInPixels
-            );
+            // elapsed seconds since start
+            const elapsedSeconds = (currentTime - startTimeRef.current) / 1000;
+            const newPos = Math.min(initialPosRef.current + elapsedSeconds * pixelToSecondRatio, totalDurationInPixels);
 
-            trackerRef.current.x(newTrackerPosition);
+            trackerRef.current.x(newPos);
             playCollidedElements();
 
-            if (newTrackerPosition < totalDurationInPixels) {
+            if (newPos < totalDurationInPixels) {
                 animationRef.current = requestAnimationFrame(animate);
             } else {
                 changePlaybackStatus(false);
