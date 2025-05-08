@@ -1,14 +1,15 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Group, Rect } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePaintings } from '../../../../providers/PaintingProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SoundEventDragContext } from '../../../../providers/SoundEventDragProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { GroupElement } from '../GroupElement/GroupElement';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { timelineState } = useContext(TimelineContext);
     const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
     const { handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } = useContext(SoundEventDragContext);

@@ -1,10 +1,10 @@
 import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { PanelContext, SELECTIONS_PANEL_ID } from '../../../../hooks/usePanelState';
 import usePlayback from '../../../../hooks/usePlayback';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext, TimelineHeight, Y_OFFSET } from '../../../../providers/TimelineProvider';
 import { CloseIcon, FlexContainer, PlayIcon, TrashIcon } from '../Panel/Panel.styles';
@@ -21,6 +21,7 @@ const EventsContainer = styled(FlexContainer)`
 `;
 
 export const SelectionsPanel = () => {
+    const pixelToSecondRatio = usePixelRatio();
     const { closePanel } = useContext(PanelContext);
     const { timelineState } = useContext(TimelineContext);
     const { clearSelection, deleteSelections, endTime, selectedValues, startTime } = useContext(SelectionContext);
@@ -90,7 +91,7 @@ export const SelectionsPanel = () => {
     const handleModifyStartTime = useCallback(
         ({ delta, id: filterId }) => {
             // 1) collect every element (flat) we might need to shift
-            const allEls = getElementsToModify(selectedValues);
+            const allEls = getElementsToModify({ pixelToSecondRatio, selectedValues });
 
             // 2) if an id filter was passed, drop the rest
             const toShift = allEls.filter((el) => {
@@ -100,9 +101,9 @@ export const SelectionsPanel = () => {
             });
 
             // 3) shift each one
-            toShift.forEach((el) => updateElementStartTime(el, delta));
+            toShift.forEach((el) => updateElementStartTime({ delta, el, pixelToSecondRatio }));
         },
-        [selectedValues]
+        [pixelToSecondRatio, selectedValues]
     );
 
     if (selectedValues.length > 0) {

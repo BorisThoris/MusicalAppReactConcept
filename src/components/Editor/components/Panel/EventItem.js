@@ -5,6 +5,7 @@ import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import { EventHeader } from './EventHeader';
@@ -32,6 +33,7 @@ const UnselectButton = styled.button`
 `;
 
 export const EventItem = ({ event }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
     const { getEventById } = useInstrumentRecordingsOperations();
@@ -53,7 +55,10 @@ export const EventItem = ({ event }) => {
         stageRef?.findOne('.top-layer')?.batchDraw();
     }, [element, deleteSelections, event, stageRef]);
 
-    const handleModifyStartTime = useCallback(({ delta }) => updateElementStartTime(element, delta), [element]);
+    const handleModifyStartTime = useCallback(
+        ({ delta }) => updateElementStartTime({ delta, element, pixelToSecondRatio }),
+        [element, pixelToSecondRatio]
+    );
 
     const handleCopy = useCallback(() => copyEvents(event), [copyEvents, event]);
 

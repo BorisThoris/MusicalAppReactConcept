@@ -7,9 +7,9 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
 // External/Internal Dependencies
 import { ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
@@ -69,6 +69,8 @@ const SoundEventElement = React.memo(
         timelineHeight,
         timelineY
     }) => {
+        const pixelToSecondRatio = usePixelRatio();
+
         // Destructure recording properties
         const { eventLength, id, locked, name, startTime } = recording;
 

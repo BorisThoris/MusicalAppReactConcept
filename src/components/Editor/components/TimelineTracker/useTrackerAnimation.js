@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 
 export const useTrackerAnimation = (
     trackerRef,
@@ -10,6 +10,7 @@ export const useTrackerAnimation = (
     playCollidedElements,
     resetTrackerPosition
 ) => {
+    const pixelToSecondRatio = usePixelRatio();
     const animationRef = useRef(null);
 
     const startTimeRef = useRef(null);
@@ -57,6 +58,7 @@ export const useTrackerAnimation = (
         trackerRef,
         trackerPosition,
         playbackStatus.isPlaying,
+        pixelToSecondRatio,
         totalDurationInPixels,
         playCollidedElements,
         changePlaybackStatus,

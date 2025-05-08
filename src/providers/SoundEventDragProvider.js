@@ -1,13 +1,14 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
-import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from './SelectionsProvider';
 
 // @ts-ignore
 export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { selectedItems } = useContext(SelectionContext);
 
@@ -137,7 +138,7 @@ export const SoundEventDragProvider = ({ children }) => {
                 });
             }
         },
-        [findClosestTimelineEvents, insertElementIntoTimeline]
+        [findClosestTimelineEvents, insertElementIntoTimeline, pixelToSecondRatio]
     );
 
     const processSelectedElements = useCallback(

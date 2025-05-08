@@ -1,17 +1,18 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useCallback, useContext, useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Group, Rect } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import useContextMenu from '../../../../hooks/useContextMenu';
 import { useCustomCursorContext } from '../../../../providers/CursorProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersAndTrackerOffset, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import InstrumentTimelinePanelComponent from './InstrumentTimelinePanel';
 import { TimelineEvents } from './TimelineEvents';
 
 const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
     const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
     const { handleContextMenu } = useContextMenu();

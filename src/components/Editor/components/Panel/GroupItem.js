@@ -1,5 +1,6 @@
 import React, { useCallback, useContext } from 'react';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { EventHeader } from './EventHeader';
 import { EventItem } from './EventItem';
@@ -7,6 +8,7 @@ import { updateElementStartTime } from './recordingHelpers';
 import TimeControl from './TimeControl';
 
 const GroupItem = ({ event }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { element, elements, endTime, startTime } = event;
     const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { deleteSelections } = useContext(SelectionContext);
@@ -19,7 +21,10 @@ const GroupItem = ({ event }) => {
         stageRef?.findOne('.top-layer')?.batchDraw();
     }, [element, deleteSelections, event, stageRef]);
 
-    const handleModifyStartTime = useCallback(({ delta }) => updateElementStartTime(element, delta), [element]);
+    const handleModifyStartTime = useCallback(
+        ({ delta }) => updateElementStartTime({ delta, element, pixelToSecondRatio }),
+        [element, pixelToSecondRatio]
+    );
 
     const handleCopy = useCallback(() => copyEvents(event), [copyEvents, event]);
 

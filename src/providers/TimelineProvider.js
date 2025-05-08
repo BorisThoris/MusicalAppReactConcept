@@ -1,6 +1,6 @@
 import React, { createContext, useMemo, useState } from 'react';
-import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../globalConstants/songLimit';
+import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 
 export const TimelineHeight = 200;
 export const Y_OFFSET = 20;
@@ -19,6 +19,7 @@ const defaultTimelineState = {
 export const TimelineContext = createContext(defaultTimelineState);
 
 export const TimelineProvider = ({ children }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const [timelineState, setTimelineState] = useState(defaultTimelineState);
 
     // Function to update the timeline state

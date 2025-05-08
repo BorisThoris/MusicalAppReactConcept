@@ -1,10 +1,10 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useCallback, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import { Layer, Stage, useStrictMode } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
@@ -14,6 +14,7 @@ import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
 const Timelines = React.memo(() => {
+    const pixelToSecondRatio = usePixelRatio();
     const stageRef = useRef(null);
     const topLayerRef = useRef(null);
 

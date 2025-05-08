@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Group, Layer, Line, Text } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 
 const TimeMarker = ({ duration, height, pixelToSecond }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { timelineState } = useContext(TimelineContext);
 
     const [width, setWidth] = useState(180 * pixelToSecondRatio);

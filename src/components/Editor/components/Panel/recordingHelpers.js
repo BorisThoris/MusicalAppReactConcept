@@ -1,5 +1,3 @@
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
-
 const moveAndUpdateRecording = (el, delta) => {
     const recording = el.attrs['data-recording'];
     if (!recording) return;
@@ -12,22 +10,22 @@ const moveAndUpdateRecording = (el, delta) => {
     });
 };
 
-export const updateElementStartTime = (element, delta) => {
+export const updateElementStartTime = ({ delta, element, pixelToSecondRatio }) => {
     if (!element) return;
 
     if (element.attrs['data-recording']) {
-        moveAndUpdateRecording(element, delta);
+        moveAndUpdateRecording({ delta, el: element, pixelToSecondRatio });
     } else if (element.attrs['data-overlap-group']) {
         const group = element.attrs['data-overlap-group'];
 
         element.move({ x: delta * pixelToSecondRatio, y: 0 });
         Object.values(group.elements).forEach(({ element: subEl }) => {
-            moveAndUpdateRecording(subEl, delta);
+            moveAndUpdateRecording({ delta, el: subEl, pixelToSecondRatio });
         });
     }
 };
 
-export const getElementsToModify = (selectedValues) => {
+export const getElementsToModify = ({ pixelToSecondRatio, selectedValues }) => {
     if (!Array.isArray(selectedValues)) return [];
     return selectedValues.flatMap(({ element }) => {
         const group = element.attrs['data-overlap-group'];

@@ -1,21 +1,25 @@
 import { get } from 'lodash';
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { Line } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { useRecordingPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
 import { useTrackerAnimation } from './useTrackerAnimation';
 import { useCollisionDetection } from './useTrackerCollisionDetection';
 
 const TimelineTracker = () => {
+    const pixelToSecondRatio = usePixelRatio();
     const trackerRef = useRef();
     const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
         useRecordingPlayerContext();
     const { furthestEndTime, processedItems } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
-    const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
+    const totalDurationInPixels = useMemo(
+        () => furthestEndTime * pixelToSecondRatio,
+        [furthestEndTime, pixelToSecondRatio]
+    );
     const calculatePoints = useMemo(() => [0, 0, 0, window.innerHeight], []);
 
     const { playCollidedElements } = useCollisionDetection(

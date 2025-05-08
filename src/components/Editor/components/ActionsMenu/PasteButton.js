@@ -1,10 +1,10 @@
 // PasteButton.js
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import styled from 'styled-components';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { getElementScreenPosition } from '../../../../globalHelpers/getElementScreenPosition';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { markersAndTrackerOffset } from '../../../../providers/TimelineProvider';
 import { useFillClosestTimelines } from './useFillClosestTimelines';
 import { useFindClosestTimelines } from './useFindClosestTimelines';
@@ -31,6 +31,10 @@ const PreviewOverlay = styled.div`
 `;
 
 const PasteButton = ({ copiedEvents, menuPosition }) => {
+    const pixelToSecondRatio = usePixelRatio();
+
+    console.log('pixelToSecondRatio', pixelToSecondRatio);
+
     const { duplicateEventsToInstrument } = useInstrumentRecordingsOperations();
     const { hideActionsMenu } = useContext(PanelContext);
 
@@ -57,7 +61,14 @@ const PasteButton = ({ copiedEvents, menuPosition }) => {
         });
 
         hideActionsMenu();
-    }, [closestTimelines, copiedEvents, duplicateEventsToInstrument, hideActionsMenu, menuPosition.x]);
+    }, [
+        closestTimelines,
+        copiedEvents,
+        duplicateEventsToInstrument,
+        hideActionsMenu,
+        menuPosition.x,
+        pixelToSecondRatio
+    ]);
 
     const handleKeyDown = useCallback(
         (e) => {
@@ -97,7 +108,7 @@ const PasteButton = ({ copiedEvents, menuPosition }) => {
         });
 
         return previews;
-    }, [baseStartTime, closestTimelines, copiedEvents, menuPosition.y]);
+    }, [baseStartTime, closestTimelines, copiedEvents, menuPosition.y, pixelToSecondRatio]);
 
     return (
         <>

@@ -2,14 +2,15 @@ import { isEqual } from 'lodash';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import { Portal } from '../../../../globalHelpers/Portal';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
+        const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
         const { elements, eventLength, id, isSelected, locked, startTime } = groupData;
