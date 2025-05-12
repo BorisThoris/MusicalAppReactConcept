@@ -7,10 +7,6 @@ const PixelRatioContext = createContext(1);
 export function PixelRatioProvider({ children, durationSec }) {
     const ratio = usePixelToSecondRatio(durationSec);
 
-    console.log('  ');
-    console.log('durationSec', durationSec);
-    console.log('RATIO', ratio);
-
     return <PixelRatioContext.Provider value={ratio}>{children}</PixelRatioContext.Provider>;
 }
 
