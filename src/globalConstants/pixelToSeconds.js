@@ -7,7 +7,3 @@
 export function getPixelToSecondRatio(durationInSeconds) {
     return window.innerWidth / durationInSeconds;
 }
-
-const pixelToSecondRatio = 105;
-
-export default pixelToSecondRatio;

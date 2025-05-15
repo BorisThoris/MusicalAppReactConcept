@@ -11,13 +11,8 @@ import { useCollisionDetection } from './useTrackerCollisionDetection';
 const TimelineTracker = () => {
     const pixelToSecondRatio = usePixelRatio();
     const trackerRef = useRef();
-    const {
-        changePlaybackStatus,
-        mutedInstruments,
-        playbackStatus,
-        setTrackerPosition,
-        trackerPosition: trackerPosPx
-    } = useRecordingPlayerContext();
+    const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
+        useRecordingPlayerContext();
     const { furthestEndTime, processedItems } = useContext(CollisionsContext);
     const { timelineState } = useContext(TimelineContext);
 
