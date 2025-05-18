@@ -67,6 +67,7 @@ const Timelines = memo(() => {
     return (
         <button onClick={handleClick} style={{ all: 'unset', display: 'block', width: '100%' }}>
             <PaintingTopBar />
+
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1}>
                 <Layer ref={topLayerRef} name="top-layer">
                     {recordingsArr.map(([parentGroupName, events], index) => (
@@ -79,10 +80,13 @@ const Timelines = memo(() => {
                         />
                     ))}
                 </Layer>
+
                 <Layer>
                     <TimelineTracker furthestEndTime={playbackStatus.currentInstrument || 0} />
                 </Layer>
+
                 <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
+
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>
         </button>

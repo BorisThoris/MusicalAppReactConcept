@@ -39,18 +39,9 @@ export function PixelRatioProvider({ children, durationSec }) {
 
     // devicePixelRatio (1 on non-retina, 2 on retina, etc.)
     const dpr = typeof window !== 'undefined' ? Konva.pixelRatio : 1;
-    console.log('KONVA KONVA', Konva.pixelRatio);
 
     // multiply once to get device-px per second
     const devicePxPerSec = useMemo(() => cssPxPerSec * dpr, [cssPxPerSec, dpr]);
-
-    console.log('⏱️ pixel ratio (device-px/sec)', {
-        cssPxPerSec,
-        devicePxPerSec,
-        dpr,
-        durationSec,
-        width
-    });
 
     return (
         <PixelRatioContext.Provider value={devicePxPerSec}>

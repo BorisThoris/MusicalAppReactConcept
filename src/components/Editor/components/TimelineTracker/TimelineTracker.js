@@ -78,7 +78,7 @@ const TimelineTracker = () => {
             dragBoundFunc={restrictVerticalMovement}
             points={calculatePoints}
             stroke="red"
-            strokeWidth={10}
+            strokeWidth={5}
             onDragEnd={handleDragEndCallback}
         />
     );

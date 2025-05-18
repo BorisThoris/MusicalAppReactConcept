@@ -90,7 +90,7 @@ const TopNav = ({ duration, onDurationChange }) => {
 
 function App() {
     // State to hold the timeline duration
-    const [duration, setDuration] = useState(60);
+    const [duration, setDuration] = useState(20);
     // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
     const handleDurationChange = (e) => setDuration(Number(e.target.value));
 
