@@ -154,8 +154,9 @@ const SoundEventElement = React.memo(
         const shouldUsePortal = isDragging && !(groupRef && locked);
 
         const selectedRecording = useMemo(() => {
-            return { ...recording, isSelected: shouldSelect };
-        }, [recording, shouldSelect]);
+            const shldSelect = shouldDrag ? shouldSelect : false;
+            return { ...recording, isSelected: shldSelect };
+        }, [recording, shouldDrag, shouldSelect]);
 
         return (
             <Portal selector={portalTarget} enabled={shouldUsePortal} outerRef={portalRef}>
@@ -187,6 +188,7 @@ const SoundEventElement = React.memo(
                         y={0}
                         width={lengthBasedWidth}
                         {...unifiedDynamicStyles}
+                        {...(!shouldDrag ? { fill: 'orange' } : {})}
                         cornerRadius={CONSTANTS.CORNER_RADIUS}
                         shadowOffset={CONSTANTS.SHADOW.OFFSET}
                         shadowOpacity={CONSTANTS.SHADOW.OPACITY}

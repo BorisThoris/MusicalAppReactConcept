@@ -1,9 +1,10 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
@@ -13,9 +14,12 @@ export const GroupElement = React.memo(
         const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { elements, eventLength, id, isSelected, locked, startTime } = groupData;
+        const { isItemSelected } = useContext(SelectionContext);
 
-        // Sort the group events to maintain a consistent order.
+        const { elements, eventLength, id, locked, startTime } = groupData;
+
+        const shouldSelect = isItemSelected(id); // Main group selection
+
         const groupEvents = useMemo(
             () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
             [elements]
@@ -23,7 +27,6 @@ export const GroupElement = React.memo(
 
         const groupLength = groupEvents.length;
 
-        // Toggle the group's locked state.
         const onLockGroup = useCallback(() => {
             if (!groupRef.current) return;
             const prevData = groupRef.current.attrs['data-overlap-group'];
@@ -34,16 +37,11 @@ export const GroupElement = React.memo(
         }, []);
 
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
-
-        // Determine dragging state
         const isDragging = isElementBeingDragged(groupId);
-
-        // Controlled positioning when not dragging
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
-
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-        const isDraggable = isSelected || locked;
+        const isDraggable = shouldSelect || locked;
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
@@ -55,9 +53,9 @@ export const GroupElement = React.memo(
                     data-group-id={groupId}
                     id={groupId}
                     draggable={isDraggable}
-                    onDragStart={isDraggable && handleDragStart}
-                    onDragMove={isDraggable && handleDragMove}
-                    onDragEnd={isDraggable && handleDragEnd}
+                    onDragStart={isDraggable ? handleDragStart : undefined}
+                    onDragMove={isDraggable ? handleDragMove : undefined}
+                    onDragEnd={isDraggable ? handleDragEnd : undefined}
                     {...controlledPositionProps}
                 >
                     <Rect
@@ -65,8 +63,7 @@ export const GroupElement = React.memo(
                         y={0}
                         width={lengthBasedWidth + 100}
                         height={TimelineHeight}
-                        fill={isSelected ? 'red' : 'transparent'}
-                        // Spread our unified dynamic styles.
+                        fill={shouldSelect ? 'red' : 'transparent'}
                     />
 
                     <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
@@ -86,6 +83,7 @@ export const GroupElement = React.memo(
                                 childScale={(index + 1) / groupLength}
                                 groupRef={groupRef}
                                 parentGroupId={groupId}
+                                isSelected={isItemSelected(event.id)}
                             />
                         ))}
                     </Group>

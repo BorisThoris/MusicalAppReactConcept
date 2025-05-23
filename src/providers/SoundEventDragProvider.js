@@ -4,7 +4,6 @@ import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from './SelectionsProvider';
 
-// @ts-ignore
 export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
@@ -12,46 +11,64 @@ export const SoundEventDragProvider = ({ children }) => {
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { selectedItems } = useContext(SelectionContext);
 
-    // Convert selectedItems to raw IDs array
-    const selectedElementIds = useMemo(
-        () =>
-            Object.values(selectedItems).map(({ element, id }) => {
-                const isGroup = element.attrs['data-overlap-group'];
-                const prefix = isGroup ? GROUP_ELEMENT_ID_PREFIX : ELEMENT_ID_PREFIX;
-                const computedType = isGroup ? 'group' : 'element';
+    function extractElementIdsFromGroup(groupElm, targetId) {
+        console.log('here');
 
-                return { id: `${prefix}${id}`, type: computedType };
-            }),
-        [selectedItems]
-    );
+        const chl = Object.values(groupElm.elements)
+            .filter((child) => targetId === child.id)
+            .map((child) => child.id);
 
-    // Refs for drag state
+        return chl;
+    }
+
+    const selectedElementIds = useMemo(() => {
+        const result = [];
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const { element, id } of Object.values(selectedItems)) {
+            const isGroup = element?.attrs?.['data-overlap-group'];
+
+            if (isGroup) {
+                const groupString = element?.attrs?.['data-overlap-group'];
+                const childrenIds = extractElementIdsFromGroup(groupString, id);
+                childrenIds.forEach((childId) =>
+                    result.push({ id: `${ELEMENT_ID_PREFIX}${childId}`, type: 'element' })
+                );
+
+                result.push({ id: `${GROUP_ELEMENT_ID_PREFIX}${id}`, type: 'group' });
+            } else {
+                result.push({ id: `${ELEMENT_ID_PREFIX}${id}`, type: 'element' });
+            }
+        }
+
+        return result;
+    }, [selectedItems]);
+
+    console.log('selectedElementIds', selectedElementIds);
+
     const initialXRef = useRef(null);
     const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
     const initialPositionsRef = useRef(new Map());
 
-    // Utility to update Konva attrs
     const forceUpdatePosition = useCallback((el) => {
         el.setAttrs({ x: el.x(), y: el.y() });
     }, []);
 
-    // Highlight helpers omitted for brevity...
     const applyHighlightToTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('yellow');
             timeline.getLayer().draw();
         }
     };
+
     const removeHighlightFromTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('white');
             timeline.getLayer().draw();
         }
     };
-
-    // Find closest timeline events/rects omitted for brevity...
 
     const findClosestTimelineEvents = useCallback(
         (element) => {
@@ -112,27 +129,20 @@ export const SoundEventDragProvider = ({ children }) => {
                 const start = designatedStartTime ?? element.x() / pixelToSecondRatio;
                 const rec = { ...element.attrs['data-recording'] };
                 const end = start + rec.eventLength;
-
                 if (rec.startTime === start && rec.endTime === end) return;
-
                 element.setAttr('data-recording', { ...rec, endTime: end, startTime: start });
             } else if (element.attrs['data-overlap-group']) {
                 const grp = { ...element.attrs['data-overlap-group'] };
                 const newGroupStart = designatedStartTime ?? element.x() / pixelToSecondRatio;
                 const offset = newGroupStart - grp.startTime;
-
                 grp.startTime = newGroupStart;
                 grp.endTime = newGroupStart + grp.length;
-
                 element.setAttr('data-overlap-group', grp);
-
                 Object.values(grp.elements).forEach((child) => {
                     const currentChildStart =
                         child.element.attrs['data-recording']?.startTime ?? child.element.x() / pixelToSecondRatio;
                     const newChildStart = currentChildStart + offset;
-
                     updateStartTimeForElement({ designatedStartTime: newChildStart, element: child.element });
-
                     const tl = findClosestTimelineEvents(child.element);
                     insertElementIntoTimeline({ closestTimeline: tl, element: child.element });
                 });
@@ -144,11 +154,13 @@ export const SoundEventDragProvider = ({ children }) => {
     const processSelectedElements = useCallback(
         (stage, action) => {
             selectedElementIds.forEach(({ id }) => {
-                const element = stage.findOne((currentNode) => {
-                    return currentNode.attrs.id === id;
-                });
-
-                if (element) action(element);
+                const element = stage.findOne((n) => n.attrs.id === id);
+                if (!element) {
+                    console.warn(`⚠️ Element not found for ID: ${id}`);
+                } else {
+                    console.log('Element found:', element);
+                    action(element);
+                }
             });
         },
         [selectedElementIds]
@@ -181,14 +193,10 @@ export const SoundEventDragProvider = ({ children }) => {
             currentYRef.current = event.evt.y;
 
             const stage = stageRef;
-            // If not dragging a group, capture all selected elements; otherwise capture only the group
-            if (!isGroupDrag) {
-                processSelectedElements(stage, (element) => {
-                    initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
-                });
-            } else {
-                initialPositionsRef.current.set(event.target.attrs.id, { x: event.target.x(), y: event.target.y() });
-            }
+
+            processSelectedElements(stage, (element) => {
+                initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
+            });
 
             // Prepare dragging state
             const newDragging = {};
@@ -206,7 +214,6 @@ export const SoundEventDragProvider = ({ children }) => {
         },
         [stageRef, processSelectedElements, selectedElementIds, setDragging]
     );
-
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
@@ -226,17 +233,21 @@ export const SoundEventDragProvider = ({ children }) => {
                 const newHighlights = new Set();
                 const mover = (element) => {
                     const init = initialPositionsRef.current.get(element.attrs.id);
-                    if (init) element.setAttr('x', init.x + totalDX);
+                    if (init) {
+                        element.setAttr('x', init.x + totalDX);
+                    }
+
                     element.move({ y: dY });
                     forceUpdatePosition(element);
+
                     const tl = findClosestTimelineRect(element);
-                    if (tl) newHighlights.add(tl);
+                    if (tl) {
+                        newHighlights.add(tl);
+                    }
                 };
 
                 // If dragging a group, only move the group; otherwise move selected items
-                if (isGroup) {
-                    mover(e.target);
-                } else if (selectedElementIds.length) {
+                if (selectedElementIds.length) {
                     processSelectedElements(stageRef, mover);
                 } else {
                     mover(e.target);
@@ -265,12 +276,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const handleDragEnd = useCallback(
         (e) => {
-            const idAttr = e.target.attrs.id || '';
-            const isGroup = idAttr.startsWith(GROUP_ELEMENT_ID_PREFIX);
-
-            if (isGroup) {
-                finalizeDrag(e.target);
-            } else if (selectedElementIds.length) {
+            if (selectedElementIds.length) {
                 processSelectedElements(stageRef, finalizeDrag);
             } else {
                 finalizeDrag(e.target);
