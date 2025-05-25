@@ -1,17 +1,20 @@
 // SoundEventElement.jsx
 // @ts-nocheck
+
+// External Libraries
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Rect, Text } from 'react-konva';
-// External/Internal Dependencies
+// Internal Dependencies
 import { ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
+// Component-specific Hooks
 import { Lock } from '../Lock/Lock';
 import { useCursorEffects } from './hooks/useCursorEffects';
 import { useUnifiedDynamicStyles } from './hooks/useDynamicStyles';
@@ -21,39 +24,24 @@ import { useClickHandlers } from './useEventClickHandlers';
 // Constants
 const CONSTANTS = {
     CORNER_RADIUS: 5,
-    GRADIENT_END: { x: 100, y: 0 },
-    GRADIENT_START: { x: 0, y: 0 },
-    LOCK_OFFSET_Y: -10,
-    SHADOW: { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 },
-    STROKE_WIDTH: 2,
-    TEXT_FONT_SIZE: 18,
+    SHADOW: {
+        BLUR: 5,
+        OFFSET: { x: 8, y: 5 },
+        OPACITY: 0.5
+    },
     TEXT_STYLE: {
         fill: 'black',
-        fontSize: 15,
-        x: 5,
-        y: 15
+        fontSize: 15
     },
     TRANSPARENCY_VALUE: 0.8
 };
 
-// Helper function for comparing props
+// Utility: Compare props to avoid unnecessary rerenders
 const areEqual = (prevProps, nextProps) => {
-    const equal = isEqual(prevProps, nextProps);
-    // Uncomment below for detailed logging when props change:
-    // if (!equal) {
-    //   Object.keys(prevProps).forEach((key) => {
-    //     if (!isEqual(prevProps[key], nextProps[key])) {
-    //       console.log(`Prop '${key}' changed:`, {
-    //         next: nextProps[key],
-    //         prev: prevProps[key]
-    //       });
-    //     }
-    //   });
-    // }
-    return equal;
+    return isEqual(prevProps, nextProps);
 };
 
-// Main Component Definition
+// Main Component
 const SoundEventElement = React.memo(
     ({
         childScale,
@@ -70,8 +58,6 @@ const SoundEventElement = React.memo(
         timelineY
     }) => {
         const pixelToSecondRatio = usePixelRatio();
-
-        // Destructure recording properties
         const { eventLength, id, locked, name, startTime } = recording;
 
         // Refs
@@ -79,7 +65,7 @@ const SoundEventElement = React.memo(
         const elementRef = useRef();
         const portalRef = useRef(null);
 
-        // State for z-index management
+        // State
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
@@ -87,14 +73,11 @@ const SoundEventElement = React.memo(
         const { timelineState } = useContext(TimelineContext);
         const { getGroupById } = useContext(CollisionsContext);
 
-        // Retrieve parent group data if it exists
         const parent = getGroupById(parentGroupId);
         const parentData = groupRef?.current?.attrs['data-overlap-group'];
 
-        // Use our custom focus hook
+        // Hooks
         const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(id);
-
-        // Use the click hook for all click-related behaviors.
         const { handleClick, handleContextMenu, handleDelete, handleDoubleClick, handleLock } = useClickHandlers({
             elementContainerRef,
             parent,
@@ -103,22 +86,16 @@ const SoundEventElement = React.memo(
         });
 
         const isSelected = isItemSelected(id);
-
-        const shouldSelect = isSelected;
-
-        // Get the unified dynamic styles.
-        // This hook unifies both the focus/selection based styles and the layout-based styles.
         const unifiedDynamicStyles = useUnifiedDynamicStyles({
             childScale,
             groupRef,
             isFocused,
-            isSelected: shouldSelect,
+            isSelected,
             timelineHeight
         });
         const { withCursor } = useCursorEffects();
 
-        const lengthBasedWidth = eventLength * pixelToSecondRatio;
-
+        // Cursor & Drag Handlers
         const handleMouseEnterWithCursor = withCursor('pointer', handleMouseEnter);
         const handleMouseLeaveWithCursor = withCursor('default', restoreZIndex);
         const handleDragStartWithCursor = withCursor('grabbing', handleDragStart);
@@ -127,27 +104,35 @@ const SoundEventElement = React.memo(
 
         const formattedId = `${ELEMENT_ID_PREFIX}${id}`;
         const isDragging = isElementBeingDragged(formattedId);
-
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
-
         const isNotInGroup = !groupRef;
+        const portalTarget = '.top-layer';
+        const shouldDrag = !parentData?.locked && !parentData?.isSelected;
+        const shouldUsePortal = isDragging && !(groupRef && locked);
+        const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
+        const selectedRecording = useMemo(() => {
+            const allowSelect = shouldDrag ? isSelected : false;
+            return { ...recording, isSelected: allowSelect };
+        }, [recording, shouldDrag, isSelected]);
+
+        // Effects
+
+        // Sync selected item data
         useEffect(() => {
             const existing = selectedItems[id];
-
-            if (!elementContainerRef.current || !existing) {
-                return;
-            }
+            if (!elementContainerRef.current || !existing) return;
 
             updateSelectedItemById(id, {
                 element: elementContainerRef.current,
-                eventLength: recording.eventLength,
-                locked: recording.locked,
-                name: recording.name,
-                startTime: recording.startTime
+                eventLength,
+                locked,
+                name,
+                startTime
             });
-        }, [id, recording, updateSelectedItemById, selectedItems]);
+        }, [id, recording, updateSelectedItemById, selectedItems, eventLength, locked, name, startTime]);
 
+        // Track zIndex and restore
         useEffect(() => {
             if (portalRef.current && !isFocused) {
                 const currentZIndex = portalRef.current.zIndex();
@@ -165,15 +150,7 @@ const SoundEventElement = React.memo(
             }
         }, [isFocused]);
 
-        const portalTarget = '.top-layer';
-        const shouldDrag = !parentData?.locked && !parentData?.isSelected;
-        const shouldUsePortal = isDragging && !(groupRef && locked);
-
-        const selectedRecording = useMemo(() => {
-            const shldSelect = shouldDrag ? shouldSelect : false;
-            return { ...recording, isSelected: shldSelect };
-        }, [recording, shouldDrag, shouldSelect]);
-
+        // JSX
         return (
             <Portal selector={portalTarget} enabled={shouldUsePortal} outerRef={portalRef}>
                 <Group
@@ -242,6 +219,7 @@ const SoundEventElement = React.memo(
     areEqual
 );
 
+// Prop Types
 SoundEventElement.propTypes = {
     childScale: PropTypes.number.isRequired,
     groupRef: PropTypes.bool,
@@ -264,6 +242,7 @@ SoundEventElement.propTypes = {
     timelineY: PropTypes.number.isRequired
 };
 
+// Default Props
 SoundEventElement.defaultProps = {
     groupRef: false,
     parentGroupId: null
