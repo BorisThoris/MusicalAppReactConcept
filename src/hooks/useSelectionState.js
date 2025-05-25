@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
@@ -115,17 +116,19 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const updateSelectedItemById = useCallback((id, updates) => {
         setSelectedItems((prevSelectedValues) => {
-            if (!prevSelectedValues[id]) return prevSelectedValues;
+            const existing = prevSelectedValues[id];
+            if (!existing) return prevSelectedValues;
+
+            const merged = { ...existing, ...updates };
+
+            if (isEqual(existing, merged)) return prevSelectedValues; // 🚫 no-op if same
+
             return {
                 ...prevSelectedValues,
-                [id]: {
-                    ...prevSelectedValues[id],
-                    ...updates
-                }
+                [id]: merged
             };
         });
     }, []);
-
     const memoizedSelectedItems = useMemo(() => {
         return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
     }, [selectedItems]);

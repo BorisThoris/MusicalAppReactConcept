@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import { Portal } from '../../../../globalHelpers/Portal';
@@ -14,7 +14,7 @@ export const GroupElement = React.memo(
         const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { isItemSelected } = useContext(SelectionContext);
+        const { isItemSelected, selectedItems, updateSelectedItemById } = useContext(SelectionContext);
 
         const { elements, eventLength, id, locked, startTime } = groupData;
 
@@ -42,6 +42,23 @@ export const GroupElement = React.memo(
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
         const isDraggable = shouldSelect || locked;
+
+        useEffect(() => {
+            if (!groupRef.current) return;
+            if (!shouldSelect) return;
+
+            const existing = selectedItems[id];
+            const newData = {
+                element: groupRef.current,
+                eventLength,
+                locked,
+                startTime
+            };
+
+            if (!existing || !isEqual(existing, { ...existing, ...newData })) {
+                updateSelectedItemById(id, newData);
+            }
+        }, [shouldSelect, id, selectedItems, updateSelectedItemById, startTime, eventLength, locked]);
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>

@@ -83,7 +83,7 @@ const SoundEventElement = React.memo(
         const [originalZIndex, setOriginalZIndex] = useState(null);
 
         // Contexts
-        const { isItemSelected, toggleItem } = useContext(SelectionContext);
+        const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
         const { timelineState } = useContext(TimelineContext);
         const { getGroupById } = useContext(CollisionsContext);
 
@@ -131,6 +131,22 @@ const SoundEventElement = React.memo(
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         const isNotInGroup = !groupRef;
+
+        useEffect(() => {
+            const existing = selectedItems[id];
+
+            if (!elementContainerRef.current || !existing) {
+                return;
+            }
+
+            updateSelectedItemById(id, {
+                element: elementContainerRef.current,
+                eventLength: recording.eventLength,
+                locked: recording.locked,
+                name: recording.name,
+                startTime: recording.startTime
+            });
+        }, [id, recording, updateSelectedItemById, selectedItems]);
 
         useEffect(() => {
             if (portalRef.current && !isFocused) {
