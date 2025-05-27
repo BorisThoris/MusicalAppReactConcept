@@ -47,7 +47,6 @@ export const GroupElement = React.memo(
             if (!groupRef.current) return;
             if (!shouldSelect) return;
 
-            const existing = selectedItems[id];
             const newData = {
                 element: groupRef.current,
                 eventLength,
@@ -55,9 +54,7 @@ export const GroupElement = React.memo(
                 startTime
             };
 
-            if (!existing || !isEqual(existing, { ...existing, ...newData })) {
-                updateSelectedItemById(id, newData);
-            }
+            updateSelectedItemById({ id, shouldSelect, updates: newData });
         }, [shouldSelect, id, selectedItems, updateSelectedItemById, startTime, eventLength, locked]);
 
         return (
@@ -73,6 +70,7 @@ export const GroupElement = React.memo(
                     onDragStart={isDraggable ? handleDragStart : undefined}
                     onDragMove={isDraggable ? handleDragMove : undefined}
                     onDragEnd={isDraggable ? handleDragEnd : undefined}
+                    isSelected={shouldSelect}
                     {...controlledPositionProps}
                 >
                     <Rect
@@ -100,7 +98,6 @@ export const GroupElement = React.memo(
                                 childScale={(index + 1) / groupLength}
                                 groupRef={groupRef}
                                 parentGroupId={groupId}
-                                isSelected={isItemSelected(event.id)}
                             />
                         ))}
                     </Group>

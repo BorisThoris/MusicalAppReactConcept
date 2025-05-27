@@ -123,14 +123,32 @@ const SoundEventElement = React.memo(
             const existing = selectedItems[id];
             if (!elementContainerRef.current || !existing) return;
 
-            updateSelectedItemById(id, {
+            console.log('updated selected item');
+
+            const updates = {
                 element: elementContainerRef.current,
                 eventLength,
                 locked,
                 name,
                 startTime
+            };
+
+            updateSelectedItemById({
+                id,
+                isSelected: selectedRecording.isSelected,
+                updates: selectedRecording
             });
-        }, [id, recording, updateSelectedItemById, selectedItems, eventLength, locked, name, startTime]);
+        }, [
+            id,
+            recording,
+            updateSelectedItemById,
+            selectedItems,
+            eventLength,
+            locked,
+            name,
+            startTime,
+            selectedRecording
+        ]);
 
         // Track zIndex and restore
         useEffect(() => {

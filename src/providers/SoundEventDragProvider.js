@@ -44,8 +44,6 @@ export const SoundEventDragProvider = ({ children }) => {
         return result;
     }, [selectedItems]);
 
-    console.log('selectedElementIds', selectedElementIds);
-
     const initialXRef = useRef(null);
     const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
@@ -158,7 +156,6 @@ export const SoundEventDragProvider = ({ children }) => {
                 if (!element) {
                     console.warn(`⚠️ Element not found for ID: ${id}`);
                 } else {
-                    console.log('Element found:', element);
                     action(element);
                 }
             });

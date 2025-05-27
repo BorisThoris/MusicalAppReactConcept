@@ -104,6 +104,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const deleteSelections = useCallback((selectedEvents) => {
         const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
+
         setSelectedItems((prevSelectedItems) => {
             const updatedSelectedItems = { ...prevSelectedItems };
             eventsArray.forEach(({ element, id }) => {
@@ -114,14 +115,22 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
         });
     }, []);
 
-    const updateSelectedItemById = useCallback((id, updates) => {
+    const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
         setSelectedItems((prevSelectedValues) => {
             const existing = prevSelectedValues[id];
             if (!existing) return prevSelectedValues;
 
             const merged = { ...existing, ...updates };
 
-            if (isEqual(existing, merged)) return prevSelectedValues; // 🚫 no-op if same
+            if (isEqual(existing, merged)) {
+                return prevSelectedValues;
+            }
+
+            if (isSelected === false) {
+                // @ts-ignore
+                const { [id]: _, ...rest } = prevSelectedValues;
+                return rest;
+            }
 
             return {
                 ...prevSelectedValues,
@@ -129,6 +138,7 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
             };
         });
     }, []);
+
     const memoizedSelectedItems = useMemo(() => {
         return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
     }, [selectedItems]);
