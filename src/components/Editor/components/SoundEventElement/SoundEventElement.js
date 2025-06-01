@@ -80,6 +80,7 @@ const SoundEventElement = React.memo((props) => {
         groupRef,
         isFocused,
         isSelected,
+        shouldDrag,
         timelineHeight
     });
     const { withCursor } = useCursorEffects();
@@ -140,7 +141,7 @@ const SoundEventElement = React.memo((props) => {
                     shadowOpacity={SHADOW.OPACITY}
                     opacity={OPACITY}
                     {...unifiedDynamicStyles}
-                    {...(!shouldDrag && { fill: 'orange' })}
+                    // {...(!shouldDrag && { fill: 'orange' })}
                     onMouseEnter={withCursor('pointer', handleMouseEnter)}
                     onMouseLeave={withCursor('default', restoreZIndex)}
                 />

@@ -36,36 +36,41 @@ function getDynamicFill({ isFocused, isSelected }) {
  * @param {boolean} params.isFocused - Whether the element is focused.
  * @param {boolean} params.isSelected - Whether the element is selected.
  * @param {boolean} params.groupRef - Indicates if the element is part of a group.
+ * @param {boolean} params.shouldDrag - Indicates if the element is being dragged.
  * @param {number} params.childScale - Scaling factor for elements in a group.
  * @param {number} params.timelineHeight - Base timeline height.
  *
  * @returns {Object} A style object with unified dynamic properties.
  */
-export const useUnifiedDynamicStyles = ({ childScale, groupRef, isFocused, isSelected, timelineHeight }) => {
-    // These values come from focus/selection and are analogous to your previous dynamic values.
-    const dynamicFill = getDynamicFill({ isFocused, isSelected });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const dynamicColorStops = [0, 'red', 1, 'yellow']; // You can enhance this logic if necessary.
-    const dynamicShadowBlur = 5;
+export const useUnifiedDynamicStyles = ({
+    childScale,
+    groupRef,
+    isFocused,
+    isSelected,
+    shouldDrag,
+    timelineHeight
+}) => {
+    const height = groupRef ? timelineHeight * childScale : timelineHeight;
+    const stroke = groupRef ? 'blue' : 'black';
+    const strokeWidth = groupRef ? 4 : 2;
 
-    return useMemo(() => {
-        // Determine height based on whether the element is part of a group.
-        const height = groupRef ? timelineHeight * childScale : timelineHeight;
-        // Define border styling differently depending on group context.
-        const stroke = groupRef ? 'blue' : 'black';
-        const strokeWidth = groupRef ? 4 : 2;
+    // Priority: isSelected > isFocused > !shouldDrag > default
+    let fill = 'red';
+    if (isSelected) fill = 'blue';
+    else if (isFocused) fill = 'green';
+    else if (!shouldDrag) fill = 'orange';
 
-        return {
-            // Dynamic styling from focus/selection.
-            fill: dynamicFill,
-            fillLinearGradientColorStops: dynamicColorStops,
-            fillLinearGradientEndPoint: CONSTANTS.GRADIENT_END,
-            fillLinearGradientStartPoint: CONSTANTS.GRADIENT_START,
-            // Layout based on group membership.
+    return useMemo(
+        () => ({
+            fill,
+            fillLinearGradientColorStops: [0, 'red', 1, 'yellow'],
+            fillLinearGradientEndPoint: { x: 100, y: 0 },
+            fillLinearGradientStartPoint: { x: 0, y: 0 },
             height,
-            shadowBlur: dynamicShadowBlur,
+            shadowBlur: 5,
             stroke,
             strokeWidth
-        };
-    }, [groupRef, childScale, timelineHeight, dynamicFill, dynamicColorStops, dynamicShadowBlur]);
+        }),
+        [fill, height, stroke, strokeWidth]
+    );
 };
