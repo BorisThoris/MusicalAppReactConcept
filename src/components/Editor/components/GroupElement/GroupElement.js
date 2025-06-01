@@ -87,7 +87,7 @@ export const GroupElement = React.memo(
                         fill={isSelected ? 'red' : 'transparent'}
                     /> */}
 
-                    <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
+                    {/* <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} /> */}
 
                     <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (
