@@ -14,11 +14,11 @@ export const GroupElement = React.memo(
         const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { isItemSelected, selectedItems, updateSelectedItemById } = useContext(SelectionContext);
+        const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
 
         const { elements, eventLength, id, locked, startTime } = groupData;
 
-        const shouldSelect = isItemSelected(id); // Main group selection
+        const isSelected = isItemSelected(id); // Main group selection
 
         const groupEvents = useMemo(
             () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
@@ -27,7 +27,9 @@ export const GroupElement = React.memo(
 
         const groupLength = groupEvents.length;
 
-        const onLockGroup = useCallback(() => {
+        const onLockGroup = useCallback((e) => {
+            e.cancelBubble = true;
+
             if (!groupRef.current) return;
             const prevData = groupRef.current.attrs['data-overlap-group'];
             groupRef.current.setAttrs({
@@ -41,28 +43,33 @@ export const GroupElement = React.memo(
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
         const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
-        const isDraggable = shouldSelect || locked;
+        const isDraggable = isSelected || locked;
+        const shouldSelect = isDraggable;
+
+        const selectedGroup = useMemo(() => ({ ...groupData, isSelected: shouldSelect }), [groupData, shouldSelect]);
 
         useEffect(() => {
             if (!groupRef.current) return;
-            if (!shouldSelect) return;
 
-            const newData = {
-                element: groupRef.current,
-                eventLength,
-                locked,
-                startTime
-            };
-
-            updateSelectedItemById({ id, shouldSelect, updates: newData });
-        }, [shouldSelect, id, selectedItems, updateSelectedItemById, startTime, eventLength, locked]);
+            updateSelectedItemById({ id, isSelected: selectedGroup.isSelected, updates: selectedGroup });
+        }, [
+            isSelected,
+            id,
+            selectedItems,
+            updateSelectedItemById,
+            startTime,
+            eventLength,
+            locked,
+            selectedGroup,
+            toggleItem
+        ]);
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
                     y={isDragging ? timelineY : 0}
                     ref={groupRef}
-                    data-overlap-group={groupData}
+                    data-overlap-group={selectedGroup}
                     name={groupId}
                     data-group-id={groupId}
                     id={groupId}
@@ -78,7 +85,7 @@ export const GroupElement = React.memo(
                         y={0}
                         width={lengthBasedWidth + 100}
                         height={TimelineHeight}
-                        fill={shouldSelect ? 'red' : 'transparent'}
+                        fill={isSelected ? 'red' : 'transparent'}
                     />
 
                     <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />

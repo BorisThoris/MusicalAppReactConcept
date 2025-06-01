@@ -84,8 +84,6 @@ const SoundEventElement = React.memo((props) => {
     });
     const { withCursor } = useCursorEffects();
 
-    console.log('parentData', parentData);
-
     const selectedRecording = useMemo(
         () => ({ ...recording, isSelected: shouldDrag ? isSelected : false }),
         [recording, shouldDrag, isSelected]
@@ -94,8 +92,9 @@ const SoundEventElement = React.memo((props) => {
     useEffect(() => {
         const existing = selectedItems[id];
         if (!containerRef.current || !existing) return;
+
         updateSelectedItemById({ id, isSelected: selectedRecording.isSelected, updates: selectedRecording });
-    }, [id, selectedItems, updateSelectedItemById, selectedRecording]);
+    }, [id, selectedItems, updateSelectedItemById, selectedRecording, parentData]);
 
     useEffect(() => {
         if (portalRef.current && !isFocused) {
@@ -147,8 +146,11 @@ const SoundEventElement = React.memo((props) => {
                 />
                 <Text x={5} y={5} text={name} {...TEXT_STYLE} />
                 <Text x={5} y={25} text={`${id}`} {...TEXT_STYLE} />
+
                 {notInGroup && <Lock isLocked={locked} onClick={handleLock} />}
+
                 <Circle x={width - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
+
                 {parentGroupId && (
                     <Text x={5} y={45 + index * 20} text={`Parent Group ID ${parentGroupId}`} {...TEXT_STYLE} />
                 )}

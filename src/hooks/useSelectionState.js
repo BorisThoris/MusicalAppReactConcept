@@ -6,36 +6,31 @@ import { useTimeRange } from './useTimeRange';
 const EMPTY_SELECTION = {};
 
 function getRecordingData(item) {
-    return item.element?.getAttr('data-recording') || item.element?.getAttr('data-overlap-group');
+    // Safety: ensure item and element exist, with getAttr method
+    const attrFn = item?.element?.getAttr;
+    if (typeof attrFn !== 'function') {
+        return null;
+    }
+    return item.element.getAttr('data-recording') ?? item.element.getAttr('data-overlap-group');
 }
 
-export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { processedItems } = useContext(CollisionsContext);
+export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
+    const { processedItems = [] } = useContext(CollisionsContext) || {};
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    const setSelectionBasedOnCoordinates = useCallback(
-        ({ intersectedElements, yLevel }) => {
-            setSelectedItems((prevSelectedItems) => {
-                const newSelectedItems = intersectedElements.reduce((acc, element) => {
-                    acc[element.id] = { ...element };
-                    return acc;
-                }, {});
-
-                const currentIds = Object.keys(prevSelectedItems);
-                const newIds = Object.keys(newSelectedItems);
-                const hasChanged = currentIds.length !== newIds.length || currentIds.some((id) => !newIds.includes(id));
-
-                if (hasChanged) {
-                    setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
-                    return newSelectedItems;
-                }
-                return prevSelectedItems;
-            });
-        },
-        [markersAndTrackerOffset]
-    );
+    // Map group IDs to their child element IDs
+    const groupMembership = useMemo(() => {
+        const map = {};
+        processedItems.forEach((item) => {
+            const rec = getRecordingData(item);
+            if (rec && rec.id && rec.elements && typeof rec.elements === 'object') {
+                map[rec.id] = Object.keys(rec.elements);
+            }
+        });
+        return map;
+    }, [processedItems]);
 
     const clearSelection = useCallback(() => {
         setSelectedItems({});
@@ -43,105 +38,109 @@ export const useSelectionState = ({ markersAndTrackerOffset }) => {
 
     const toggleItem = useCallback(
         (input) => {
-            // normalize to array
-            const itemsToToggle = Array.isArray(input) ? input : [input];
-            const toggledNodes = [];
+            const items = Array.isArray(input) ? input : [input];
+            const ids = items.map((i) => i?.id).filter(Boolean);
+            if (!ids.length) {
+                return;
+            }
 
-            setSelectedItems((prevSelectedItems) => {
-                const newSelectedItems = { ...prevSelectedItems };
+            setSelectedItems((prev) => {
+                const next = { ...prev };
 
-                itemsToToggle.forEach(({ id }) => {
-                    // find the container whose recData contains our id
-                    const container = processedItems.find((item) => {
-                        const recData = getRecordingData(item);
-                        if (!recData) return false;
-                        if (recData.id === id) return true;
-                        return Boolean(recData.elements && recData.elements[id]);
-                    });
-                    if (!container) return;
+                ids.forEach((id) => {
+                    const children = groupMembership[id];
 
-                    const recData = getRecordingData(container);
-                    let entryData;
-                    let node;
-
-                    if (recData.id === id) {
-                        // top-level match
-                        entryData = recData;
-                        node = container.element;
+                    if (children) {
+                        // Group toggle
+                        if (next[id]) {
+                            delete next[id];
+                        } else {
+                            // remove children, select group
+                            children.forEach((cid) => delete next[cid]);
+                            const container = processedItems.find((it) => getRecordingData(it)?.id === id);
+                            const recData = getRecordingData(container) || {};
+                            next[id] = { ...recData, element: container?.element };
+                        }
                     } else {
-                        // child match
-                        entryData = recData.elements[id];
-                        // assume each child node has attrs.id = "element-<id>"
-                        node = container.element.findOne(`#element-${id}`) || container.element;
-                    }
+                        // Child toggle
+                        if (next[id]) {
+                            delete next[id];
+                        } else {
+                            const container = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
+                            const rec = getRecordingData(container) || {};
+                            const child = rec.elements?.[id] || {};
+                            const node = container?.element?.findOne?.(`#element-${id}`) ?? container?.element;
+                            next[id] = { ...child, element: node };
+                        }
 
-                    // toggle selection
-                    if (newSelectedItems[id]) {
-                        toggledNodes.push(newSelectedItems[id].element);
-                        delete newSelectedItems[id];
-                    } else {
-                        newSelectedItems[id] = {
-                            ...entryData,
-                            element: node
-                        };
-                        toggledNodes.push(node);
+                        // Sync parent
+                        const parentItem = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
+                        const parentRec = getRecordingData(parentItem);
+                        if (parentRec?.id) {
+                            const siblings = groupMembership[parentRec.id] || [];
+                            const allSelected = siblings.every((cid) => Boolean(next[cid]));
+
+                            if (allSelected) {
+                                siblings.forEach((cid) => delete next[cid]);
+                                next[parentRec.id] = { ...parentRec, element: parentItem?.element };
+                            } else {
+                                delete next[parentRec.id];
+                            }
+                        }
                     }
                 });
 
-                return newSelectedItems;
-            });
-
-            // redraw only the layers we touched
-            toggledNodes.forEach((node) => {
-                const layer = node.getLayer();
-                if (layer) layer.batchDraw();
+                return next;
             });
         },
-        [processedItems]
+        [processedItems, groupMembership]
     );
 
-    const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
+    const setSelectionBasedOnCoordinates = useCallback(
+        ({ intersectedElements, yLevel }) => {
+            if (!intersectedElements) return;
+            clearSelection();
+            setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
+            toggleItem(intersectedElements);
+        },
+        [markersAndTrackerOffset, clearSelection, toggleItem]
+    );
 
-    const deleteSelections = useCallback((selectedEvents) => {
-        const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
-
-        setSelectedItems((prevSelectedItems) => {
-            const updatedSelectedItems = { ...prevSelectedItems };
-            eventsArray.forEach(({ element, id }) => {
-                delete updatedSelectedItems[id];
-                element.destroy();
+    const deleteSelections = useCallback((events) => {
+        const arr = Array.isArray(events) ? events : [events];
+        setSelectedItems((prev) => {
+            const next = { ...prev };
+            arr.forEach(({ element, id }) => {
+                if (id in next) {
+                    delete next[id];
+                }
+                if (element?.destroy) {
+                    element.destroy();
+                }
             });
-            return updatedSelectedItems;
+            return next;
         });
     }, []);
+
+    const isItemSelected = useCallback((id) => Boolean(selectedItems[id]), [selectedItems]);
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
-        setSelectedItems((prevSelectedValues) => {
-            const existing = prevSelectedValues[id];
-            if (!existing) return prevSelectedValues;
-
+        setSelectedItems((prev) => {
+            const existing = prev[id];
+            if (!existing) return prev;
             const merged = { ...existing, ...updates };
-
             if (isEqual(existing, merged)) {
-                return prevSelectedValues;
+                return prev;
             }
-
             if (isSelected === false) {
-                // @ts-ignore
-                const { [id]: _, ...rest } = prevSelectedValues;
+                const { [id]: _, ...rest } = prev;
                 return rest;
             }
-
-            return {
-                ...prevSelectedValues,
-                [id]: merged
-            };
+            return { ...prev, [id]: merged };
         });
     }, []);
 
-    const memoizedSelectedItems = useMemo(() => {
-        return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
-    }, [selectedItems]);
+    const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 
     return {
         clearSelection,

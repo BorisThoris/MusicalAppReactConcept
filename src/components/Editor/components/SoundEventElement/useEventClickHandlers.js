@@ -33,17 +33,22 @@ export const useClickHandlers = ({ elementContainerRef, parent, recording, toggl
     }, [elementContainerRef]);
 
     // Toggle the locked state for the sound event element.
-    const handleLock = useCallback(() => {
-        if (elementContainerRef.current) {
-            const prevData = elementContainerRef.current.attrs['data-recording'];
-            const updatedState = { ...prevData, locked: !prevData.locked };
+    const handleLock = useCallback(
+        (e) => {
+            e.cancelBubble = true;
 
-            elementContainerRef.current.setAttrs({
-                'data-recording': updatedState
-            });
-            elementContainerRef.current.getLayer().draw();
-        }
-    }, [elementContainerRef]);
+            if (elementContainerRef.current) {
+                const prevData = elementContainerRef.current.attrs['data-recording'];
+                const updatedState = { ...prevData, locked: !prevData.locked };
+
+                elementContainerRef.current.setAttrs({
+                    'data-recording': updatedState
+                });
+                elementContainerRef.current.getLayer().draw();
+            }
+        },
+        [elementContainerRef]
+    );
 
     // Prevent default context menu on right-click.
     const handleContextMenu = useCallback((evt) => {
