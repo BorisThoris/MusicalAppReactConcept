@@ -1,37 +1,48 @@
-const moveAndUpdateRecording = (el, delta) => {
-    const recording = el.attrs['data-recording'];
-    if (!recording) return;
+const moveElementX = (el, deltaX) => {
+    if (el?.move) el.move({ x: deltaX, y: 0 });
+};
 
-    el.move({ x: delta * pixelToSecondRatio, y: 0 });
-    el.setAttr('data-recording', {
+const updateRecordingTimes = (recording, delta) => {
+    return {
         ...recording,
         endTime: recording.endTime + delta,
         startTime: recording.startTime + delta
-    });
+    };
+};
+
+const moveAndUpdateRecording = ({ delta, el, pixelToSecondRatio }) => {
+    const recording = el?.attrs?.['data-recording'];
+    if (!recording) return;
+
+    const deltaX = delta * pixelToSecondRatio;
+    moveElementX(el, deltaX);
+    el.setAttr('data-recording', updateRecordingTimes(recording, delta));
 };
 
 export const updateElementStartTime = ({ delta, element, pixelToSecondRatio }) => {
-    if (!element) return;
+    if (!element?.attrs) return;
 
-    if (element.attrs['data-recording']) {
+    const deltaX = delta * pixelToSecondRatio;
+
+    const recording = element.attrs['data-recording'];
+    if (recording) {
         moveAndUpdateRecording({ delta, el: element, pixelToSecondRatio });
-    } else if (element.attrs['data-overlap-group']) {
-        const group = element.attrs['data-overlap-group'];
+        return;
+    }
 
-        element.move({ x: delta * pixelToSecondRatio, y: 0 });
-        Object.values(group.elements).forEach(({ element: subEl }) => {
-            moveAndUpdateRecording({ delta, el: subEl, pixelToSecondRatio });
-        });
+    const group = element.attrs['data-overlap-group'];
+    if (group?.elements) {
+        moveElementX(element, deltaX);
+        Object.values(group.elements).forEach(({ element: subEl }) =>
+            moveAndUpdateRecording({ delta, el: subEl, pixelToSecondRatio })
+        );
     }
 };
 
 export const getElementsToModify = ({ pixelToSecondRatio, selectedValues }) => {
     if (!Array.isArray(selectedValues)) return [];
     return selectedValues.flatMap(({ element }) => {
-        const group = element.attrs['data-overlap-group'];
-        if (group?.elements) {
-            return Object.values(group.elements).map(({ element: subEl }) => subEl);
-        }
-        return [element];
+        const group = element.attrs?.['data-overlap-group'];
+        return group?.elements ? Object.values(group.elements).map(({ element: subEl }) => subEl) : [element];
     });
 };

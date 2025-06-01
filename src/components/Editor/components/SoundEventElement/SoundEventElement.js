@@ -147,13 +147,13 @@ const SoundEventElement = React.memo((props) => {
                 <Text x={5} y={5} text={name} {...TEXT_STYLE} />
                 <Text x={5} y={25} text={`${id}`} {...TEXT_STYLE} />
 
-                {notInGroup && <Lock isLocked={locked} onClick={handleLock} />}
+                {/* {notInGroup && <Lock isLocked={locked} onClick={handleLock} />} */}
 
                 <Circle x={width - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
 
-                {parentGroupId && (
+                {/* {parentGroupId && (
                     <Text x={5} y={45 + index * 20} text={`Parent Group ID ${parentGroupId}`} {...TEXT_STYLE} />
-                )}
+                )} */}
             </Group>
         </Portal>
     );

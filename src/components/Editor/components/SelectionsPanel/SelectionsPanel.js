@@ -101,7 +101,7 @@ export const SelectionsPanel = () => {
             });
 
             // 3) shift each one
-            toShift.forEach((el) => updateElementStartTime({ delta, el, pixelToSecondRatio }));
+            toShift.forEach((el) => updateElementStartTime({ delta, element: el, pixelToSecondRatio }));
         },
         [pixelToSecondRatio, selectedValues]
     );

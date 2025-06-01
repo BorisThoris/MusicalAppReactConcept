@@ -41,7 +41,6 @@ export const GroupElement = React.memo(
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
         const isDragging = isElementBeingDragged(groupId);
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
-        const lengthBasedWidth = eventLength * pixelToSecondRatio;
 
         const isDraggable = isSelected || locked;
         const shouldSelect = isDraggable;
@@ -80,13 +79,13 @@ export const GroupElement = React.memo(
                     isSelected={shouldSelect}
                     {...controlledPositionProps}
                 >
-                    <Rect
+                    {/* <Rect
                         x={0}
                         y={0}
                         width={lengthBasedWidth + 100}
                         height={TimelineHeight}
                         fill={isSelected ? 'red' : 'transparent'}
-                    />
+                    /> */}
 
                     <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
 
