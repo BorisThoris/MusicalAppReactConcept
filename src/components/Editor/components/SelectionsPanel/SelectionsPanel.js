@@ -20,6 +20,19 @@ const EventsContainer = styled(FlexContainer)`
     gap: 20px;
 `;
 
+const GroupControls = styled.div`
+    border: 1px solid #ccc;
+    padding: 1px;
+    margin: 1px 0;
+    border-radius: 8px;
+    background-color: #f8f8f8;
+`;
+
+const GroupControlsLabel = styled.div`
+    font-weight: bold;
+    font-size: 15px;
+`;
+
 export const SelectionsPanel = () => {
     const pixelToSecondRatio = usePixelRatio();
     const { closePanel } = useContext(PanelContext);
@@ -27,9 +40,9 @@ export const SelectionsPanel = () => {
     const { clearSelection, deleteSelections, endTime, selectedValues, startTime } = useContext(SelectionContext);
 
     const { copyEvents, stageRef } = useContext(CollisionsContext);
-
     const { setNewTimeout } = usePlayback({ playbackStatus: true });
 
+    const hasGroupSelection = selectedValues.length > 1;
     const startTimeCorrected = selectedValues[0]?.startTime;
 
     const useReplayEvents = useCallback(() => {
@@ -39,21 +52,14 @@ export const SelectionsPanel = () => {
     }, [selectedValues, setNewTimeout, startTimeCorrected]);
 
     const calculatePanelYPosition = () => {
-        // Check if selectedValues is available and not empty
-        if (!selectedValues || selectedValues.length === 0) {
-            return 0; // Default Y position if there are no selected values
-        }
+        if (!selectedValues || selectedValues.length === 0) return 0;
 
-        // Extract Y positions directly using Konva's getAbsolutePosition and DOM offset
         const parsedElements = selectedValues.map((item) => {
             const { element } = item;
             const elementAbsolutePos = element?.getAbsolutePosition() || { x: 0, y: 0 };
 
-            // Get the Konva stage container's DOM offset in the page
             const stageContainer = stageRef.container();
             const containerRect = stageContainer.getBoundingClientRect();
-
-            // Calculate global Y position
             const globalYPosition = containerRect.top + elementAbsolutePos.y;
 
             return {
@@ -63,16 +69,12 @@ export const SelectionsPanel = () => {
             };
         });
 
-        // Sort parsed elements by Y position
         const sortedByYPosition = parsedElements.sort((a, b) => a.yPosition - b.yPosition);
         const lastElementYPosition = sortedByYPosition[sortedByYPosition.length - 1]?.yPosition || 0;
 
-        const panelYPosition = lastElementYPosition + Y_OFFSET + TimelineHeight;
-
-        return panelYPosition;
+        return lastElementYPosition + Y_OFFSET + TimelineHeight;
     };
 
-    // Example usage
     const panelYPosition = calculatePanelYPosition();
 
     const handleClose = useCallback(() => {
@@ -90,17 +92,13 @@ export const SelectionsPanel = () => {
 
     const handleModifyStartTime = useCallback(
         ({ delta, id: filterId }) => {
-            // 1) collect every element (flat) we might need to shift
             const allEls = getElementsToModify({ pixelToSecondRatio, selectedValues });
-
-            // 2) if an id filter was passed, drop the rest
             const toShift = allEls.filter((el) => {
                 if (!filterId) return true;
                 const rec = el.attrs['data-recording'];
                 return rec?.id === filterId;
             });
 
-            // 3) shift each one
             toShift.forEach((el) => updateElementStartTime({ delta, element: el, pixelToSecondRatio }));
         },
         [pixelToSecondRatio, selectedValues]
@@ -111,12 +109,21 @@ export const SelectionsPanel = () => {
             <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
                 <button onClick={onCopyClick}>Copy</button>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
-                <FlexContainer>
-                    <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
-                    <TrashIcon onClick={onTrashClick}>🗑️</TrashIcon>
-                </FlexContainer>
 
-                <TimeControl endTime={endTime} startTime={startTime} onModifyStartTime={handleModifyStartTime} />
+                {hasGroupSelection && (
+                    <GroupControls>
+                        <GroupControlsLabel>Selections Controls</GroupControlsLabel>
+                        <FlexContainer>
+                            <PlayIcon onClick={useReplayEvents}>▶</PlayIcon>
+                            <TrashIcon onClick={onTrashClick}>🗑️</TrashIcon>
+                        </FlexContainer>
+                        <TimeControl
+                            endTime={endTime}
+                            startTime={startTime}
+                            onModifyStartTime={handleModifyStartTime}
+                        />
+                    </GroupControls>
+                )}
 
                 <EventsContainer>
                     <SelectedEventsList selectedValues={selectedValues} />
