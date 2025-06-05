@@ -76,19 +76,8 @@ export const GroupElement = React.memo(
                     onDragStart={isDraggable ? handleDragStart : undefined}
                     onDragMove={isDraggable ? handleDragMove : undefined}
                     onDragEnd={isDraggable ? handleDragEnd : undefined}
-                    isSelected={shouldSelect}
                     {...controlledPositionProps}
                 >
-                    {/* <Rect
-                        x={0}
-                        y={0}
-                        width={lengthBasedWidth + 100}
-                        height={TimelineHeight}
-                        fill={isSelected ? 'red' : 'transparent'}
-                    /> */}
-
-                    {/* <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} /> */}
-
                     <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (
                             <SoundEventElement

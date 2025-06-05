@@ -15,7 +15,7 @@ function getRecordingData(item) {
 }
 
 export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
-    const { processedItems = [] } = useContext(CollisionsContext) || {};
+    const { processedItems = [], stageRef } = useContext(CollisionsContext) || {};
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
