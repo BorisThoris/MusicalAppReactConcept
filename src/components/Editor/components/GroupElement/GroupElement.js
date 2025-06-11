@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Group } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
@@ -18,7 +18,11 @@ export const GroupElement = React.memo(
 
         const { elements, eventLength, id, locked, startTime } = groupData;
 
-        const isSelected = isItemSelected(id); // Main group selection
+        // Stable initialId tracking and updating
+        const stableInitialIdRef = useRef(id);
+        const initialId = stableInitialIdRef.current;
+
+        const isSelected = isItemSelected(initialId); // Use stable ID for selection
 
         const groupEvents = useMemo(
             () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
@@ -45,23 +49,43 @@ export const GroupElement = React.memo(
         const isDraggable = isSelected || locked;
         const shouldSelect = isDraggable;
 
-        const selectedGroup = useMemo(() => ({ ...groupData, isSelected: shouldSelect }), [groupData, shouldSelect]);
+        const selectedGroup = useMemo(() => {
+            return {
+                ...groupData,
+                initialId,
+                isSelected: shouldSelect
+            };
+        }, [groupData, initialId, shouldSelect]);
 
         useEffect(() => {
-            if (!groupRef.current) return;
+            const groupNode = groupRef.current;
+            if (!groupNode) return;
 
-            updateSelectedItemById({ id, isSelected: selectedGroup.isSelected, updates: selectedGroup });
-        }, [
-            isSelected,
-            id,
-            selectedItems,
-            updateSelectedItemById,
-            startTime,
-            eventLength,
-            locked,
-            selectedGroup,
-            toggleItem
-        ]);
+            // On mount: update selection state
+            updateSelectedItemById({
+                id,
+                isSelected: selectedGroup.isSelected,
+                updates: selectedGroup
+            });
+
+            // Update the stable initialId if the ID changed
+            if (initialId !== id) {
+                stableInitialIdRef.current = id;
+            }
+
+            // On unmount: update or clean up selection
+            return () => {
+                const cleanupUpdates = {
+                    ...selectedGroup
+                };
+
+                updateSelectedItemById({
+                    id,
+                    isSelected: false,
+                    updates: cleanupUpdates
+                });
+            };
+        }, [groupEvents, id, initialId, selectedGroup, updateSelectedItemById]);
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>

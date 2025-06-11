@@ -33,8 +33,6 @@ const PreviewOverlay = styled.div`
 const PasteButton = ({ copiedEvents, menuPosition }) => {
     const pixelToSecondRatio = usePixelRatio();
 
-    console.log('pixelToSecondRatio', pixelToSecondRatio);
-
     const { duplicateEventsToInstrument } = useInstrumentRecordingsOperations();
     const { hideActionsMenu } = useContext(PanelContext);
 

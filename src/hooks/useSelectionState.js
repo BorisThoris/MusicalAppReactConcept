@@ -1,17 +1,21 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
 function getRecordingData(item) {
-    // Safety: ensure item and element exist, with getAttr method
     const attrFn = item?.element?.getAttr;
-    if (typeof attrFn !== 'function') {
-        return null;
-    }
-    return item.element.getAttr('data-recording') ?? item.element.getAttr('data-overlap-group');
+    if (typeof attrFn !== 'function') return null;
+
+    const rec = item.element.getAttr('data-recording') ?? item.element.getAttr('data-overlap-group');
+    if (!rec) return null;
+
+    // ✅ Ensure stable initialId
+    if (!rec.initialId) rec.initialId = rec.id;
+
+    return rec;
 }
 
 export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
@@ -20,7 +24,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Map group IDs to their child element IDs
     const groupMembership = useMemo(() => {
         const map = {};
         processedItems.forEach((item) => {
@@ -95,7 +98,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         },
         [processedItems, groupMembership]
     );
-
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
             if (!intersectedElements) return;
@@ -125,20 +127,43 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
     const isItemSelected = useCallback((id) => Boolean(selectedItems[id]), [selectedItems]);
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
+        const initialId = updates?.initialId ?? updates?.id ?? id;
+        const currentId = id;
+
         setSelectedItems((prev) => {
-            const existing = prev[id];
-            if (!existing) return prev;
+            const existing = prev[initialId];
+            // if (!existing) return prev;
+
             const merged = { ...existing, ...updates };
-            if (isEqual(existing, merged)) {
-                return prev;
-            }
+
+            // if (isEqual(existing, merged)) return prev;
+
             if (isSelected === false) {
-                const { [id]: _, ...rest } = prev;
+                const { [initialId]: _, ...rest } = prev;
                 return rest;
             }
-            return { ...prev, [id]: merged };
+
+            if (initialId !== currentId) {
+                const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
+
+                return {
+                    ...rest,
+                    [currentId]: {
+                        ...(existingCurrent || {}),
+                        ...merged,
+                        initialId: currentId
+                    }
+                };
+            }
+
+            console.log('yoooo');
+
+            return { ...prev, [initialId]: merged };
         });
     }, []);
+
+    console.log('      ');
+    console.log('SELECTEDITEMS', selectedItems);
 
     const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 
