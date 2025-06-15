@@ -1,7 +1,8 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Group } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
+import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -11,18 +12,21 @@ import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
+        const { elements, id, isSelected: dataIsSelected, locked, startTime } = groupData;
+
         const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
-
-        const { elements, eventLength, id, locked, startTime } = groupData;
-
-        // Stable initialId tracking and updating
+        const hasToggledRef = useRef(false);
         const stableInitialIdRef = useRef(id);
         const initialId = stableInitialIdRef.current;
 
-        const isSelected = isItemSelected(initialId); // Use stable ID for selection
+        const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
+
+        const isSelected = isItemSelected(initialId);
+        const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
+        const isDragging = isElementBeingDragged(groupId);
+        const isDraggable = isSelected || locked;
 
         const groupEvents = useMemo(
             () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
@@ -31,61 +35,63 @@ export const GroupElement = React.memo(
 
         const groupLength = groupEvents.length;
 
+        const selectedGroup = useMemo(
+            () => ({
+                ...groupData,
+                initialId,
+                isSelected: isDraggable
+            }),
+            [groupData, initialId, isDraggable]
+        );
+
+        const handleToggle = useCallback(() => {
+            toggleItem({ ...selectedGroup, element: groupRef.current });
+        }, [selectedGroup, toggleItem]);
+
         const onLockGroup = useCallback((e) => {
             e.cancelBubble = true;
-
             if (!groupRef.current) return;
             const prevData = groupRef.current.attrs['data-overlap-group'];
-            groupRef.current.setAttrs({
-                'data-overlap-group': { ...prevData, locked: !prevData.locked }
-            });
+            groupRef.current.setAttrs({ 'data-overlap-group': { ...prevData, locked: !prevData.locked } });
             groupRef.current.getLayer().draw();
         }, []);
 
-        const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
-        const isDragging = isElementBeingDragged(groupId);
-        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
-
-        const isDraggable = isSelected || locked;
-        const shouldSelect = isDraggable;
-
-        const selectedGroup = useMemo(() => {
-            return {
-                ...groupData,
-                initialId,
-                isSelected: shouldSelect
-            };
-        }, [groupData, initialId, shouldSelect]);
-
+        // 🧠 [1] Sync selection state on mount + clean up on unmount
         useEffect(() => {
-            const groupNode = groupRef.current;
-            if (!groupNode) return;
+            const node = groupRef.current;
+            if (!node) return;
 
-            // On mount: update selection state
             updateSelectedItemById({
                 id,
                 isSelected: selectedGroup.isSelected,
                 updates: selectedGroup
             });
 
-            // Update the stable initialId if the ID changed
             if (initialId !== id) {
                 stableInitialIdRef.current = id;
             }
 
-            // On unmount: update or clean up selection
             return () => {
-                const cleanupUpdates = {
-                    ...selectedGroup
-                };
-
                 updateSelectedItemById({
                     id,
                     isSelected: false,
-                    updates: cleanupUpdates
+                    updates: { ...selectedGroup }
                 });
             };
         }, [groupEvents, id, initialId, selectedGroup, updateSelectedItemById]);
+
+        // 🧠 [2] Toggle if selected externally
+        useEffect(() => {
+            const shouldToggle = !isSelected && dataIsSelected;
+            if (shouldToggle && !hasToggledRef.current) {
+                toggleItem({ ...selectedGroup, element: groupRef.current });
+                hasToggledRef.current = true;
+            }
+        }, [dataIsSelected, isSelected, selectedGroup, toggleItem]);
+
+        console.log('selectedItems  ', selectedItems);
+
+        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
@@ -120,6 +126,30 @@ export const GroupElement = React.memo(
                             />
                         ))}
                     </Group>
+
+                    <KonvaHtml
+                        // eslint-disable-next-line react/no-children-prop
+                        children={
+                            <button
+                                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                                onClick={handleToggle}
+                                style={{
+                                    background: '#222',
+                                    border: '1px solid #555',
+                                    borderRadius: 4,
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    position: 'absolute',
+                                    right: 10,
+                                    top: 10,
+                                    zIndex: 9999
+                                }}
+                            >
+                                Toggle Test Element
+                            </button>
+                        }
+                    />
 
                     <Lock isLocked={locked} onClick={onLockGroup} />
                 </Group>

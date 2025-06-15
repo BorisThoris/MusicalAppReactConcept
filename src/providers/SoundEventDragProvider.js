@@ -12,8 +12,6 @@ export const SoundEventDragProvider = ({ children }) => {
     const { selectedItems } = useContext(SelectionContext);
 
     function extractElementIdsFromGroup(groupElm, targetId) {
-        console.log('here');
-
         const chl = Object.values(groupElm.elements)
             .filter((child) => targetId === child.id)
             .map((child) => child.id);

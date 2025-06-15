@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
@@ -12,14 +12,13 @@ function getRecordingData(item) {
     const rec = item.element.getAttr('data-recording') ?? item.element.getAttr('data-overlap-group');
     if (!rec) return null;
 
-    // ✅ Ensure stable initialId
     if (!rec.initialId) rec.initialId = rec.id;
 
     return rec;
 }
 
 export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
-    const { processedItems = [], stageRef } = useContext(CollisionsContext) || {};
+    const { processedItems = [] } = useContext(CollisionsContext) || {};
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
@@ -43,40 +42,44 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         (input) => {
             const items = Array.isArray(input) ? input : [input];
             const ids = items.map((i) => i?.id).filter(Boolean);
-            if (!ids.length) {
-                return;
-            }
+            if (!ids.length) return;
 
             setSelectedItems((prev) => {
                 const next = { ...prev };
 
-                ids.forEach((id) => {
-                    const children = groupMembership[id];
+                ids.forEach((id, idx) => {
+                    const item = items[idx];
+                    const children =
+                        item?.elements && typeof item.elements === 'object'
+                            ? Object.keys(item.elements)
+                            : groupMembership[id];
 
-                    if (children) {
-                        // Group toggle
+                    const isGroup = Boolean(children);
+
+                    if (isGroup) {
                         if (next[id]) {
                             delete next[id];
                         } else {
-                            // remove children, select group
                             children.forEach((cid) => delete next[cid]);
-                            const container = processedItems.find((it) => getRecordingData(it)?.id === id);
-                            const recData = getRecordingData(container) || {};
-                            next[id] = { ...recData, element: container?.element };
+
+                            const element = item?.element;
+                            const recData = item ?? getRecordingData({ element }) ?? {};
+
+                            next[id] = { ...recData, element };
                         }
                     } else {
-                        // Child toggle
                         if (next[id]) {
                             delete next[id];
                         } else {
                             const container = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
                             const rec = getRecordingData(container) || {};
                             const child = rec.elements?.[id] || {};
-                            const node = container?.element?.findOne?.(`#element-${id}`) ?? container?.element;
+                            const node =
+                                item?.element?.findOne?.(`#element-${id}`) ?? item?.element ?? container?.element;
+
                             next[id] = { ...child, element: node };
                         }
 
-                        // Sync parent
                         const parentItem = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
                         const parentRec = getRecordingData(parentItem);
                         if (parentRec?.id) {
@@ -98,6 +101,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         },
         [processedItems, groupMembership]
     );
+
     const setSelectionBasedOnCoordinates = useCallback(
         ({ intersectedElements, yLevel }) => {
             if (!intersectedElements) return;
@@ -132,11 +136,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
         setSelectedItems((prev) => {
             const existing = prev[initialId];
-            // if (!existing) return prev;
-
             const merged = { ...existing, ...updates };
-
-            // if (isEqual(existing, merged)) return prev;
 
             if (isSelected === false) {
                 const { [initialId]: _, ...rest } = prev;
@@ -145,7 +145,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
             if (initialId !== currentId) {
                 const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
-
                 return {
                     ...rest,
                     [currentId]: {
@@ -156,14 +155,10 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                 };
             }
 
-            console.log('yoooo');
-
+            if (isEqual(existing, merged)) return prev;
             return { ...prev, [initialId]: merged };
         });
     }, []);
-
-    console.log('      ');
-    console.log('SELECTEDITEMS', selectedItems);
 
     const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 
