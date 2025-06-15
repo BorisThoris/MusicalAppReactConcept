@@ -45,7 +45,7 @@ const SoundEventElement = React.memo((props) => {
         timelineY
     } = props;
 
-    const { eventLength, id, locked, name, startTime } = recording;
+    const { eventLength, id, isSelected: dataIsSelected, locked, name, startTime } = recording;
     const pixelToSecondRatio = usePixelRatio();
     const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
     const { timelineState } = useContext(TimelineContext);
@@ -117,14 +117,15 @@ const SoundEventElement = React.memo((props) => {
         }
     }, [isFocused, originalZ]);
 
-    // useEffect(() => {
-    //     if (notInGroup) {
-    //         console.log('   ');
-    //         console.log('===================== SoundEventElement Render ====================');
-    //         console.log('isSelected:', selectedRecording.isSelected);
-    //         console.log(props);
-    //     }
-    // }, [notInGroup, props, selectedRecording.isSelected]);
+    const hasToggledRef = useRef(false);
+
+    useEffect(() => {
+        const shouldToggle = !isSelected && dataIsSelected;
+        if (shouldToggle && !hasToggledRef.current && notInGroup) {
+            toggleItem({ ...selectedRecording, element: containerRef.current });
+            hasToggledRef.current = true;
+        }
+    }, [dataIsSelected, isSelected, selectedRecording, toggleItem, notInGroup]);
 
     return (
         <Portal selector=".top-layer" enabled={shouldUsePortal} outerRef={portalRef}>

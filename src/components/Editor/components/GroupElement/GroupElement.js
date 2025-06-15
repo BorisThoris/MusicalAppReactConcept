@@ -21,7 +21,7 @@ export const GroupElement = React.memo(
         const stableInitialIdRef = useRef(id);
         const initialId = stableInitialIdRef.current;
 
-        const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
+        const { isItemSelected, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
 
         const isSelected = isItemSelected(initialId);
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;

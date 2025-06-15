@@ -114,6 +114,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
     const deleteSelections = useCallback((events) => {
         const arr = Array.isArray(events) ? events : [events];
+
         setSelectedItems((prev) => {
             const next = { ...prev };
             arr.forEach(({ element, id }) => {
@@ -128,7 +129,24 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         });
     }, []);
 
-    const isItemSelected = useCallback((id) => Boolean(selectedItems[id]), [selectedItems]);
+    const isItemSelected = useCallback(
+        (id) => {
+            // Directly selected
+            if (selectedItems[id]) return true;
+
+            // Check if this item is part of a group that's selected
+            // eslint-disable-next-line no-restricted-syntax, guard-for-in
+            for (const groupId in groupMembership) {
+                const children = groupMembership[groupId] || [];
+                if (children.includes(id) && selectedItems[groupId]) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+        [selectedItems, groupMembership]
+    );
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
         const initialId = updates?.initialId ?? updates?.id ?? id;
