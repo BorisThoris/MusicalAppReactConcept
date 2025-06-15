@@ -89,8 +89,6 @@ export const GroupElement = React.memo(
             }
         }, [dataIsSelected, isSelected, selectedGroup, toggleItem]);
 
-        console.log('selectedItems  ', selectedItems);
-
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         return (

@@ -109,6 +109,23 @@ const SoundEventElement = React.memo((props) => {
         if (isFocused && portalRef.current) portalRef.current.moveToTop();
     }, [isFocused]);
 
+    useEffect(() => {
+        if (containerRef.current) {
+            const currentZ = containerRef.current.zIndex();
+            if (originalZ === null) setOriginalZ(currentZ);
+            else if (originalZ !== currentZ) containerRef.current.zIndex(originalZ);
+        }
+    }, [isFocused, originalZ]);
+
+    // useEffect(() => {
+    //     if (notInGroup) {
+    //         console.log('   ');
+    //         console.log('===================== SoundEventElement Render ====================');
+    //         console.log('isSelected:', selectedRecording.isSelected);
+    //         console.log(props);
+    //     }
+    // }, [notInGroup, props, selectedRecording.isSelected]);
+
     return (
         <Portal selector=".top-layer" enabled={shouldUsePortal} outerRef={portalRef}>
             <Group
