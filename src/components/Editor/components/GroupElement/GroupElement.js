@@ -57,7 +57,6 @@ export const GroupElement = React.memo(
             groupRef.current.getLayer().draw();
         }, []);
 
-        // 🧠 [1] Sync selection state on mount + clean up on unmount
         useEffect(() => {
             const node = groupRef.current;
             if (!node) return;
@@ -79,9 +78,8 @@ export const GroupElement = React.memo(
                     updates: { ...selectedGroup }
                 });
             };
-        }, [groupEvents, id, initialId, selectedGroup, updateSelectedItemById]);
+        }, [id, initialId, selectedGroup, updateSelectedItemById]);
 
-        // 🧠 [2] Toggle if selected externally
         useEffect(() => {
             const shouldToggle = !isSelected && dataIsSelected;
             if (shouldToggle && !hasToggledRef.current) {

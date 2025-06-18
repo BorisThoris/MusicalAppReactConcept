@@ -90,12 +90,17 @@ const SoundEventElement = React.memo((props) => {
         [recording, shouldDrag, isSelected]
     );
 
-    useEffect(() => {
-        const existing = selectedItems[id];
-        if (!containerRef.current || !existing) return;
+    const prevRecordingRef = useRef();
 
-        updateSelectedItemById({ id, isSelected: selectedRecording.isSelected, updates: selectedRecording });
-    }, [id, selectedItems, updateSelectedItemById, selectedRecording, parentData]);
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        // on first run, prevRecordingRef.current is undefined, so we’ll update once
+        if (!isEqual(prevRecordingRef.current, selectedRecording)) {
+            updateSelectedItemById({ id, isSelected: selectedRecording.isSelected, updates: selectedRecording });
+            prevRecordingRef.current = selectedRecording;
+        }
+    }, [id, selectedRecording, updateSelectedItemById]);
 
     useEffect(() => {
         if (portalRef.current && !isFocused) {
