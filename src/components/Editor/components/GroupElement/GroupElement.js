@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Group } from 'react-konva';
+import { Group, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
 import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
@@ -38,6 +38,7 @@ export const GroupElement = React.memo(
         const selectedGroup = useMemo(
             () => ({
                 ...groupData,
+                element: groupRef.current,
                 initialId,
                 isSelected: isDraggable
             }),

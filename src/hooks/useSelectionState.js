@@ -163,6 +163,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
             if (initialId !== currentId) {
                 const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
+
                 return {
                     ...rest,
                     [currentId]: {
@@ -177,6 +178,8 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
             return { ...prev, [initialId]: merged };
         });
     }, []);
+
+    console.log('selectedItems', selectedItems);
 
     const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 

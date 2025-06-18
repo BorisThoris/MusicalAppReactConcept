@@ -151,6 +151,7 @@ export const SoundEventDragProvider = ({ children }) => {
         (stage, action) => {
             selectedElementIds.forEach(({ id }) => {
                 const element = stage.findOne((n) => n.attrs.id === id);
+
                 if (!element) {
                     console.warn(`⚠️ Element not found for ID: ${id}`);
                 } else {
