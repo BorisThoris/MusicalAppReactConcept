@@ -1,9 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { createAndPlayEventIntance, getEventPath } from '../fmodLogic/eventInstanceHelpers';
-import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import { createSound } from '../globalHelpers/createSound';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
-import useRecorder from '../hooks/useRecorder';
+import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 
 // Create the Context
 const PaintingContext = createContext({
@@ -23,6 +22,7 @@ export const usePaintings = () => {
 
 // Create the Provider component
 const PaintingProviderComponent = ({ children }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const [paintingTarget, setPaintingTarget] = useState(null);
 
     const paintEvent = useCallback(
@@ -44,7 +44,7 @@ const PaintingProviderComponent = ({ children }) => {
 
             renderEvent(event);
         },
-        [paintingTarget]
+        [paintingTarget?.event, paintingTarget?.instrument, pixelToSecondRatio]
     );
 
     const value = useMemo(() => {

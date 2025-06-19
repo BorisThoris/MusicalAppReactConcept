@@ -1,18 +1,21 @@
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext } from 'react';
 import styled from 'styled-components';
+import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import ParameterControlComponent from '../ParameterControl/ParameterControl';
 import { EventHeader } from './EventHeader';
+import { updateElementStartTime } from './recordingHelpers';
 import TimeControl from './TimeControl';
 
 const EventItemContainer = styled.div`
     display: flex;
     flex-direction: column;
-    background-color: ${(props) => (props.focused ? '#ffcccb' : 'transparent')};
+    background-color: ${({ focused }) => (focused ? '#ffcccb' : 'transparent')};
     border-radius: 8px;
     border: 1px solid #ddd;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -29,43 +32,37 @@ const UnselectButton = styled.button`
     }
 `;
 
-export const EventItem = ({ event, onDelete, onModifyStartTime, onPlay }) => {
-    // Destructure event properties
-    const { endTime, eventInstance, id, locked, params, parentId, startTime } = event;
-    const { copyEvents } = useContext(CollisionsContext);
-
+export const EventItem = ({ event }) => {
+    const pixelToSecondRatio = usePixelRatio();
+    const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
     const { getEventById } = useInstrumentRecordingsOperations();
-    const { isItemSelected, toggleItem } = useContext(SelectionContext);
+    const { deleteSelections, isItemSelected, toggleItem } = useContext(SelectionContext);
 
-    const isSelected = isItemSelected(id);
+    const { element, endTime, eventInstance, id, locked, params, parentId, startTime } = event;
+
     const parent = getEventById(parentId);
-    const isGroupNotLocked = (parent && !parent.locked) || (!parentId && !locked);
+    const isSelected = isItemSelected(id);
+    const isGroupNotLocked = !locked && (!parentId || (parent && !parent.locked));
 
     const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
 
-    const handleDelete = useCallback(() => {
-        onDelete({ event });
-    }, [event, onDelete]);
+    const handlePlay = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
 
-    const handlePlay = useCallback(() => {
-        onPlay(eventInstance);
-    }, [onPlay, eventInstance]);
+    const handleDelete = useCallback(() => {
+        element.destroy();
+        deleteSelections(event);
+        stageRef?.findOne('.top-layer')?.batchDraw();
+    }, [element, deleteSelections, event, stageRef]);
 
     const handleModifyStartTime = useCallback(
-        (value) => {
-            onModifyStartTime({ ...value, id });
-        },
-        [id, onModifyStartTime]
+        ({ delta }) => updateElementStartTime({ delta, element, pixelToSecondRatio }),
+        [element, pixelToSecondRatio]
     );
 
-    const handleCopy = useCallback(() => {
-        copyEvents(event);
-    }, [copyEvents, event]);
+    const handleCopy = useCallback(() => copyEvents(event), [copyEvents, event]);
 
-    const handleItemSelect = useCallback(() => {
-        toggleItem(event);
-    }, [event, toggleItem]);
+    const handleItemSelect = useCallback(() => toggleItem(event), [toggleItem, event]);
 
     return (
         <EventItemContainer focused={focusedEvent === id} onMouseEnter={focusEvent}>
@@ -77,7 +74,7 @@ export const EventItem = ({ event, onDelete, onModifyStartTime, onPlay }) => {
                 <TimeControl startTime={startTime} endTime={endTime} onModifyStartTime={handleModifyStartTime} />
             )}
 
-            {params.map((param) => (
+            {params?.map((param) => (
                 <ParameterControlComponent key={param.name} param={param} event={event} />
             ))}
         </EventItemContainer>
@@ -96,9 +93,5 @@ EventItem.propTypes = {
         params: PropTypes.array,
         parentId: PropTypes.number,
         startTime: PropTypes.number
-    }).isRequired,
-    onDelete: PropTypes.func.isRequired,
-    onModifyStartTime: PropTypes.func.isRequired,
-    onPlay: PropTypes.func.isRequired,
-    overlapGroup: PropTypes.object
+    }).isRequired
 };

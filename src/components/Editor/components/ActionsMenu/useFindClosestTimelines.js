@@ -34,11 +34,11 @@ export const useFindClosestTimelines = ({ copiedEvents, isHovering, menuPosition
             const tempClosestTimelines = {};
 
             // Get the initial position of the first copied event
-            const initialEventPosition = copiedEvents[0].element.attrs['data-timeline-y'] - markersAndTrackerOffset;
+            const initialEventPosition = copiedEvents[0].rect.y - markersAndTrackerOffset;
 
             copiedEvents.forEach((event, index) => {
                 // Calculate each event's relative offset based on its natural position relative to the first event
-                const relativeOffset = event.element.attrs['data-timeline-y'] - initialEventPosition;
+                const relativeOffset = event.rect.y - initialEventPosition;
 
                 // Position each event based on menuPosition plus its relative offset
                 const eventYPosition = menuPosition.y + relativeOffset;

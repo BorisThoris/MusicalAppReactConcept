@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { recreateEvents } from '../../globalHelpers/createSound';
 import { PanelContext } from '../../hooks/usePanelState';
 import { useBeatRefresher } from './hooks/useBeatRefresher';
 import { useBeats } from './hooks/useBeats';
@@ -10,7 +11,7 @@ import { useProcessBeat } from './hooks/useProcessBeat';
 import { useSelectedBeat } from './hooks/useSelectedBeat';
 import { useTimelineManager } from './hooks/useTimelineManager';
 import { useTimelineRefs } from './hooks/useTimelineRefs';
-import { findOverlaps } from './overlapHelpers';
+import { findOverlaps, processOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
@@ -30,7 +31,6 @@ export const CollisionsProvider = ({ children }) => {
     const {
         addStageRef,
         addTimelineRef,
-        deleteAllElements,
         deleteAllTimelines,
         findAllSoundEventElements,
         getGroupById,
@@ -82,13 +82,16 @@ export const CollisionsProvider = ({ children }) => {
     );
 
     const copyEvents = useCallback((events) => {
-        const eventArray = Array.isArray(events) ? events : [events];
-        const sortedEvents = [...eventArray].sort((ev1, ev2) => ev1.startTime - ev2.startTime);
-        setCopiedEvents(sortedEvents);
+        const list = Array.isArray(events) ? events : [events];
+
+        const overlaps = recreateEvents(processOverlaps(list));
+        const eventGroups = Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
+
+        setCopiedEvents(eventGroups);
     }, []);
 
     // Use extracted timeline manager hook
-    const { addTimeline } = useTimelineManager(overlapGroups, setOverlapGroups);
+    const { addTimeline } = useTimelineManager(setOverlapGroups);
 
     /** * OVERLAP GROUPS CALCULATION ** */
     const prevBeat = prevProcessBeatResultRef.current;
@@ -97,7 +100,6 @@ export const CollisionsProvider = ({ children }) => {
         const newOverlapGroups = findOverlaps(currentBeat);
         setOverlapGroups(newOverlapGroups);
 
-        console.log('OVERLAP GROUPS: ', newOverlapGroups);
         prevProcessBeatResultRef.current = currentBeat;
     }
 
@@ -122,14 +124,12 @@ export const CollisionsProvider = ({ children }) => {
             clearLocalStorage,
             copiedEvents,
             copyEvents,
-            deleteAllElements,
             deleteAllTimelines,
             dragging,
             findAllSoundEventElements,
             furthestEndTime,
             getGroupById,
             getProcessedElements,
-            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,
@@ -168,14 +168,12 @@ export const CollisionsProvider = ({ children }) => {
             clearLocalStorage,
             copiedEvents,
             copyEvents,
-            deleteAllElements,
             deleteAllTimelines,
             dragging,
             findAllSoundEventElements,
             furthestEndTime,
             getGroupById,
             getProcessedElements,
-            getProcessedItems,
             getSoundEventById,
             hasChanged,
             history,

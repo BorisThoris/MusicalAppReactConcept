@@ -1,61 +1,40 @@
-import { useCallback, useRef } from 'react';
+import Konva from 'konva';
+import { useCallback, useMemo, useRef } from 'react';
 import { playEventInstance } from '../../../../fmodLogic/eventInstanceHelpers';
 
 export const useCollisionDetection = (trackerRef, processedItems, mutedInstruments, playbackStatus) => {
-    const playedInstancesRef = useRef(new Set());
-
-    const haveIntersection = useCallback((r1, r2) => {
-        return !(
-            r2.x > r1.x + r1.width ||
-            r2.x + r2.width < r1.x ||
-            r2.y > r1.y + r1.height ||
-            r2.y + r2.height < r1.y
-        );
-    }, []);
-
-    const processItemCollision = useCallback(
-        (clientRect, recording) => {
-            if (!clientRect || !recording) return false;
-
-            const trackerRect = trackerRef.current.getClientRect();
-            const { eventInstance, instrumentName } = recording;
-
-            const shouldPlay =
-                haveIntersection(trackerRect, clientRect) &&
-                !mutedInstruments.includes(instrumentName) &&
-                !playedInstancesRef.current.has(eventInstance);
-
-            const shouldStop =
-                !haveIntersection(trackerRect, clientRect) && playedInstancesRef.current.has(eventInstance);
-
-            if (shouldPlay) {
-                playEventInstance(eventInstance);
-                playedInstancesRef.current.add(eventInstance);
-                return true;
-            }
-            if (shouldStop) {
-                playedInstancesRef.current.delete(eventInstance);
-            }
-
-            return false;
-        },
-        [trackerRef, haveIntersection, mutedInstruments]
-    );
+    const playedInstances = useRef(new Set());
+    const mutedSet = useMemo(() => new Set(mutedInstruments), [mutedInstruments]);
 
     const playCollidedElements = useCallback(() => {
-        if (!playbackStatus.isPlaying || !trackerRef.current) return;
+        if (!playbackStatus.isPlaying) return;
+        const tracker = trackerRef.current;
+        if (!tracker) return;
+        const trackerRect = tracker.getClientRect();
 
-        let hasCollided = false;
+        // eslint-disable-next-line no-restricted-syntax
+        for (const item of processedItems) {
+            const { clientRect, group, recording } = item;
+            const tracks = group ? Object.values(group.elements) : [{ ...recording, rect: clientRect }];
 
-        processedItems.forEach(({ clientRect, groupData, recording, type }) => {
-            if (type === 'element') {
-                // Check standalone elements
-                if (processItemCollision(clientRect, recording)) {
-                    hasCollided = true;
+            // eslint-disable-next-line no-restricted-syntax
+            for (const { element, eventInstance, instrumentName, rect } of tracks) {
+                // eslint-disable-next-line no-continue
+                if (!rect || !eventInstance || mutedSet.has(instrumentName)) continue;
+
+                // use Konva.Util.haveIntersection instead of your own
+                const isIntersecting = Konva.Util.haveIntersection(trackerRect, element.getClientRect());
+                const hasPlayed = playedInstances.current.has(eventInstance);
+
+                if (isIntersecting && !hasPlayed) {
+                    playEventInstance(eventInstance);
+                    playedInstances.current.add(eventInstance);
+                } else if (!isIntersecting && hasPlayed) {
+                    playedInstances.current.delete(eventInstance);
                 }
             }
-        });
-    }, [playbackStatus.isPlaying, trackerRef, processedItems, processItemCollision]);
+        }
+    }, [processedItems, playbackStatus.isPlaying, trackerRef, mutedSet]);
 
-    return { haveIntersection, playCollidedElements };
+    return { playCollidedElements };
 };

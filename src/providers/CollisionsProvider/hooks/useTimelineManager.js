@@ -2,20 +2,24 @@ import { useCallback } from 'react';
 
 /**
  * Custom hook to manage timeline operations.
- * In this case, it encapsulates the logic for adding a new timeline.
+ * Default names are now plain numbers ("1", "2", "3", …).
  */
-export const useTimelineManager = (overlapGroups, setOverlapGroups) => {
+export const useTimelineManager = (setOverlapGroups) => {
     const addTimeline = useCallback(
         (passedName) => {
             setOverlapGroups((prevGroups) => {
-                let newTimelineName = passedName ?? `Additional Timeline ${Object.keys(prevGroups).length + 1}`;
-                // Ensure the name is unique
-                let counter = 1;
+                // Determine starting number: either the passedName if provided, or next count
+                let newTimelineName = passedName ?? `${Object.keys(prevGroups).length + 1}`;
+                // Parse it as a number; if that’s NaN, switch to count+1
+                let baseNumber = parseInt(newTimelineName, 10);
+                if (Number.isNaN(baseNumber)) {
+                    baseNumber = Object.keys(prevGroups).length + 1;
+                    newTimelineName = `${baseNumber}`;
+                }
+                // Ensure uniqueness: bump the number until it's unused
                 while (prevGroups[newTimelineName]) {
-                    newTimelineName = passedName
-                        ? `${passedName} (${counter})`
-                        : `Additional Timeline ${Object.keys(prevGroups).length + counter}`;
-                    counter += 1;
+                    baseNumber += 1;
+                    newTimelineName = `${baseNumber}`;
                 }
                 return {
                     ...prevGroups,

@@ -1,114 +1,52 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
-import { ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
-import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
+import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from './SelectionsProvider';
 
 export const SoundEventDragContext = createContext();
 
 export const SoundEventDragProvider = ({ children }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
-    const { clearSelection, isItemSelected, selectedItems } = useContext(SelectionContext);
+    const { selectedItems } = useContext(SelectionContext);
 
-    // Memoize selected element IDs so we don't recalc on every drag event.
+    function extractElementIdsFromGroup(groupElm, targetId) {
+        const chl = Object.values(groupElm.elements)
+            .filter((child) => targetId === child.id)
+            .map((child) => child.id);
+        return chl;
+    }
+
     const selectedElementIds = useMemo(() => {
-        return Object.values(selectedItems).map(({ id }) => id);
+        const result = [];
+        // eslint-disable-next-line no-restricted-syntax
+        for (const { element, id } of Object.values(selectedItems)) {
+            const isGroup = element?.attrs?.['data-overlap-group'];
+            if (isGroup) {
+                const groupString = element.attrs['data-overlap-group'];
+                const childrenIds = extractElementIdsFromGroup(groupString, id);
+                childrenIds.forEach((childId) =>
+                    result.push({ id: `${ELEMENT_ID_PREFIX}${childId}`, type: 'element' })
+                );
+                result.push({ id: `${GROUP_ELEMENT_ID_PREFIX}${id}`, type: 'group' });
+            } else {
+                result.push({ id: `${ELEMENT_ID_PREFIX}${id}`, type: 'element' });
+            }
+        }
+        return result;
     }, [selectedItems]);
 
-    // Refs for tracking positions and drag requests.
-    const initialXRef = useRef(null); // For total X displacement.
+    const initialXRef = useRef(null);
     const currentYRef = useRef(0);
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
     const initialPositionsRef = useRef(new Map());
 
-    // ----- Utility Functions -----
-    const forceUpdatePosition = useCallback((element) => {
-        element.setAttrs({
-            x: element.x(),
-            y: element.y()
-        });
+    const forceUpdatePosition = useCallback((el) => {
+        el.setAttrs({ x: el.x(), y: el.y() });
     }, []);
 
-    /**
-     * Updates the start and end times.
-     *
-     * For an individual element, it calculates the absolute x position (using getAbsolutePosition())
-     * so that whether it is standalone or inside a group its timing is correct.
-     *
-     * For a group (a node with a data-overlap-group attribute), it updates its own timing data,
-     * and then iterates through all child elements (which have data-recording) to update each one.
-     */
-    const updateStartTimeForElement = useCallback(
-        ({ designatedStartTime = null, element }) => {
-            // Case 1: Individual element with a 'data-recording' attribute.
-            if (element.attrs['data-recording']) {
-                // If a designated start time is provided, use that, otherwise calculate from element.x()
-                const newStartTime =
-                    designatedStartTime !== null ? designatedStartTime : element.x() / pixelToSecondRatio;
-
-                const recording = { ...element.attrs['data-recording'] };
-                const newEndTime = newStartTime + recording.eventLength;
-
-                // Early exit if the values are unchanged
-                if (recording.startTime === newStartTime && recording.endTime === newEndTime) return;
-
-                const updatedRecording = {
-                    ...recording,
-                    endTime: newEndTime,
-                    startTime: newStartTime
-                };
-
-                element.setAttr('data-recording', updatedRecording);
-                console.log(
-                    `Updated element: ${element.attrs.id}, new start time: ${newStartTime}, new end time: ${newEndTime}`
-                );
-            }
-            // Case 2: Group element with a 'data-overlap-group' attribute.
-            else if (element.attrs['data-overlap-group']) {
-                const groupData = { ...element.attrs['data-overlap-group'] };
-
-                // Determine the new start time for the group:
-                const newGroupStartTime =
-                    designatedStartTime !== null ? designatedStartTime : element.x() / pixelToSecondRatio;
-
-                // Calculate the offset – the amount by which the group's start time is changing.
-                const offset = newGroupStartTime - groupData.startTime;
-
-                // Update the group's own timing.
-                groupData.startTime = newGroupStartTime;
-                groupData.endTime = newGroupStartTime + groupData.length;
-                element.setAttr('data-overlap-group', groupData);
-                console.log(
-                    `Updated group element: ${element.attrs.id}, new start time: ${newGroupStartTime}, new end time: ${groupData.endTime}`
-                );
-
-                // Update each child element.
-                // Here we assume that groupData.elements is an object containing the child nodes.
-                const groupChildren = Object.values(groupData.elements);
-                console.log('groupChildren', groupChildren);
-
-                groupChildren.forEach((child) => {
-                    // Determine the child's current start time:
-                    // - If the child has a data-recording attribute, use its stored startTime.
-                    // - Otherwise, calculate it based on its x coordinate.
-                    const currentChildStartTime =
-                        child.node.attrs['data-recording'] && child.node.attrs['data-recording'].startTime
-                            ? child.node.attrs['data-recording'].startTime
-                            : child.node.x() / pixelToSecondRatio;
-
-                    // The new designated start time for the child is adjusted by the group's offset.
-                    const newChildStartTime = currentChildStartTime + offset;
-
-                    // Recursively update the child element with the new designated start time.
-                    updateStartTimeForElement({ designatedStartTime: newChildStartTime, element: child.node });
-                });
-            }
-        },
-        [] // dependencies as needed
-    );
-
-    // ----- Timeline Highlighting Functions -----
     const applyHighlightToTimeline = (timeline) => {
         if (timeline) {
             timeline.fill('yellow');
@@ -123,191 +61,199 @@ export const SoundEventDragProvider = ({ children }) => {
         }
     };
 
-    // ----- Timeline Search Functions -----
-    const findClosestTimelineRect = useCallback(
-        (element) => {
-            const elementBox = element.getClientRect();
-            let closestTimeline = null;
-            let minDistance = Infinity;
-
-            const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('timelineRect'));
-            allTimelineElements.forEach((timelineElement) => {
-                const timelineBox = timelineElement.getClientRect();
-                const distance = Math.abs(elementBox.y - timelineBox.y);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestTimeline = timelineElement;
-                }
-            });
-
-            return closestTimeline;
-        },
-        [stageRef]
-    );
-
     const findClosestTimelineEvents = useCallback(
         (element) => {
-            const elementBox = element.getAbsolutePosition();
-            let closestTimeline = null;
-            let minDistance = Infinity;
-
-            const allTimelineElements = stageRef.find((node) => node.attrs?.id?.includes('-events'));
-            allTimelineElements.forEach((timelineElement) => {
-                const timelineBox = timelineElement.parent.getAbsolutePosition();
-                const distance = Math.abs(elementBox.y - timelineBox.y);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestTimeline = timelineElement;
+            const pos = element.getAbsolutePosition();
+            let closest = null;
+            let minDist = Infinity;
+            const all = stageRef.find((n) => n.attrs?.id?.includes('-events'));
+            all.forEach((el) => {
+                const box = el.parent.getAbsolutePosition();
+                const d = Math.abs(pos.y - box.y);
+                if (d < minDist) {
+                    minDist = d;
+                    closest = el;
                 }
             });
-
-            return closestTimeline;
+            return closest;
         },
         [stageRef]
     );
 
-    // Update timeline insertion for both individual elements and groups.
+    const findClosestTimelineRect = useCallback(
+        (element) => {
+            const boxEl = element.getClientRect();
+            let closest = null;
+            let minDist = Infinity;
+            const all = stageRef.find((n) => n.attrs?.id?.includes('timelineRect'));
+            all.forEach((el) => {
+                const box = el.getClientRect();
+                const d = Math.abs(boxEl.y - box.y);
+                if (d < minDist) {
+                    minDist = d;
+                    closest = el;
+                }
+            });
+            return closest;
+        },
+        [stageRef]
+    );
+
     const insertElementIntoTimeline = useCallback(({ closestTimeline, element }) => {
-        const closestTimelineInstrumentName = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown Timeline';
+        const name = closestTimeline?.attrs?.id.split('-')[0] || 'Unknown';
         if (element.attrs['data-recording']) {
-            const recording = { ...element.attrs['data-recording'] };
-            recording.instrumentName = closestTimelineInstrumentName;
-            element.setAttr('data-recording', recording);
+            element.setAttr('data-recording', {
+                ...element.attrs['data-recording'],
+                instrumentName: name
+            });
         } else if (element.attrs['data-overlap-group']) {
-            const groupData = { ...element.attrs['data-overlap-group'] };
-            groupData.instrumentName = closestTimelineInstrumentName;
-            element.setAttr('data-overlap-group', groupData);
+            element.setAttr('data-overlap-group', {
+                ...element.attrs['data-overlap-group'],
+                instrumentName: name
+            });
         }
     }, []);
 
-    // ----- Reusable Function for Processing Selected Elements -----
-    const processSelectedElements = useCallback(
-        (stage, action) => {
-            selectedElementIds.forEach((id) => {
-                // Try to find either an individual element or a group.
-                const targetElement =
-                    stage.findOne(`#${ELEMENT_ID_PREFIX}${id}`) || stage.findOne(`#group-element-${id}`);
-                if (targetElement) {
-                    action(targetElement);
-                }
-            });
+    const updateStartTimeForElement = useCallback(
+        ({ designatedStartTime = null, element }) => {
+            if (element.attrs['data-recording']) {
+                const start = designatedStartTime ?? element.x() / pixelToSecondRatio;
+                const rec = { ...element.attrs['data-recording'] };
+                const end = start + rec.eventLength;
+                if (rec.startTime === start && rec.endTime === end) return;
+                element.setAttr('data-recording', { ...rec, endTime: end, startTime: start });
+            } else if (element.attrs['data-overlap-group']) {
+                const grp = { ...element.attrs['data-overlap-group'] };
+                const newGroupStart = designatedStartTime ?? element.x() / pixelToSecondRatio;
+                const offset = newGroupStart - grp.startTime;
+                grp.startTime = newGroupStart;
+                grp.endTime = newGroupStart + grp.length;
+                element.setAttr('data-overlap-group', grp);
+                Object.values(grp.elements).forEach((child) => {
+                    const currentChildStart =
+                        child.element.attrs['data-recording']?.startTime ?? child.element.x() / pixelToSecondRatio;
+                    const newChildStart = currentChildStart + offset;
+                    updateStartTimeForElement({ designatedStartTime: newChildStart, element: child.element });
+                    const tl = findClosestTimelineEvents(child.element);
+                    insertElementIntoTimeline({ closestTimeline: tl, element: child.element });
+                });
+            }
         },
-        [selectedElementIds]
+        [findClosestTimelineEvents, insertElementIntoTimeline, pixelToSecondRatio]
     );
 
-    const processId = (id) => {
-        if (id.startsWith(ELEMENT_ID_PREFIX)) {
-            return `element-${id.split(ELEMENT_ID_PREFIX)[1]}`;
-        }
-        if (id.startsWith('group-element-')) {
-            return `group-${id.split('group-element-')[1]}`;
-        }
-        return id;
-    };
+    const processSelectedElements = useCallback(
+        (action) => {
+            Object.values(selectedItems).forEach((item) => {
+                if (item.element) action(item.element);
 
-    // ----- Drag Event Handlers -----
+                const { element } = item;
 
-    // Drag start: initialize X and Y refs.
+                action(element);
+            });
+        },
+        [selectedItems]
+    );
+
     const handleDragStart = useCallback(
         (event) => {
             event.evt.stopPropagation();
             event.target.moveToTop();
 
-            // Determine which type is being dragged.
-            const itemId = event.target.attrs['data-recording']?.id || event.target.attrs['data-overlap-group']?.id;
-            if (itemId && !isItemSelected(itemId)) {
-                clearSelection();
+            const recording = event.target.attrs['data-recording'];
+            const overlap = event.target.attrs['data-overlap-group'];
+
+            let rawId;
+            let prefix;
+            let isGroupDrag = false;
+
+            if (recording?.id) {
+                rawId = recording.id;
+                prefix = ELEMENT_ID_PREFIX;
+            } else if (overlap?.id) {
+                rawId = overlap.id;
+                prefix = GROUP_ELEMENT_ID_PREFIX;
+                isGroupDrag = true;
+            } else {
+                return;
             }
 
             initialXRef.current = event.target.x();
             currentYRef.current = event.evt.y;
 
-            // Save initial positions for all selected elements.
-            const stage = stageRef;
-            processSelectedElements(stage, (element) => {
+            processSelectedElements((element) => {
                 initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
             });
 
-            // Use processId to create a unique key.
-            const newDragging = { [processId(event.target.attrs.id)]: true };
-            selectedElementIds.forEach((id) => {
-                newDragging[processId(id)] = true;
-            });
+            const newDragging = {};
+            const itemId = `${prefix}${rawId}`;
+            newDragging[itemId] = true;
 
-            setDragging((prevDragging) => ({ ...prevDragging, ...newDragging }));
+            if (!isGroupDrag) {
+                selectedElementIds.forEach(({ id }) => {
+                    newDragging[id] = true;
+                });
+            }
+
+            setDragging((prev) => ({ ...prev, ...newDragging }));
         },
-        [isItemSelected, stageRef, processSelectedElements, selectedElementIds, setDragging, clearSelection]
+        [processSelectedElements, selectedElementIds, setDragging]
     );
-
-    // Drag move: update positions using total X displacement and incremental Y displacement.
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
-            const stage = stageRef;
-            if (!stage) return;
+            const idAttr = e.target.attrs.id || '';
+            const isGroup = idAttr.startsWith(GROUP_ELEMENT_ID_PREFIX);
+            if (!idAttr.startsWith(ELEMENT_ID_PREFIX) && !isGroup) return;
 
-            if (dragRequestRef.current) {
-                cancelAnimationFrame(dragRequestRef.current);
-            }
+            if (dragRequestRef.current) cancelAnimationFrame(dragRequestRef.current);
 
             dragRequestRef.current = requestAnimationFrame(() => {
-                // Get current X and Y values.
-                const currentX = e.target.x();
-                const currentY = e.evt.y;
-                // Calculate total X displacement from initial position.
-                const totalDeltaX = currentX - initialXRef.current;
-                // Y uses incremental updates.
-                const deltaY = currentY - currentYRef.current;
-                currentYRef.current = currentY;
+                const curX = e.target.x();
+                const curY = e.evt.y;
+                const totalDX = curX - initialXRef.current;
+                const dY = curY - currentYRef.current;
+                currentYRef.current = curY;
 
-                const newHighlightedTimelines = new Set();
-
-                const processElement = (element) => {
-                    // For X: update absolutely using the initial position + total delta.
-                    const initialPos = initialPositionsRef.current.get(element.attrs.id);
-                    if (initialPos) {
-                        const newX = initialPos.x + totalDeltaX;
-                        element.setAttr('x', newX);
+                const newHighlights = new Set();
+                const mover = (element) => {
+                    const init = initialPositionsRef.current.get(element.attrs.id);
+                    if (init) {
+                        element.setAttr('x', init.x + totalDX);
                     }
-                    // For Y: continue using incremental updates.
-                    element.move({ y: deltaY });
+
+                    element.move({ y: dY });
                     forceUpdatePosition(element);
 
-                    // Highlight timeline based on new position.
-                    const closestTimeline = findClosestTimelineRect(element);
-                    if (closestTimeline) {
-                        newHighlightedTimelines.add(closestTimeline);
+                    const tl = findClosestTimelineRect(element);
+                    if (tl) {
+                        newHighlights.add(tl);
                     }
                 };
 
-                if (selectedElementIds.length > 0) {
-                    processSelectedElements(stage, processElement);
+                // If dragging a group, only move the group; otherwise move selected items
+                if (selectedElementIds.length) {
+                    processSelectedElements(mover);
                 } else {
-                    processElement(e.target);
+                    mover(e.target);
                 }
 
-                // Update timeline highlights.
-                highlightedTimelinesRef.current.forEach((timeline) => {
-                    if (!newHighlightedTimelines.has(timeline)) {
-                        removeHighlightFromTimeline(timeline);
-                    }
+                highlightedTimelinesRef.current.forEach((t) => {
+                    if (!newHighlights.has(t)) removeHighlightFromTimeline(t);
                 });
-                newHighlightedTimelines.forEach((timeline) => {
-                    if (!highlightedTimelinesRef.current.has(timeline)) {
-                        applyHighlightToTimeline(timeline);
-                    }
+                newHighlights.forEach((t) => {
+                    if (!highlightedTimelinesRef.current.has(t)) applyHighlightToTimeline(t);
                 });
-                highlightedTimelinesRef.current = newHighlightedTimelines;
+                highlightedTimelinesRef.current = newHighlights;
             });
         },
-        [stageRef, selectedElementIds.length, forceUpdatePosition, findClosestTimelineRect, processSelectedElements]
+        [forceUpdatePosition, findClosestTimelineRect, processSelectedElements, selectedElementIds]
     );
 
-    // Finalize the drag: update the timeline and start time.
     const finalizeDrag = useCallback(
         (element) => {
-            const closestTimeline = findClosestTimelineEvents(element);
-            insertElementIntoTimeline({ closestTimeline, element });
+            const tl = findClosestTimelineEvents(element);
+            insertElementIntoTimeline({ closestTimeline: tl, element });
             updateStartTimeForElement({ element });
         },
         [findClosestTimelineEvents, insertElementIntoTimeline, updateStartTimeForElement]
@@ -315,35 +261,26 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const handleDragEnd = useCallback(
         (e) => {
-            const stage = stageRef;
-            if (!stage) return;
-
-            if (selectedElementIds.length > 0) {
-                processSelectedElements(stage, finalizeDrag);
+            if (selectedElementIds.length) {
+                processSelectedElements(finalizeDrag);
             } else {
                 finalizeDrag(e.target);
             }
 
-            highlightedTimelinesRef.current.forEach((timeline) => {
-                removeHighlightFromTimeline(timeline);
-            });
-            highlightedTimelinesRef.current = new Set();
-
-            // Reset the initial coordinate references.
+            highlightedTimelinesRef.current.forEach(removeHighlightFromTimeline);
+            highlightedTimelinesRef.current.clear();
             initialXRef.current = null;
             currentYRef.current = 0;
             initialPositionsRef.current.clear();
-
             setDragging({});
             refreshBeat();
         },
-        [stageRef, selectedElementIds.length, setDragging, refreshBeat, processSelectedElements, finalizeDrag]
+        [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, setDragging]
     );
 
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);
 
-    // ----- Context Value -----
-    const contextValue = useMemo(
+    const value = useMemo(
         () => ({
             applyHighlightToTimeline,
             handleDragEnd,
@@ -353,10 +290,10 @@ export const SoundEventDragProvider = ({ children }) => {
             isElementBeingDragged,
             removeHighlightFromTimeline
         }),
-        [handleDragEnd, handleDragMove, handleDragStart, insertElementIntoTimeline, isElementBeingDragged]
+        [handleDragStart, handleDragMove, handleDragEnd, insertElementIntoTimeline, isElementBeingDragged]
     );
 
-    return <SoundEventDragContext.Provider value={contextValue}>{children}</SoundEventDragContext.Provider>;
+    return <SoundEventDragContext.Provider value={value}>{children}</SoundEventDragContext.Provider>;
 };
 
 const useDrag = () => useContext(SoundEventDragContext);

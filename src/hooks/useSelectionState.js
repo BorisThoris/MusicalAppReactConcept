@@ -1,178 +1,185 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
-// Helper function moved outside the hook.
-const getRecordingData = (element) => {
-    if (!element) return null;
-    if (typeof element.getAttr === 'function') {
-        return element.getAttr('data-recording');
-    }
-    if (typeof element === 'string') {
-        try {
-            const parsed = JSON.parse(element);
-            return parsed?.attrs?.['data-recording'] || null;
-        } catch (e) {
-            console.error('Failed to parse element JSON', e);
-            return null;
-        }
-    } else if (typeof element === 'object') {
-        return element.attrs?.['data-recording'] || null;
-    }
-    return null;
-};
+function getRecordingData(item) {
+    const attrFn = item?.element?.getAttr;
+    if (typeof attrFn !== 'function') return null;
 
-export const useSelectionState = ({ markersAndTrackerOffset }) => {
-    const { processedItems } = useContext(CollisionsContext);
+    const rec = item.element.getAttr('data-recording') ?? item.element.getAttr('data-overlap-group');
+    if (!rec) return null;
+
+    if (!rec.initialId) rec.initialId = rec.id;
+
+    return rec;
+}
+
+export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
+    const { processedItems = [] } = useContext(CollisionsContext) || {};
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Build a memoized map of processed items keyed by their recording id.
-    const processedItemsMap = useMemo(() => {
-        const map = new Map();
+    const groupMembership = useMemo(() => {
+        const map = {};
         processedItems.forEach((item) => {
-            const recData = item.element?.getAttr('data-recording');
-            if (recData?.id) {
-                map.set(recData.id, item);
+            const rec = getRecordingData(item);
+            if (rec && rec.id && rec.elements && typeof rec.elements === 'object') {
+                map[rec.id] = Object.keys(rec.elements);
             }
         });
         return map;
     }, [processedItems]);
 
-    // Update selection based on intersected elements and y-level using functional state update.
-    const setSelectionBasedOnCoordinates = useCallback(
-        ({ intersectedElements, yLevel }) => {
-            setSelectedItems((prevSelectedItems) => {
-                const newSelectedItems = intersectedElements.reduce((acc, element) => {
-                    acc[element.id] = { ...element };
-                    return acc;
-                }, {});
-
-                const currentIds = Object.keys(prevSelectedItems);
-                const newIds = Object.keys(newSelectedItems);
-                const hasChanged = currentIds.length !== newIds.length || currentIds.some((id) => !newIds.includes(id));
-
-                if (hasChanged) {
-                    setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
-                    return newSelectedItems;
-                }
-                return prevSelectedItems;
-            });
-        },
-        [markersAndTrackerOffset]
-    );
-
-    // Clears the current selection.
     const clearSelection = useCallback(() => {
         setSelectedItems({});
     }, []);
 
-    // Toggles the selection state for provided item(s) using the data-recording attr.
     const toggleItem = useCallback(
         (input) => {
-            setSelectedItems((prevSelectedItems) => {
-                const itemsToToggle = Array.isArray(input) ? input : [input];
-                const newSelectedItems = { ...prevSelectedItems };
+            const items = Array.isArray(input) ? input : [input];
+            const ids = items.map((i) => i?.id).filter(Boolean);
+            if (!ids.length) return;
 
-                itemsToToggle.forEach(({ id }) => {
-                    const elementData = processedItemsMap.get(id);
-                    if (newSelectedItems[id]) {
-                        delete newSelectedItems[id];
-                    } else if (elementData) {
-                        const recData = elementData.element.getAttr('data-recording') || elementData.recording;
-                        newSelectedItems[id] = {
-                            ...recData,
-                            element: elementData.element
-                        };
+            setSelectedItems((prev) => {
+                const next = { ...prev };
+
+                ids.forEach((id, idx) => {
+                    const item = items[idx];
+                    const children =
+                        item?.elements && typeof item.elements === 'object'
+                            ? Object.keys(item.elements)
+                            : groupMembership[id];
+
+                    const isGroup = Boolean(children);
+
+                    if (isGroup) {
+                        if (next[id]) {
+                            delete next[id];
+                        } else {
+                            children.forEach((cid) => delete next[cid]);
+
+                            const element = item?.element;
+                            const recData = item ?? getRecordingData({ element }) ?? {};
+
+                            next[id] = { ...recData, element };
+                        }
+                    } else {
+                        if (next[id]) {
+                            delete next[id];
+                        } else {
+                            const container = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
+                            const rec = getRecordingData(container) || {};
+                            const child = rec.elements?.[id] || {};
+                            const node =
+                                item?.element?.findOne?.(`#element-${id}`) ?? item?.element ?? container?.element;
+
+                            next[id] = { ...child, element: node };
+                        }
+
+                        const parentItem = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
+                        const parentRec = getRecordingData(parentItem);
+                        if (parentRec?.id) {
+                            const siblings = groupMembership[parentRec.id] || [];
+                            const allSelected = siblings.every((cid) => Boolean(next[cid]));
+
+                            if (allSelected) {
+                                siblings.forEach((cid) => delete next[cid]);
+                                next[parentRec.id] = { ...parentRec, element: parentItem?.element };
+                            } else {
+                                delete next[parentRec.id];
+                            }
+                        }
                     }
                 });
 
-                return newSelectedItems;
+                return next;
             });
         },
-        [processedItemsMap]
+        [processedItems, groupMembership]
     );
 
-    // Returns whether an item is selected.
-    const isItemSelected = useCallback((itemId) => !!selectedItems[itemId], [selectedItems]);
+    const setSelectionBasedOnCoordinates = useCallback(
+        ({ intersectedElements, yLevel }) => {
+            if (!intersectedElements) return;
+            clearSelection();
+            setHighestYLevel(yLevel + markersAndTrackerOffset * 2 + 10);
+            toggleItem(intersectedElements);
+        },
+        [markersAndTrackerOffset, clearSelection, toggleItem]
+    );
 
-    // Deletes selected events and cleans up the associated elements.
-    const deleteSelections = useCallback((selectedEvents) => {
-        const eventsArray = Array.isArray(selectedEvents) ? selectedEvents : [selectedEvents];
-        setSelectedItems((prevSelectedItems) => {
-            const updatedSelectedItems = { ...prevSelectedItems };
-            eventsArray.forEach(({ element, id }) => {
-                delete updatedSelectedItems[id];
-                element.destroy();
-            });
-            return updatedSelectedItems;
-        });
-    }, []);
+    const deleteSelections = useCallback((events) => {
+        const arr = Array.isArray(events) ? events : [events];
 
-    // Updates a selected item by its id with new values.
-    const updateSelectedItemById = useCallback((id, updates) => {
-        setSelectedItems((prevSelectedValues) => {
-            if (!prevSelectedValues[id]) return prevSelectedValues;
-            return {
-                ...prevSelectedValues,
-                [id]: {
-                    ...prevSelectedValues[id],
-                    ...updates
+        setSelectedItems((prev) => {
+            const next = { ...prev };
+            arr.forEach(({ element, id }) => {
+                if (id in next) {
+                    delete next[id];
                 }
-            };
+                if (element?.destroy) {
+                    element.destroy();
+                }
+            });
+            return next;
         });
     }, []);
 
-    // Memoized selection state for consistent reference.
-    const memoizedSelectedItems = useMemo(() => {
-        return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
-    }, [selectedItems]);
+    const isItemSelected = useCallback(
+        (id) => {
+            // Directly selected
+            if (selectedItems[id]) return true;
 
-    useEffect(() => {
-        const layersToDraw = new Set();
-
-        processedItems.forEach((item) => {
-            if (!item.element) return;
-            const recordingData = item.element.getAttr('data-recording');
-            const id = recordingData?.id;
-            const currentlySelected = recordingData?.isSelected || false;
-            const shouldSelect = !!(id && selectedItems[id]);
-
-            if (currentlySelected !== shouldSelect) {
-                item.element.setAttr('data-recording', {
-                    ...recordingData,
-                    isSelected: shouldSelect
-                });
-                const layer = item.element.getLayer();
-                if (layer) {
-                    layersToDraw.add(layer);
+            // Check if this item is part of a group that's selected
+            // eslint-disable-next-line no-restricted-syntax, guard-for-in
+            for (const groupId in groupMembership) {
+                const children = groupMembership[groupId] || [];
+                if (children.includes(id) && selectedItems[groupId]) {
+                    return true;
                 }
             }
-        });
 
-        // Draw each unique layer only once at the end.
-        layersToDraw.forEach((layer) => {
-            layer.draw();
-        });
-    }, [selectedItems, processedItems]);
+            return false;
+        },
+        [selectedItems, groupMembership]
+    );
 
-    // Combine loops to update selections based on processed items.
-    useEffect(() => {
-        setSelectedItems((prevSelectedItems) => {
-            const updatedSelectedItems = {};
-            processedItems.forEach((item) => {
-                const recData = getRecordingData(item.element);
-                if (recData && recData.id && recData.isSelected) {
-                    updatedSelectedItems[recData.id] = { ...recData, element: item.element };
-                }
-            });
-            return isEqual(prevSelectedItems, updatedSelectedItems) ? prevSelectedItems : updatedSelectedItems;
+    const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
+        const initialId = updates?.initialId ?? updates?.id ?? id;
+        const currentId = id;
+
+        setSelectedItems((prev) => {
+            const existing = prev[initialId];
+            const merged = { ...existing, ...updates };
+
+            if (isSelected === false) {
+                const { [initialId]: _, ...rest } = prev;
+                return rest;
+            }
+
+            if (initialId !== currentId) {
+                const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
+
+                return {
+                    ...rest,
+                    [currentId]: {
+                        ...(existingCurrent || {}),
+                        ...merged,
+                        initialId: currentId
+                    }
+                };
+            }
+
+            if (isEqual(existing, merged)) return prev;
+            return { ...prev, [initialId]: merged };
         });
-    }, [processedItems]);
+    }, []);
+
+    const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 
     return {
         clearSelection,

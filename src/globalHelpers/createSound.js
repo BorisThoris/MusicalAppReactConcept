@@ -11,7 +11,7 @@ function processParameters(eventInstance, params) {
         const paramValueObj = {};
 
         eventInstance.getParameterByName(paramName, paramValueObj, {});
-        const validatedValue = Math.min(Math.max(paramValueObj.val || defaultValue, min), max);
+        const validatedValue = Math.min(Math.max(paramValueObj.val ?? defaultValue, min), max);
 
         return { name: paramName, param, value: validatedValue };
     });
@@ -25,111 +25,104 @@ export const createSound = ({ eventInstance, eventPath, instrumentName, passedPa
 
     if (passedParams.length > 0) {
         params = passedParams;
-        params.forEach((paramData) => {
-            const { param, value } = paramData;
-            const { name: paramName } = param;
-
-            eventInstance.setParameterByName(paramName, value, false);
+        params.forEach(({ param, value }) => {
+            eventInstance.setParameterByName(param.name, value, false);
         });
     } else {
         const rawParams = getEventInstanceParamaters(eventInstance);
-        const paramsWithValues = processParameters(eventInstance, rawParams);
-        params = paramsWithValues;
+        params = processParameters(eventInstance, rawParams);
     }
 
-    const idBasedOnPointer = `${eventInstance.$$.ptr}`;
+    const id = `${eventInstance.$$.ptr}`;
 
     return {
-        ...eventInstance,
         endTime: parseFloat(endTime.toFixed(2)),
         eventInstance,
         eventLength,
         eventPath,
-        id: idBasedOnPointer,
+        id,
         instrumentName,
         name,
         params,
-        startTime: parseFloat(startTime?.toFixed(2))
-    };
-};
-
-export const createEvent = ({ instrumentName, parentId = null, passedStartTime = null, recording }) => {
-    const newEventInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
-
-    const oldEventInstance =
-        recording.eventInstance && recording.eventInstance.$$ && recording.eventInstance.$$.ptr
-            ? recording.eventInstance
-            : false;
-
-    const mainEvent = createSound({
-        eventInstance: oldEventInstance || newEventInstance,
-        eventPath: recording.eventPath || 'Drum/Snare',
-        instrumentName,
-        passedParams: recording.params,
-        startTime: passedStartTime || recording.startTime
-    });
-
-    const { startTime } = mainEvent;
-    const { endTime } = mainEvent;
-
-    return {
-        ...recording,
-        ...mainEvent,
-        endTime: parseFloat(endTime.toFixed(2)),
-        eventLength: endTime - startTime,
-        events: undefined,
-        id: mainEvent.id,
-        instrumentName: mainEvent.instrumentName,
-        isSelected: recording.isSelected || false,
-        length: endTime - startTime,
-        locked: recording.locked || false,
-        parentId,
         startTime: parseFloat(startTime.toFixed(2))
     };
 };
 
-export const copyEvent = (event, targetInstrumentName, startOffset) => {
-    const newEvent = { ...event, eventInstance: null, locked: true };
-    const adjustedStartTime = event.startTime + startOffset;
+export const createEvent = ({ instrumentName, parentId = null, passedStartTime = null, recording }) => {
+    // Build the main event instance and sound data
+    const newInstance = createEventInstance(recording.eventPath || 'Drum/Snare');
+    const oldInstance = recording.eventInstance?.$$?.ptr ? recording.eventInstance : false;
 
+    const sound = createSound({
+        eventInstance: oldInstance || newInstance,
+        eventPath: recording.eventPath || 'Drum/Snare',
+        instrumentName,
+        passedParams: recording.params,
+        startTime: passedStartTime ?? recording.startTime
+    });
+
+    const { endTime, id, startTime } = sound;
+    const length = endTime - startTime;
+
+    // base event object
+    const eventObj = {
+        ...recording,
+        ...sound,
+        endTime: parseFloat(endTime.toFixed(2)),
+        eventLength: parseFloat(length.toFixed(2)),
+        id,
+        instrumentName,
+        isSelected: recording.isSelected || false,
+        locked: recording.locked || false,
+        parentId,
+        startTime: parseFloat(startTime.toFixed(2))
+    };
+
+    // If this recording has an overlap-group, recreate its children
+    if (recording.elements && Object.keys(recording.elements).length) {
+        eventObj.elements = {};
+        const groupOffset = (passedStartTime ?? recording.startTime) - recording.startTime;
+
+        Object.values(recording.elements).forEach((child) => {
+            const childOffsetRelative = child.startTime - recording.startTime;
+            const childStart = (passedStartTime ?? recording.startTime) + childOffsetRelative;
+            const childRecording = { ...child, eventInstance: null };
+
+            const created = createEvent({
+                instrumentName,
+                parentId: eventObj.id,
+                passedStartTime: parseFloat(childStart.toFixed(2)),
+                recording: childRecording
+            });
+
+            eventObj.elements[created.id] = created;
+        });
+    }
+
+    return eventObj;
+};
+
+export const copyEvent = (event, targetInstrumentName, startOffset) => {
+    // simply delegate to createEvent; it will handle overlap-groups automatically
+    const recording = { ...event, eventInstance: null, locked: true };
+    const start = event.startTime + startOffset;
     return createEvent({
         instrumentName: targetInstrumentName,
-        passedStartTime: adjustedStartTime,
-        recording: newEvent
+        parentId: event.parentId,
+        passedStartTime: parseFloat(start.toFixed(2)),
+        recording
     });
 };
 
 export const recreateEvents = (passedGroups) => {
     const newRecordings = {};
 
-    Object.keys(passedGroups).forEach((instrumentName) => {
+    Object.entries(passedGroups).forEach(([instrumentName, groupMap]) => {
         newRecordings[instrumentName] = {};
 
-        Object.values(passedGroups[instrumentName]).forEach((recording) => {
-            if (recording.overlapGroup) {
-                const newOverlapGroup = {};
-                const newEventIds = [];
-
-                Object.entries(recording.overlapGroup).forEach(([id, overlapEvent]) => {
-                    const recreatedEvent = createEvent({
-                        instrumentName,
-                        recording: overlapEvent
-                    });
-                    newOverlapGroup[recreatedEvent.id] = recreatedEvent;
-                    newEventIds.push(recreatedEvent.id);
-                });
-
-                const newOverlapGroupId = newEventIds.join('-');
-                newRecordings[instrumentName][newOverlapGroupId] = {
-                    ...recording,
-                    id: newOverlapGroupId,
-                    overlapGroup: newOverlapGroup
-                };
-            } else {
-                // Process regular events
-                const recreatedEvent = createEvent({ instrumentName, recording });
-                newRecordings[instrumentName][recreatedEvent.id] = { ...recreatedEvent };
-            }
+        Object.values(groupMap).forEach((recording) => {
+            const created = createEvent({ instrumentName, recording });
+            newRecordings[instrumentName][created.id] = created;
         });
     });
 

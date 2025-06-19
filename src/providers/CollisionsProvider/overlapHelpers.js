@@ -1,206 +1,210 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-restricted-syntax */
+import Konva from 'konva';
 
-// Helper function: uses Konva’s absolute transform to get the absolute rect from a node.
-const getAbsoluteRect = (node) => {
-    if (!node) {
-        return { height: 0, width: 0, x: 0, y: 0 };
-    }
-    const clientRect = node.getClientRect({ skipTransform: false });
-    const absTransform = node.getAbsolutePosition();
-    return {
-        height: clientRect.height,
-        width: clientRect.width,
-        x: absTransform.x,
-        y: absTransform.y
-    };
-};
-
-// Returns true if both the rectangle and time intervals of two elements overlap.
+/**
+ * Exported: true if two elements overlap in time AND their rects intersect,
+ * and they share the same instrumentName.
+ */
 export const isOverlapping = (elA, elB) => {
-    const normRectA = getAbsoluteRect(elA?.node || elA?.element);
-    const normRectB = getAbsoluteRect(elB?.node || elB?.element);
-
-    // Directly compute rectangle overlap.
-    const isRectOverlapping = !(
-        normRectA.x > normRectB.x + normRectB.width ||
-        normRectA.x + normRectA.width < normRectB.x ||
-        normRectA.y > normRectB.y + normRectB.height ||
-        normRectA.y + normRectA.height < normRectB.y
-    );
-
-    // Directly compute time overlap.
-    const isTimeOverlapping = !(elA.endTime <= elB.startTime || elB.endTime <= elA.startTime);
-
-    return isRectOverlapping && isTimeOverlapping;
-};
-
-// Checks if rectA is entirely contained within rectB.
-const isRectContained = (rectA, rectB) =>
-    rectA.x >= rectB.x &&
-    rectA.y >= rectB.y &&
-    rectA.x + rectA.width <= rectB.x + rectB.width &&
-    rectA.y + rectA.height <= rectB.y + rectB.height;
-
-// Simply returns stored group data.
-const getGroupData = (element) => ({
-    endTime: element.endTime,
-    rect: element.rect,
-    startTime: element.startTime
-});
-
-// --- Union-Find helper functions ---
-const initializeUnionFind = (elements) => {
-    const parent = {};
-    const rank = {};
-    elements.forEach(({ id }) => {
-        parent[id] = id;
-        rank[id] = 0;
-    });
-    return { parent, rank };
-};
-
-const find = (parent, id, visited = new Set()) => {
-    if (visited.has(id)) {
-        console.warn(`Infinite recursion detected for id: ${id}`);
-        return id;
+    if (elA.instrumentName !== elB.instrumentName) {
+        return false;
     }
-    visited.add(id);
-    if (parent[id] !== id) {
-        parent[id] = find(parent, parent[id], visited);
+    if (elA.endTime <= elB.startTime || elB.endTime <= elA.startTime) {
+        return false;
     }
-    return parent[id];
+    return Konva.Util.haveIntersection(elA.rect, elB.rect);
 };
 
-const union = (parent, rank, elementA, elementB) => {
-    const rootA = find(parent, elementA.id);
-    const rootB = find(parent, elementB.id);
-    if (rootA !== rootB) {
-        if (rank[rootA] > rank[rootB]) {
-            parent[rootB] = rootA;
-        } else if (rank[rootA] < rank[rootB]) {
-            parent[rootA] = rootB;
+/**
+ * Union-Find data structure encapsulating parent & rank.
+ */
+class UnionFind {
+    constructor(ids) {
+        this.parent = Object.fromEntries(ids.map((id) => [id, id]));
+        this.rank = Object.fromEntries(ids.map((id) => [id, 0]));
+    }
+
+    find(x) {
+        if (this.parent[x] !== x) {
+            this.parent[x] = this.find(this.parent[x]);
+        }
+        return this.parent[x];
+    }
+
+    union(a, b) {
+        const ra = this.find(a);
+        const rb = this.find(b);
+        if (ra === rb) {
+            return;
+        }
+        if (this.rank[ra] > this.rank[rb]) {
+            this.parent[rb] = ra;
+        } else if (this.rank[ra] < this.rank[rb]) {
+            this.parent[ra] = rb;
         } else {
-            parent[rootB] = rootA;
-            rank[rootA] += 1;
+            this.parent[rb] = ra;
+            this.rank[ra] += 1;
         }
     }
-};
+}
 
-// Main function to find overlapping groups.
-export const findOverlaps = (processedData) => {
-    if (!processedData) return;
+/**
+ * Unwrap grouped elements (if any), else return singleton array.
+ */
+function getAllElements(element) {
+    return element.elements ? Object.values(element.elements) : [element];
+}
 
-    // Returns an array of elements (if grouped, returns its elements; else wraps the element in an array).
-    const getAllElements = (element) => (element.elements ? Object.values(element.elements) : [element]);
-
-    // Gather all elements and annotate each with its instrument name.
-    const allElements = Object.entries(processedData).flatMap(([instrumentName, events]) =>
-        Object.values(events).map((event) => ({ ...event, instrumentName }))
-    );
-
-    const { parent, rank } = initializeUnionFind(allElements);
-
-    // Compare each pair using group-level data.
-    allElements.forEach((elementA, idxA) => {
-        // Precompute group data for elementA.
-        const groupDataA = getGroupData(elementA);
-        for (let idxB = idxA + 1; idxB < allElements.length; idxB += 1) {
-            const elementB = allElements[idxB];
-
-            // Skip if either element is locked.
-            // eslint-disable-next-line no-continue
-            if (elementA.locked || elementB.locked) continue;
-
-            // Precompute group data for elementB.
-            const groupDataB = getGroupData(elementB);
-
-            const overlapCheck = isOverlapping(
-                {
-                    endTime: groupDataA.endTime,
-                    node: elementA.node,
-                    rect: groupDataA.rect,
-                    startTime: groupDataA.startTime
-                },
-                {
-                    endTime: groupDataB.endTime,
-                    node: elementB.node,
-                    rect: groupDataB.rect,
-                    startTime: groupDataB.startTime
-                }
-            );
-
-            let rectContained = false;
-            if (groupDataA.rect && groupDataB.rect) {
-                rectContained =
-                    isRectContained(groupDataA.rect, groupDataB.rect) ||
-                    isRectContained(groupDataB.rect, groupDataA.rect);
-            }
-
-            // Merge groups if either the overlap or containment condition holds.
-            if (overlapCheck || rectContained) {
-                union(parent, rank, elementA, elementB);
-            }
-        }
-    });
-
-    // Build temporary groups from the union-find structure.
-    const tempGroups = allElements.reduce((groups, currentElement) => {
-        const rootId = find(parent, currentElement.id);
-        const actualElements = getAllElements(currentElement);
-        if (!groups[currentElement.instrumentName]) {
-            groups[currentElement.instrumentName] = {};
-        }
-        if (!groups[currentElement.instrumentName][rootId]) {
-            groups[currentElement.instrumentName][rootId] = {
+/**
+ * Build the final grouped output after all unions.
+ */
+function buildGroupsFromUF(elems, uf) {
+    const temp = {};
+    elems.forEach((el) => {
+        const root = uf.find(el.id);
+        if (!temp[root]) {
+            temp[root] = {
                 elements: {},
                 ids: new Set(),
-                isSelected: currentElement.selected,
-                locked: currentElement.locked
+                isSelected: el.isSelected,
+                locked: el.locked
             };
         }
-        actualElements.forEach((actualElement) => {
-            groups[currentElement.instrumentName][rootId].ids.add(actualElement.id);
-            groups[currentElement.instrumentName][rootId].elements[actualElement.id] = actualElement;
+        getAllElements(el).forEach((child) => {
+            temp[root].elements[child.id] = child;
+            temp[root].ids.add(child.id);
         });
-        return groups;
-    }, {});
+    });
 
-    // Build final groups by computing overall start/end times, lengths, and preserving the stored group rect.
-    const finalGroups = Object.entries(tempGroups).reduce((result, [instrumentName, groups]) => {
-        result[instrumentName] = Object.entries(groups).reduce((acc, [rootId, group]) => {
-            const idsArray = Array.from(group.ids);
-            if (idsArray.length === 1) {
-                const [singleId] = idsArray;
-                acc[singleId] = group.elements[singleId];
-            } else {
-                const startTime = Math.min(...Object.values(group.elements).map((el) => el.startTime));
-                const endTime = Math.max(...Object.values(group.elements).map((el) => el.endTime));
-                const length = endTime - startTime;
-                // Use the stored rect from the first element (or any agreed-upon source) in the group.
-                const storedRect = group.elements[idsArray[0]].rect;
-                acc[rootId] = {
-                    ...group,
-                    endTime,
-                    id: rootId,
-                    instrumentName,
-                    length,
-                    rect: storedRect,
-                    startTime
-                };
+    const result = {};
+    Object.entries(temp).forEach(([root, group]) => {
+        const ids = Array.from(group.ids).sort();
+        if (ids.length === 1) {
+            const single = ids[0];
+
+            result[single] = group.elements[single];
+        } else {
+            const mergedId = ids.join('-');
+            const times = ids.map((id) => ({ end: group.elements[id].endTime, start: group.elements[id].startTime }));
+            const start = Math.min(...times.map((t) => t.start));
+            const end = Math.max(...times.map((t) => t.end));
+
+            result[mergedId] = {
+                ...group,
+                endTime: end,
+                eventLength: end - start,
+                id: mergedId,
+                instrumentName: group.elements[ids[0]].instrumentName,
+                rect: group.elements[ids[0]].rect,
+                startTime: start
+            };
+        }
+    });
+
+    return result;
+}
+
+/**
+ * Per-instrument sweep-line + union-find to merge overlaps,
+ * using isOverlapping for the core test.
+ */
+function buildGroupsForInstrument(elems) {
+    // 1) sort by startTime
+    const sorted = elems.slice().sort((a, b) => a.startTime - b.startTime);
+
+    // 2) init UF
+    const uf = new UnionFind(sorted.map((e) => e.id));
+
+    // 3) sweep-line active list (sorted by endTime)
+    const active = [];
+
+    sorted.forEach((cur) => {
+        if (cur.locked) {
+            return;
+        }
+
+        // evict any that end before or at cur.startTime
+        while (active.length > 0 && active[0].endTime <= cur.startTime) {
+            active.shift();
+        }
+
+        // now only test with the remaining active elements via isOverlapping
+        active.forEach((other) => {
+            if (!other.locked && isOverlapping(cur, other)) {
+                uf.union(cur.id, other.id);
             }
-            return acc;
-        }, {});
-        return result;
-    }, {});
-
-    // Optionally sort final groups by instrumentName alphabetically.
-    const sortedFinalGroups = {};
-    Object.keys(finalGroups)
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((instrumentName) => {
-            sortedFinalGroups[instrumentName] = finalGroups[instrumentName];
         });
 
-    return sortedFinalGroups;
-};
+        // insert cur into active, keeping endTime order
+        let inserted = false;
+        for (let i = 0; i < active.length; i += 1) {
+            if (cur.endTime < active[i].endTime) {
+                active.splice(i, 0, cur);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) {
+            active.push(cur);
+        }
+    });
+
+    return buildGroupsFromUF(elems, uf);
+}
+
+/**
+ * processOverlaps: flat array → merged groups per instrument
+ */
+export function processOverlaps(allElements) {
+    // bucket by instrumentName
+    const byInst = {};
+    allElements.forEach((el) => {
+        const inst = el.instrumentName;
+        if (!byInst[inst]) {
+            byInst[inst] = [];
+        }
+        byInst[inst].push(el);
+    });
+
+    const merged = {};
+    Object.entries(byInst).forEach(([inst, list]) => {
+        merged[inst] = buildGroupsForInstrument(list);
+    });
+
+    // return sorted by instrument key
+    return Object.keys(merged)
+        .sort()
+        .reduce((out, inst) => {
+            // eslint-disable-next-line no-param-reassign
+            out[inst] = merged[inst];
+            return out;
+        }, {});
+}
+
+/**
+ * findOverlaps: takes your processedData map, flattens,
+ * runs processOverlaps, and re‑inserts empty instruments.
+ */
+export function findOverlaps(processedData) {
+    if (!processedData) {
+        return {};
+    }
+
+    // flatten into array
+    const flat = Object.entries(processedData).flatMap(([inst, events]) =>
+        Object.values(events).map((ev) => ({
+            ...ev,
+            instrumentName: inst
+        }))
+    );
+
+    const result = processOverlaps(flat);
+
+    // preserve instruments with no events
+    Object.keys(processedData).forEach((inst) => {
+        if (!result[inst]) {
+            result[inst] = {};
+        }
+    });
+
+    return result;
+}

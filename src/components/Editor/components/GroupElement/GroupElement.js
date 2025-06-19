@@ -1,65 +1,111 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Group, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
+import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
+import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineHeight } from '../../../../providers/TimelineProvider';
 import { Lock } from '../Lock/Lock';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
+        const { elements, id, isSelected: dataIsSelected, locked, startTime } = groupData;
+
+        const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const { elements, id, locked, startTime } = groupData;
+        const hasToggledRef = useRef(false);
+        const stableInitialIdRef = useRef(id);
+        const initialId = stableInitialIdRef.current;
 
-        // Calculate the initial X position of the group based on its start time.
-        const groupX = startTime * pixelToSecondRatio || 100;
+        const { isItemSelected, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
 
-        // Sort the group events to maintain a consistent order.
-        const groupEvents = useMemo(() => {
-            return Object.values(elements).sort((a, b) => a.startTime - b.startTime);
-        }, [elements]);
+        const isSelected = isItemSelected(initialId);
+        const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
+        const isDragging = isElementBeingDragged(groupId);
+        const isDraggable = isSelected || locked;
+
+        const groupEvents = useMemo(
+            () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
+            [elements]
+        );
 
         const groupLength = groupEvents.length;
 
-        // Toggle the group's locked state.
-        const onLockGroup = useCallback(() => {
+        const selectedGroup = useMemo(
+            () => ({
+                ...groupData,
+                element: groupRef.current,
+                initialId,
+                isSelected: isDraggable
+            }),
+            [groupData, initialId, isDraggable]
+        );
+
+        const handleToggle = useCallback(() => {
+            toggleItem({ ...selectedGroup, element: groupRef.current });
+        }, [selectedGroup, toggleItem]);
+
+        const onLockGroup = useCallback((e) => {
+            e.cancelBubble = true;
             if (!groupRef.current) return;
             const prevData = groupRef.current.attrs['data-overlap-group'];
-            groupRef.current.setAttrs({
-                'data-overlap-group': { ...prevData, locked: !prevData.locked }
-            });
+            groupRef.current.setAttrs({ 'data-overlap-group': { ...prevData, locked: !prevData.locked } });
             groupRef.current.getLayer().draw();
         }, []);
 
-        const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
+        useEffect(() => {
+            const node = groupRef.current;
+            if (!node) return;
 
-        // Optional: Click handler (if you want to add additional click behavior)
-        const onGroupClick = useCallback(() => {}, []);
+            updateSelectedItemById({
+                id,
+                isSelected: selectedGroup.isSelected,
+                updates: selectedGroup
+            });
 
-        // Use the global dragging state for this group by passing the raw group ID.
-        const isDragging = isElementBeingDragged(String(id));
+            if (initialId !== id) {
+                stableInitialIdRef.current = id;
+            }
+
+            return () => {
+                updateSelectedItemById({
+                    id,
+                    isSelected: false,
+                    updates: { ...selectedGroup }
+                });
+            };
+        }, [id, initialId, selectedGroup, updateSelectedItemById]);
+
+        useEffect(() => {
+            const shouldToggle = !isSelected && dataIsSelected;
+            if (shouldToggle && !hasToggledRef.current) {
+                toggleItem({ ...selectedGroup, element: groupRef.current });
+                hasToggledRef.current = true;
+            }
+        }, [dataIsSelected, isSelected, selectedGroup, toggleItem]);
+
+        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
-                    x={groupX}
-                    data-overlap-group={groupData}
                     y={isDragging ? timelineY : 0}
                     ref={groupRef}
+                    data-overlap-group={selectedGroup}
+                    name={groupId}
                     data-group-id={groupId}
                     id={groupId}
-                    onClick={onGroupClick}
-                    draggable={locked}
-                    onDragStart={locked ? handleDragStart : undefined}
-                    onDragMove={locked ? handleDragMove : undefined}
-                    onDragEnd={locked ? handleDragEnd : undefined}
+                    draggable={isDraggable}
+                    onDragStart={isDraggable ? handleDragStart : undefined}
+                    onDragMove={isDraggable ? handleDragMove : undefined}
+                    onDragEnd={isDraggable ? handleDragEnd : undefined}
+                    {...controlledPositionProps}
                 >
-                    <Text x={5} y={-15} text={`GROUP ${groupId}`} fill="black" fontSize={15} listening={false} />
-
-                    <Group offsetX={groupX}>
+                    <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (
                             <SoundEventElement
                                 key={event.id}
@@ -77,6 +123,30 @@ export const GroupElement = React.memo(
                             />
                         ))}
                     </Group>
+
+                    <KonvaHtml
+                        // eslint-disable-next-line react/no-children-prop
+                        children={
+                            <button
+                                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                                onClick={handleToggle}
+                                style={{
+                                    background: '#222',
+                                    border: '1px solid #555',
+                                    borderRadius: 4,
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    position: 'absolute',
+                                    right: 10,
+                                    top: 10,
+                                    zIndex: 9999
+                                }}
+                            >
+                                Toggle Test Element
+                            </button>
+                        }
+                    />
 
                     <Lock isLocked={locked} onClick={onLockGroup} />
                 </Group>

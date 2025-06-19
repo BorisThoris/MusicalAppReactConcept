@@ -1,12 +1,13 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
-import pixelToSecondRatio from '../globalConstants/pixelToSeconds';
 import getElapsedTime from '../globalHelpers/getElapsedTime';
+import { usePixelRatio } from '../providers/PixelRatioProvider/PixelRatioProvider';
 import { useInstrumentRecordingsOperations } from './useInstrumentRecordingsOperations';
 import { INSTRUMENTS_PANEL_ID, PanelContext } from './usePanelState';
 
 const RECORDING_TIME_LIMIT_SECONDS = 120.0;
 
 const useRecorder = ({ instrumentName } = { instrumentName: '' }) => {
+    const pixelToSecondRatio = usePixelRatio();
     const [isRecording, setIsRecording] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const { addRecording, resetRecordings } = useInstrumentRecordingsOperations();
@@ -31,7 +32,7 @@ const useRecorder = ({ instrumentName } = { instrumentName: '' }) => {
                 addRecording(eventInstance, instrumentLayer || currentInstrumentName, startTime, elapsedTime);
             }
         },
-        [isRecording, addRecording, instrumentLayer, startTime, x]
+        [isRecording, x, pixelToSecondRatio, addRecording, instrumentLayer, startTime]
     );
 
     useEffect(() => {

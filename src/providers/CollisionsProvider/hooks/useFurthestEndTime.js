@@ -1,7 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import pixelToSecondRatio from '../../../globalConstants/pixelToSeconds';
+import { usePixelRatio } from '../../PixelRatioProvider/PixelRatioProvider';
 
 export const useFurthestEndTime = (findAllSoundEventElements) => {
+    const pixelToSecondRatio = usePixelRatio();
+
     const calculateFurthestEndTime = useCallback(() => {
         const soundEventElements = findAllSoundEventElements();
         let maxEndX = 0;
@@ -13,10 +15,13 @@ export const useFurthestEndTime = (findAllSoundEventElements) => {
             }
         });
         return maxEndX / pixelToSecondRatio;
-    }, [findAllSoundEventElements]);
+    }, [findAllSoundEventElements, pixelToSecondRatio]);
 
     const furthestEndTime = calculateFurthestEndTime();
-    const totalDurationInPixels = useMemo(() => furthestEndTime * pixelToSecondRatio, [furthestEndTime]);
+    const totalDurationInPixels = useMemo(
+        () => furthestEndTime * pixelToSecondRatio,
+        [furthestEndTime, pixelToSecondRatio]
+    );
 
     return { furthestEndTime, totalDurationInPixels };
 };

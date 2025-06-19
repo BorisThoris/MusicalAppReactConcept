@@ -1,10 +1,10 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import { Layer, Stage, useStrictMode } from 'react-konva';
-import pixelToSecondRatio from '../../../../globalConstants/pixelToSeconds';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
 import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
@@ -13,13 +13,23 @@ import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
-const Timelines = React.memo(() => {
+const Timelines = memo(() => {
+    const pixelToSecondRatio = usePixelRatio();
     const stageRef = useRef(null);
     const topLayerRef = useRef(null);
 
     const { addStageRef, overlapGroups, removeStageRef, updateBeatRef } = useContext(CollisionsContext);
     const { playbackStatus } = useContext(RecordingsPlayerContext);
     const { hideActionsMenu } = useContext(PanelContext);
+
+    // Dynamically set Konva canvas pixel ratio to 1 after mount
+    useLayoutEffect(() => {
+        const stage = stageRef.current;
+        if (stage) {
+            stage.bufferCanvas.setPixelRatio(1);
+            stage.batchDraw();
+        }
+    }, []);
 
     // Calculate stage width using the current window width.
     // Note: This value won't update on window resize unless you trigger a re-render.
@@ -32,7 +42,7 @@ const Timelines = React.memo(() => {
         [recordingsArr]
     );
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         addStageRef(stageRef);
 
         const topLayer = topLayerRef.current;
@@ -55,9 +65,10 @@ const Timelines = React.memo(() => {
     }, [hideActionsMenu]);
 
     return (
-        <button onClick={handleClick}>
+        <button onClick={handleClick} style={{ all: 'unset', display: 'block', width: '100%' }}>
             <PaintingTopBar />
-            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef}>
+
+            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1}>
                 <Layer ref={topLayerRef} name="top-layer">
                     {recordingsArr.map(([parentGroupName, events], index) => (
                         <InstrumentTimeline
@@ -69,10 +80,13 @@ const Timelines = React.memo(() => {
                         />
                     ))}
                 </Layer>
+
                 <Layer>
                     <TimelineTracker furthestEndTime={playbackStatus.currentInstrument || 0} />
                 </Layer>
+
                 <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
+
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>
         </button>
