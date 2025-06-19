@@ -15,30 +15,25 @@ export const SoundEventDragProvider = ({ children }) => {
         const chl = Object.values(groupElm.elements)
             .filter((child) => targetId === child.id)
             .map((child) => child.id);
-
         return chl;
     }
 
     const selectedElementIds = useMemo(() => {
         const result = [];
-
         // eslint-disable-next-line no-restricted-syntax
         for (const { element, id } of Object.values(selectedItems)) {
             const isGroup = element?.attrs?.['data-overlap-group'];
-
             if (isGroup) {
-                const groupString = element?.attrs?.['data-overlap-group'];
+                const groupString = element.attrs['data-overlap-group'];
                 const childrenIds = extractElementIdsFromGroup(groupString, id);
                 childrenIds.forEach((childId) =>
                     result.push({ id: `${ELEMENT_ID_PREFIX}${childId}`, type: 'element' })
                 );
-
                 result.push({ id: `${GROUP_ELEMENT_ID_PREFIX}${id}`, type: 'group' });
             } else {
                 result.push({ id: `${ELEMENT_ID_PREFIX}${id}`, type: 'element' });
             }
         }
-
         return result;
     }, [selectedItems]);
 
@@ -148,18 +143,16 @@ export const SoundEventDragProvider = ({ children }) => {
     );
 
     const processSelectedElements = useCallback(
-        (stage, action) => {
-            selectedElementIds.forEach(({ id }) => {
-                const element = stage.findOne((n) => n.attrs.id === id);
+        (action) => {
+            Object.values(selectedItems).forEach((item) => {
+                if (item.element) action(item.element);
 
-                if (!element) {
-                    console.warn(`⚠️ Element not found for ID: ${id}`);
-                } else {
-                    action(element);
-                }
+                const { element } = item;
+
+                action(element);
             });
         },
-        [selectedElementIds]
+        [selectedItems]
     );
 
     const handleDragStart = useCallback(
@@ -188,16 +181,12 @@ export const SoundEventDragProvider = ({ children }) => {
             initialXRef.current = event.target.x();
             currentYRef.current = event.evt.y;
 
-            const stage = stageRef;
-
-            processSelectedElements(stage, (element) => {
+            processSelectedElements((element) => {
                 initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
             });
 
-            // Prepare dragging state
             const newDragging = {};
             const itemId = `${prefix}${rawId}`;
-
             newDragging[itemId] = true;
 
             if (!isGroupDrag) {
@@ -208,7 +197,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
             setDragging((prev) => ({ ...prev, ...newDragging }));
         },
-        [stageRef, processSelectedElements, selectedElementIds, setDragging]
+        [processSelectedElements, selectedElementIds, setDragging]
     );
     const handleDragMove = useCallback(
         (e) => {
@@ -244,7 +233,7 @@ export const SoundEventDragProvider = ({ children }) => {
 
                 // If dragging a group, only move the group; otherwise move selected items
                 if (selectedElementIds.length) {
-                    processSelectedElements(stageRef, mover);
+                    processSelectedElements(mover);
                 } else {
                     mover(e.target);
                 }
@@ -258,7 +247,7 @@ export const SoundEventDragProvider = ({ children }) => {
                 highlightedTimelinesRef.current = newHighlights;
             });
         },
-        [forceUpdatePosition, findClosestTimelineRect, processSelectedElements, selectedElementIds, stageRef]
+        [forceUpdatePosition, findClosestTimelineRect, processSelectedElements, selectedElementIds]
     );
 
     const finalizeDrag = useCallback(
@@ -273,7 +262,7 @@ export const SoundEventDragProvider = ({ children }) => {
     const handleDragEnd = useCallback(
         (e) => {
             if (selectedElementIds.length) {
-                processSelectedElements(stageRef, finalizeDrag);
+                processSelectedElements(finalizeDrag);
             } else {
                 finalizeDrag(e.target);
             }
@@ -286,7 +275,7 @@ export const SoundEventDragProvider = ({ children }) => {
             setDragging({});
             refreshBeat();
         },
-        [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, stageRef, setDragging]
+        [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, setDragging]
     );
 
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);

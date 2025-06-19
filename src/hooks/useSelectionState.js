@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
@@ -178,8 +178,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
             return { ...prev, [initialId]: merged };
         });
     }, []);
-
-    console.log('selectedItems', selectedItems);
 
     const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
 
