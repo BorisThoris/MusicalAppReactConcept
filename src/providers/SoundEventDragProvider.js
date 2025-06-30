@@ -144,12 +144,8 @@ export const SoundEventDragProvider = ({ children }) => {
 
     const processSelectedElements = useCallback(
         (action) => {
-            Object.values(selectedItems).forEach((item) => {
-                if (item.element) action(item.element);
-
-                const { element } = item;
-
-                action(element);
+            Object.values(selectedItems).forEach(({ element }) => {
+                if (element) action(element);
             });
         },
         [selectedItems]

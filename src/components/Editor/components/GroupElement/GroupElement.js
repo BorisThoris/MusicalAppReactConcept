@@ -40,9 +40,9 @@ export const GroupElement = React.memo(
                 ...groupData,
                 element: groupRef.current,
                 initialId,
-                isSelected: isDraggable
+                isSelected
             }),
-            [groupData, initialId, isDraggable]
+            [groupData, initialId, isSelected]
         );
 
         const handleToggle = useCallback(() => {
