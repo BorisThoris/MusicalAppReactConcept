@@ -49,10 +49,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
                 ids.forEach((id, idx) => {
                     const item = items[idx];
-                    const children =
-                        item?.elements && typeof item.elements === 'object'
-                            ? Object.keys(item.elements)
-                            : groupMembership[id];
+                    const children = item?.elements ? Object.keys(item.elements) : groupMembership[id];
 
                     const isGroup = Boolean(children);
 
@@ -71,13 +68,10 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                         if (next[id]) {
                             delete next[id];
                         } else {
-                            const container = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
-                            const rec = getRecordingData(container) || {};
-                            const child = rec.elements?.[id] || {};
-                            const node =
-                                item?.element?.findOne?.(`#element-${id}`) ?? item?.element ?? container?.element;
+                            const node = item?.element;
+                            const recording = node.attrs['data-recording'];
 
-                            next[id] = { ...child, element: node };
+                            next[id] = { element: node, ...recording };
                         }
 
                         const parentItem = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
