@@ -1,7 +1,3 @@
-/* eslint-disable no-shadow */
-/* eslint-disable no-param-reassign */
-/* eslint-disable prefer-destructuring */
-/* eslint-disable max-len */
 import find from 'lodash/find';
 import { useCallback, useContext } from 'react';
 import { getEventPath } from '../fmodLogic/eventInstanceHelpers';
@@ -12,148 +8,118 @@ import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsPro
 export const useInstrumentRecordingsOperations = () => {
     const { getSoundEventById, setOverlapGroups } = useContext(CollisionsContext);
 
-    const updateGroups = (setOverlapGroups, updateCallback) => {
-        setOverlapGroups((prevGroups) => {
-            const updatedGroups = { ...prevGroups };
-            updateCallback(updatedGroups);
-
-            return updatedGroups;
-        });
-    };
+    const updateGroups = useCallback(
+        (callback) => {
+            setOverlapGroups((prevGroups) => callback(prevGroups));
+        },
+        [setOverlapGroups]
+    );
 
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                updatedGroups[instrumentName] = {};
-            });
+            updateGroups((prevGroups) => ({
+                ...prevGroups,
+                [instrumentName]: {}
+            }));
         },
-        [setOverlapGroups]
+        [updateGroups]
     );
-
-    const updateRecordingParams = useCallback(
-        ({ event, updatedParam }) => {
-            const { id: eventId } = event;
-
-            const soundEvent = getSoundEventById(eventId);
-
-            if (soundEvent && soundEvent.element) {
-                const recordingData = { ...soundEvent.element.attrs['data-recording'] };
-
-                if (recordingData && recordingData.params) {
-                    // Find and update the specific param using Lodash
-                    const paramToUpdate = find(recordingData.params, { name: updatedParam.name });
-                    if (paramToUpdate) {
-                        Object.assign(paramToUpdate, updatedParam); // Update with new values
-                    }
-
-                    // Re-assign the updated data-recording back to the element's attributes
-                    soundEvent.element.setAttr('data-recording', recordingData);
-
-                    // Trigger a redraw by Konva
-                    soundEvent.element.draw();
-                }
-            }
-        },
-        [getSoundEventById]
-    );
-
-    const lockOverlapGroup = useCallback(() => {}, []);
-
-    const updateOverlapGroupTimes = useCallback(() => {}, [], []);
-
-    const deleteOverlapGroup = useCallback(() => {}, []);
 
     const deleteAllRecordingsForInstrument = useCallback(
         (instrumentName) => {
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                delete updatedGroups[instrumentName];
+            updateGroups((prevGroups) => {
+                const { [instrumentName]: _, ...rest } = prevGroups;
+                return rest;
             });
         },
-        [setOverlapGroups]
+        [updateGroups]
     );
 
     const recordSoundEvent = useCallback(
         (eventInstance, instrumentName, startTime, startOffset) => {
             const elapsedTime = getElapsedTime(startTime, startOffset);
             const eventPath = getEventPath(eventInstance);
+            const effectiveStartTime = startOffset != null ? elapsedTime : startTime;
 
             const event = createSound({
                 eventInstance,
                 eventPath,
                 instrumentName,
-                startTime: startOffset || startOffset === 0 ? elapsedTime : startTime
+                startTime: effectiveStartTime
             });
 
             const newGroup = {
                 ...event,
-                events: { [event.id]: { ...event, parentId: event.id } },
+                events: {
+                    [event.id]: {
+                        ...event,
+                        parentId: event.id
+                    }
+                },
                 locked: false
             };
 
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                if (!updatedGroups[instrumentName]) {
-                    updatedGroups[instrumentName] = {};
+            updateGroups((prevGroups) => {
+                const groupsCopy = { ...prevGroups };
+                if (!groupsCopy[instrumentName]) {
+                    groupsCopy[instrumentName] = {};
                 }
-                updatedGroups[instrumentName][event.id] = newGroup;
+                groupsCopy[instrumentName] = {
+                    ...groupsCopy[instrumentName],
+                    [event.id]: newGroup
+                };
+                return groupsCopy;
             });
         },
-        [setOverlapGroups]
+        [updateGroups]
     );
 
     const duplicateEventsToInstrument = useCallback(
         ({ eventsToDuplicate, newStartTime = null }) => {
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                const baseStartTime = eventsToDuplicate[0]?.startTime || 0;
-                const startOffset = newStartTime !== null ? newStartTime - baseStartTime : 0;
+            updateGroups((prevGroups) => {
+                const groupsCopy = { ...prevGroups };
+                const baseStartTime = eventsToDuplicate[0]?.startTime ?? 0;
+                const offset = newStartTime != null ? newStartTime - baseStartTime : 0;
 
-                eventsToDuplicate.forEach((event) => {
-                    const targetInstrumentName = event.targetInstrumentName;
-
-                    if (!updatedGroups[targetInstrumentName]) {
-                        updatedGroups[targetInstrumentName] = {};
-                    }
-
-                    const duplicatedEvent = copyEvent(event, targetInstrumentName, startOffset);
-
-                    updatedGroups[targetInstrumentName][duplicatedEvent.id] = duplicatedEvent;
+                eventsToDuplicate.forEach(({ targetInstrumentName, ...event }) => {
+                    const duplicated = copyEvent(event, targetInstrumentName, offset);
+                    groupsCopy[targetInstrumentName] = {
+                        ...groupsCopy[targetInstrumentName],
+                        [duplicated.id]: duplicated
+                    };
                 });
+
+                return groupsCopy;
             });
         },
-        [setOverlapGroups]
+        [updateGroups]
     );
 
     const duplicateInstrument = useCallback(
         (instrumentName) => {
-            const newInstrumentName = `${instrumentName} Copy`;
-
-            updateGroups(setOverlapGroups, (updatedGroups) => {
-                const originalInstrumentRecordings = updatedGroups[instrumentName];
-
-                if (!originalInstrumentRecordings) {
-                    console.warn(`Instrument "${newInstrumentName}" does not exist.`);
-                    return;
+            updateGroups((prevGroups) => {
+                const groupsCopy = { ...prevGroups };
+                const original = groupsCopy[instrumentName];
+                if (!original) {
+                    return prevGroups;
                 }
-
-                const newInstrumentRecordings = {};
-
-                // Recreate all events using createEvent
-                Object.values(originalInstrumentRecordings).forEach((recording) => {
-                    // Recreate the event using createEvent
+                const newInstrumentName = `${instrumentName} Copy`;
+                const newRecordings = Object.values(original).reduce((acc, recording) => {
                     const newEvent = createEvent({
                         instrumentName: newInstrumentName,
                         passedStartTime: recording.startTime,
                         recording
                     });
-
-                    // Add the new event to the new instrument recordings
-                    newInstrumentRecordings[newEvent.id] = newEvent;
-                });
-
-                // Add the new instrument and its recordings to the updated groups
-                updatedGroups[newInstrumentName] = newInstrumentRecordings;
+                    acc[newEvent.id] = newEvent;
+                    return acc;
+                }, {});
+                return {
+                    ...groupsCopy,
+                    [newInstrumentName]: newRecordings
+                };
             });
         },
-        [setOverlapGroups]
+        [updateGroups]
     );
 
     const resetRecordings = useCallback(
@@ -167,22 +133,36 @@ export const useInstrumentRecordingsOperations = () => {
         [resetRecordingsForInstrument, setOverlapGroups]
     );
 
-    const getElementParentOverlapGroup = useCallback((el) => {
-        const overlapGroup = el.attrs['data-group-child']?.current?.attrs['data-overlap-group'];
+    const updateRecordingParams = useCallback(
+        ({ event, updatedParam }) => {
+            const soundEvent = getSoundEventById(event.id);
+            const element = soundEvent?.element;
+            if (!element) return;
 
-        return overlapGroup;
-    }, []);
+            const recordingData = { ...element.attrs['data-recording'] };
+            const params = recordingData.params ?? [];
+            const target = find(params, ({ name }) => name === updatedParam.name);
+            if (!target) return;
+
+            Object.assign(target, updatedParam);
+            element.setAttr('data-recording', recordingData);
+            element.draw();
+        },
+        [getSoundEventById]
+    );
+
+    const getElementParentOverlapGroup = useCallback(
+        (el) => el.attrs['data-group-child']?.current?.attrs['data-overlap-group'],
+        []
+    );
 
     return {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
-        deleteOverlapGroup,
         duplicateEventsToInstrument,
         duplicateInstrument,
         getElementParentOverlapGroup,
-        lockOverlapGroup,
         resetRecordings,
-        updateOverlapGroupTimes,
         updateRecordingParams
     };
 };
