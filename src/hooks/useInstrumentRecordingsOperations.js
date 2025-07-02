@@ -21,14 +21,6 @@ export const useInstrumentRecordingsOperations = () => {
         });
     };
 
-    const getEventById = useCallback(
-        (id, type) => {
-            const element = getSoundEventById(id, type);
-            return element?.recording;
-        },
-        [getSoundEventById]
-    );
-
     const resetRecordingsForInstrument = useCallback(
         (instrumentName) => {
             updateGroups(setOverlapGroups, (updatedGroups) => {
@@ -175,13 +167,19 @@ export const useInstrumentRecordingsOperations = () => {
         [resetRecordingsForInstrument, setOverlapGroups]
     );
 
+    const getElementParentOverlapGroup = useCallback((el) => {
+        const overlapGroup = el.attrs['data-group-child']?.current?.attrs['data-overlap-group'];
+
+        return overlapGroup;
+    }, []);
+
     return {
         addRecording: recordSoundEvent,
         deleteAllRecordingsForInstrument,
         deleteOverlapGroup,
         duplicateEventsToInstrument,
         duplicateInstrument,
-        getEventById,
+        getElementParentOverlapGroup,
         lockOverlapGroup,
         resetRecordings,
         updateOverlapGroupTimes,

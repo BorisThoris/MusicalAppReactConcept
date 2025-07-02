@@ -36,14 +36,16 @@ export const EventItem = ({ event }) => {
     const pixelToSecondRatio = usePixelRatio();
     const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
-    const { getEventById } = useInstrumentRecordingsOperations();
+    const { getElementParentOverlapGroup } = useInstrumentRecordingsOperations();
     const { deleteSelections, isItemSelected, toggleItem } = useContext(SelectionContext);
 
-    const { element, endTime, eventInstance, id, locked, params, parentId, startTime } = event;
+    const { element, endTime, eventInstance, id, locked, params, startTime } = event;
 
-    const parent = getEventById(parentId);
+    const parent = getElementParentOverlapGroup(element);
     const isSelected = isItemSelected(id);
-    const isGroupNotLocked = !locked && (!parentId || (parent && !parent.locked));
+
+    const parentLocked = parent && parent.locked;
+    const isGroupNotLocked = !parentLocked && !locked;
 
     const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
 
