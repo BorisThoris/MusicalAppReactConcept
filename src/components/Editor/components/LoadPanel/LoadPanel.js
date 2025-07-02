@@ -30,9 +30,9 @@ export const LoadPanel = () => {
     return (
         <Modal onClose={closeLoadPanel}>
             <FileSystem>
-                {beats.map((beat, index) => (
+                {beats.map((beat) => (
                     <BeatFileRow
-                        key={index}
+                        key={beat.name} // ← use a unique, stable key
                         beat={beat}
                         onLoad={handleLoadCallback(beat.name)}
                         onDelete={handleDeleteCallback(beat.name)}
@@ -45,6 +45,8 @@ export const LoadPanel = () => {
 };
 
 LoadPanel.propTypes = {
+    // These props aren’t passed in directly—they come from context/hooks.
+    // You can remove or adjust these PropTypes if you’d like.
     beatName: PropTypes.string,
     beats: PropTypes.array,
     closeLoadPanel: PropTypes.func,
@@ -55,3 +57,5 @@ LoadPanel.propTypes = {
     setOverlapGroups: PropTypes.func,
     setSelectedBeat: PropTypes.func
 };
+
+export default LoadPanel;

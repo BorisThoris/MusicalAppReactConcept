@@ -31,15 +31,15 @@ const StyledTimeline = styled.div`
 const renderPanel = (panel) => {
     switch (panel.id) {
         case INSTRUMENTS_PANEL_ID:
-            return <PlayInstrumentsPanel />;
+            return <PlayInstrumentsPanel key={panel.id} />;
         case SELECTIONS_PANEL_ID:
-            return <SelectionsPanel />;
+            return <SelectionsPanel key={panel.id} />;
         case INSTRUMENT_LAYER_PANEL_ID:
-            return <InstrumentLayerPanel />;
+            return <InstrumentLayerPanel key={panel.id} />;
         case LOAD_PANEL_ID:
-            return <LoadPanel />;
+            return <LoadPanel key={panel.id} />;
         case SAVE_PANEL_ID:
-            return <SavePanel />;
+            return <SavePanel key={panel.id} />;
         default:
             return null;
     }
