@@ -37,7 +37,7 @@ export const EventItem = ({ event }) => {
     const { copyEvents, stageRef } = useContext(CollisionsContext);
     const { focusedEvent, setFocusedEvent } = useContext(PanelContext);
     const { getElementParentOverlapGroup } = useInstrumentRecordingsOperations();
-    const { deleteSelections, isItemSelected, toggleItem } = useContext(SelectionContext);
+    const { deleteSelections, isItemSelected, unselectItem } = useContext(SelectionContext);
 
     const { element, endTime, eventInstance, id, locked, params, startTime } = event;
 
@@ -46,10 +46,6 @@ export const EventItem = ({ event }) => {
 
     const parentLocked = parent && parent.locked;
     const isGroupNotLocked = !parentLocked && !locked;
-
-    const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
-
-    const handlePlay = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
 
     const handleDelete = useCallback(() => {
         element.destroy();
@@ -62,13 +58,17 @@ export const EventItem = ({ event }) => {
         [element, pixelToSecondRatio]
     );
 
+    const focusEvent = useCallback(() => setFocusedEvent(id), [id, setFocusedEvent]);
+
+    const handlePlay = useCallback(() => playEventInstance(eventInstance), [eventInstance]);
+
     const handleCopy = useCallback(() => copyEvents(event), [copyEvents, event]);
 
-    const handleItemSelect = useCallback(() => toggleItem(event), [toggleItem, event]);
+    const handleUnselect = useCallback(() => unselectItem(event), [unselectItem, event]);
 
     return (
         <EventItemContainer focused={focusedEvent === id} onMouseEnter={focusEvent}>
-            {isGroupNotLocked && isSelected && <UnselectButton onClick={handleItemSelect}>Unselect</UnselectButton>}
+            {isGroupNotLocked && isSelected && <UnselectButton onClick={handleUnselect}>Unselect</UnselectButton>}
 
             <EventHeader onPlay={handlePlay} onDelete={handleDelete} onCopy={handleCopy} />
 

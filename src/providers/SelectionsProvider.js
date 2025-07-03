@@ -32,6 +32,7 @@ export const SelectionProvider = ({ children }) => {
         selectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
+        unselectItem,
         updateSelectedItemById
     } = useSelectionState({ markersAndTrackerOffset });
 
@@ -74,6 +75,7 @@ export const SelectionProvider = ({ children }) => {
             setSelectionBasedOnCoordinates,
             startTime: groupStartTime,
             toggleItem,
+            unselectItem,
             updateSelectedItemById
         };
     }, [
@@ -90,6 +92,7 @@ export const SelectionProvider = ({ children }) => {
         selectedValues,
         setSelectionBasedOnCoordinates,
         groupStartTime,
+        unselectItem,
         toggleItem
     ]);
 

@@ -38,6 +38,46 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         setSelectedItems({});
     }, []);
 
+    const unselectItem = useCallback((input) => {
+        const items = Array.isArray(input) ? input : [input];
+        const ids = items.map((i) => (typeof i === 'string' ? i : i?.id)).filter(Boolean);
+        if (!ids.length) return;
+
+        setSelectedItems((prevSelected) => {
+            // We need to reference the *old* selection when deciding which groups to break,
+            // so capture it once here.
+            const old = prevSelected;
+            const next = { ...old };
+
+            ids.forEach((id) => {
+                // 1) Remove any direct selection
+                delete next[id];
+
+                // 2) Find any *selected group* that contained this id
+                Object.entries(old).forEach(([groupId, groupData]) => {
+                    const members = groupData.elements && Object.keys(groupData.elements);
+                    if (members && members.includes(id)) {
+                        // We found a selected group that included the item to unselect
+                        delete next[groupId]; // drop the group as a whole
+
+                        // re-add all siblings except the one being unselected
+                        members.forEach((siblingId) => {
+                            if (siblingId === id) return;
+                            next[siblingId] = {
+                                element: groupData.element,
+                                // carry through whatever other metadata you need:
+                                id: siblingId,
+                                ...groupData.elements[siblingId]
+                            };
+                        });
+                    }
+                });
+            });
+
+            return next;
+        });
+    }, []);
+
     const toggleItem = useCallback(
         (input) => {
             const items = Array.isArray(input) ? input : [input];
@@ -186,6 +226,7 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         setSelectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
+        unselectItem,
         updateSelectedItemById
     };
 };
