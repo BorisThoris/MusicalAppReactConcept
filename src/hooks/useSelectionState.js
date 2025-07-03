@@ -44,28 +44,19 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         if (!ids.length) return;
 
         setSelectedItems((prevSelected) => {
-            // We need to reference the *old* selection when deciding which groups to break,
-            // so capture it once here.
             const old = prevSelected;
             const next = { ...old };
 
             ids.forEach((id) => {
-                // 1) Remove any direct selection
                 delete next[id];
-
-                // 2) Find any *selected group* that contained this id
                 Object.entries(old).forEach(([groupId, groupData]) => {
                     const members = groupData.elements && Object.keys(groupData.elements);
                     if (members && members.includes(id)) {
-                        // We found a selected group that included the item to unselect
-                        delete next[groupId]; // drop the group as a whole
-
-                        // re-add all siblings except the one being unselected
+                        delete next[groupId];
                         members.forEach((siblingId) => {
                             if (siblingId === id) return;
                             next[siblingId] = {
                                 element: groupData.element,
-                                // carry through whatever other metadata you need:
                                 id: siblingId,
                                 ...groupData.elements[siblingId]
                             };
@@ -90,7 +81,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                 ids.forEach((id, idx) => {
                     const item = items[idx];
                     const children = item?.elements ? Object.keys(item.elements) : groupMembership[id];
-
                     const isGroup = Boolean(children);
 
                     if (isGroup) {
@@ -98,10 +88,8 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                             delete next[id];
                         } else {
                             children.forEach((cid) => delete next[cid]);
-
                             const element = item?.element;
                             const recData = item ?? getRecordingData({ element }) ?? {};
-
                             next[id] = { ...recData, element };
                         }
                     } else {
@@ -110,7 +98,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                         } else {
                             const node = item?.element;
                             const recording = node.attrs['data-recording'];
-
                             next[id] = { element: node, ...recording };
                         }
 
@@ -165,19 +152,11 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
     const isItemSelected = useCallback(
         (id) => {
-            // Directly selected
             if (selectedItems[id]) return true;
 
-            // Check if this item is part of a group that's selected
-            // eslint-disable-next-line no-restricted-syntax, guard-for-in
-            for (const groupId in groupMembership) {
-                const children = groupMembership[groupId] || [];
-                if (children.includes(id) && selectedItems[groupId]) {
-                    return true;
-                }
-            }
-
-            return false;
+            return Object.entries(groupMembership).some(
+                ([groupId, children]) => children.includes(id) && Boolean(selectedItems[groupId])
+            );
         },
         [selectedItems, groupMembership]
     );
@@ -197,7 +176,6 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
             if (initialId !== currentId) {
                 const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
-
                 return {
                     ...rest,
                     [currentId]: {
