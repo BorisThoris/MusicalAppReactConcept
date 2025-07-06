@@ -124,30 +124,6 @@ export const GroupElement = React.memo(
                         ))}
                     </Group>
 
-                    <KonvaHtml
-                        // eslint-disable-next-line react/no-children-prop
-                        children={
-                            <button
-                                // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                                onClick={handleToggle}
-                                style={{
-                                    background: '#222',
-                                    border: '1px solid #555',
-                                    borderRadius: 4,
-                                    color: '#fff',
-                                    cursor: 'pointer',
-                                    padding: '8px 12px',
-                                    position: 'absolute',
-                                    right: 10,
-                                    top: 10,
-                                    zIndex: 9999
-                                }}
-                            >
-                                Toggle Test Element
-                            </button>
-                        }
-                    />
-
                     <Lock isLocked={locked} onClick={onLockGroup} />
                 </Group>
             </Portal>

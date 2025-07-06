@@ -27,8 +27,6 @@ const SHADOW = { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 };
 const TEXT_STYLE = { fill: 'black', fontSize: 15 };
 const OPACITY = 0.8;
 
-const areEqual = (prev, next) => isEqual(prev, next);
-
 const SoundEventElement = React.memo((props) => {
     const {
         childScale,
@@ -47,7 +45,7 @@ const SoundEventElement = React.memo((props) => {
 
     const { eventLength, id, isSelected: dataIsSelected, locked, name, startTime } = recording;
     const pixelToSecondRatio = usePixelRatio();
-    const { isItemSelected, selectedItems, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
+    const { isItemSelected, toggleItem, updateSelectedItemById } = useContext(SelectionContext);
     const { timelineState } = useContext(TimelineContext);
     const { getGroupById } = useContext(CollisionsContext);
     const parent = getGroupById(parentGroupId);
@@ -70,7 +68,7 @@ const SoundEventElement = React.memo((props) => {
     const isDragging = isElementBeingDragged(`${ELEMENT_ID_PREFIX}${id}`);
     const parentData = groupRef?.current?.attrs['data-overlap-group'];
     const shouldDrag = !parentData?.locked && !parentData?.isSelected;
-    const shouldUsePortal = isDragging && !(groupRef && locked);
+    const shouldUsePortal = isDragging && !locked && !!groupRef;
     const notInGroup = !groupRef;
     const width = eventLength * pixelToSecondRatio;
     const position = isDragging ? {} : { x: startTime * pixelToSecondRatio, y: 0 };
@@ -94,10 +92,12 @@ const SoundEventElement = React.memo((props) => {
 
     useEffect(() => {
         if (!containerRef.current) return;
-
-        // on first run, prevRecordingRef.current is undefined, so we’ll update once
         if (!isEqual(prevRecordingRef.current, selectedRecording)) {
-            updateSelectedItemById({ id, isSelected: selectedRecording.isSelected, updates: selectedRecording });
+            updateSelectedItemById({
+                id,
+                isSelected: selectedRecording.isSelected,
+                updates: selectedRecording
+            });
             prevRecordingRef.current = selectedRecording;
         }
     }, [id, selectedRecording, updateSelectedItemById]);
@@ -123,7 +123,6 @@ const SoundEventElement = React.memo((props) => {
     }, [isFocused, originalZ]);
 
     const hasToggledRef = useRef(false);
-
     useEffect(() => {
         const shouldToggle = !isSelected && dataIsSelected;
         if (shouldToggle && !hasToggledRef.current && notInGroup) {
@@ -164,24 +163,16 @@ const SoundEventElement = React.memo((props) => {
                     shadowOpacity={SHADOW.OPACITY}
                     opacity={OPACITY}
                     {...unifiedDynamicStyles}
-                    // {...(!shouldDrag && { fill: 'orange' })}
                     onMouseEnter={withCursor('pointer', handleMouseEnter)}
                     onMouseLeave={withCursor('default', restoreZIndex)}
                 />
                 <Text x={5} y={5} text={name} {...TEXT_STYLE} />
                 <Text x={5} y={25} text={`${id}`} {...TEXT_STYLE} />
-
-                {/* {notInGroup && <Lock isLocked={locked} onClick={handleLock} />} */}
-
                 <Circle x={width - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
-
-                {/* {parentGroupId && (
-                    <Text x={5} y={45 + index * 20} text={`Parent Group ID ${parentGroupId}`} {...TEXT_STYLE} />
-                )} */}
             </Group>
         </Portal>
     );
-}, areEqual);
+}, isEqual);
 
 SoundEventElement.propTypes = {
     childScale: PropTypes.number.isRequired,
