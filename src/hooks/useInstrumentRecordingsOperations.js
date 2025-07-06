@@ -152,7 +152,7 @@ export const useInstrumentRecordingsOperations = () => {
     );
 
     const getElementParentOverlapGroup = useCallback(
-        (el) => el.attrs['data-group-child']?.current?.attrs['data-overlap-group'],
+        (el) => el?.attrs['data-group-child']?.current?.attrs['data-overlap-group'],
         []
     );
 

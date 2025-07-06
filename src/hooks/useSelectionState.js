@@ -1,10 +1,13 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
+/**
+ * Extract recording metadata (group id, elements, etc.)
+ */
 function getRecordingData(item) {
     const attrFn = item?.element?.getAttr;
     if (typeof attrFn !== 'function') return null;
@@ -13,8 +16,28 @@ function getRecordingData(item) {
     if (!rec) return null;
 
     if (!rec.initialId) rec.initialId = rec.id;
-
     return rec;
+}
+
+/**
+ * Normalize selectedItems: collapse full groups and expand invalid groups
+ */
+function normalizeSelection(selected, groupMap) {
+    const next = { ...selected };
+
+    // collapse fully selected groups
+    Object.entries(groupMap).forEach(([groupId, children]) => {
+        const allSelected = children.every((childId) => Boolean(next[childId]));
+        if (allSelected) {
+            children.forEach((cid) => delete next[cid]);
+            next[groupId] = selected[groupId] || {
+                elements: children.reduce((acc, cid) => ({ ...acc, [cid]: {} }), {}),
+                id: groupId
+            };
+        }
+    });
+
+    return next;
 }
 
 export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
@@ -23,64 +46,67 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    const groupMembership = useMemo(() => {
-        const map = {};
-        processedItems.forEach((item) => {
-            const rec = getRecordingData(item);
-            if (rec && rec.id && rec.elements && typeof rec.elements === 'object') {
-                map[rec.id] = Object.keys(rec.elements);
-            }
-        });
-        return map;
-    }, [processedItems]);
+    // Build group membership map: { groupId: [childId, ...] }
+    const groupMembership = useMemo(
+        () =>
+            Object.fromEntries(
+                processedItems
+                    .map((item) => {
+                        const rec = getRecordingData(item);
+                        if (rec?.id && rec.elements && typeof rec.elements === 'object') {
+                            return [rec.id, Object.keys(rec.elements)];
+                        }
+                        return null;
+                    })
+                    .filter(Boolean)
+            ),
+        [processedItems]
+    );
 
-    const clearSelection = useCallback(() => {
-        setSelectedItems({});
-    }, []);
+    // Recalculate selection when group structure changes
+    useEffect(() => {
+        setSelectedItems((prev) => normalizeSelection(prev, groupMembership));
+    }, [groupMembership]);
 
-    const unselectItem = useCallback((input) => {
-        const items = Array.isArray(input) ? input : [input];
-        const ids = items.map((i) => (typeof i === 'string' ? i : i?.id)).filter(Boolean);
-        if (!ids.length) return;
+    const clearSelection = useCallback(() => setSelectedItems({}), []);
 
-        setSelectedItems((prevSelected) => {
-            const old = prevSelected;
-            const next = { ...old };
-
-            ids.forEach((id) => {
-                delete next[id];
-                Object.entries(old).forEach(([groupId, groupData]) => {
-                    const members = groupData.elements && Object.keys(groupData.elements);
-                    if (members && members.includes(id)) {
-                        delete next[groupId];
-                        members.forEach((siblingId) => {
-                            if (siblingId === id) return;
-                            next[siblingId] = {
-                                element: groupData.element,
-                                id: siblingId,
-                                ...groupData.elements[siblingId]
-                            };
-                        });
-                    }
-                });
-            });
-
-            return next;
-        });
-    }, []);
-
-    const toggleItem = useCallback(
+    const unselectItem = useCallback(
         (input) => {
-            const items = Array.isArray(input) ? input : [input];
-            const ids = items.map((i) => i?.id).filter(Boolean);
+            const ids = (Array.isArray(input) ? input : [input])
+                .map((i) => (typeof i === 'string' ? i : i?.id))
+                .filter(Boolean);
             if (!ids.length) return;
 
             setSelectedItems((prev) => {
                 const next = { ...prev };
+                ids.forEach((id) => {
+                    delete next[id];
+                    Object.entries(groupMembership).forEach(([gid, children]) => {
+                        if (children.includes(id) && prev[gid]) {
+                            delete next[gid];
+                            children.forEach((cid) => {
+                                if (cid !== id) {
+                                    const parent = prev[gid];
+                                    next[cid] = { element: parent.element, id: cid, ...(parent.elements || {})[cid] };
+                                }
+                            });
+                        }
+                    });
+                });
+                return next;
+            });
+        },
+        [groupMembership]
+    );
 
-                ids.forEach((id, idx) => {
-                    const item = items[idx];
-                    const children = item?.elements ? Object.keys(item.elements) : groupMembership[id];
+    const toggleItem = useCallback(
+        (input) => {
+            const items = Array.isArray(input) ? input : [input];
+            setSelectedItems((prev) => {
+                const next = { ...prev };
+                items.forEach((item) => {
+                    const { id } = item;
+                    const children = item.elements ? Object.keys(item.elements) : groupMembership[id];
                     const isGroup = Boolean(children);
 
                     if (isGroup) {
@@ -88,39 +114,34 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                             delete next[id];
                         } else {
                             children.forEach((cid) => delete next[cid]);
-                            const element = item?.element;
-                            const recData = item ?? getRecordingData({ element }) ?? {};
-                            next[id] = { ...recData, element };
+                            next[id] = item;
                         }
                     } else {
                         if (next[id]) {
                             delete next[id];
                         } else {
-                            const node = item?.element;
-                            const recording = node.attrs['data-recording'];
-                            next[id] = { element: node, ...recording };
+                            next[id] = item;
                         }
 
-                        const parentItem = processedItems.find((it) => getRecordingData(it)?.elements?.[id]);
-                        const parentRec = getRecordingData(parentItem);
-                        if (parentRec?.id) {
-                            const siblings = groupMembership[parentRec.id] || [];
-                            const allSelected = siblings.every((cid) => Boolean(next[cid]));
-
-                            if (allSelected) {
-                                siblings.forEach((cid) => delete next[cid]);
-                                next[parentRec.id] = { ...parentRec, element: parentItem?.element };
-                            } else {
-                                delete next[parentRec.id];
+                        Object.entries(groupMembership).forEach(([pid, siblings]) => {
+                            if (siblings.includes(id)) {
+                                const allSel = siblings.every((cid) => Boolean(next[cid]));
+                                if (allSel) {
+                                    siblings.forEach((cid) => delete next[cid]);
+                                    const parentItem = processedItems.find((it) => getRecordingData(it)?.id === pid);
+                                    const rec = getRecordingData(parentItem) || {};
+                                    next[pid] = { ...rec, element: parentItem?.element };
+                                } else {
+                                    delete next[pid];
+                                }
                             }
-                        }
+                        });
                     }
                 });
-
                 return next;
             });
         },
-        [processedItems, groupMembership]
+        [groupMembership, processedItems]
     );
 
     const setSelectionBasedOnCoordinates = useCallback(
@@ -135,16 +156,11 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
 
     const deleteSelections = useCallback((events) => {
         const arr = Array.isArray(events) ? events : [events];
-
         setSelectedItems((prev) => {
             const next = { ...prev };
             arr.forEach(({ element, id }) => {
-                if (id in next) {
-                    delete next[id];
-                }
-                if (element?.destroy) {
-                    element.destroy();
-                }
+                delete next[id];
+                element?.destroy?.();
             });
             return next;
         });
@@ -162,32 +178,14 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
     );
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
-        const initialId = updates?.initialId ?? updates?.id ?? id;
-        const currentId = id;
-
         setSelectedItems((prev) => {
-            const existing = prev[initialId];
+            const existing = prev[id];
             const merged = { ...existing, ...updates };
-
             if (isSelected === false) {
-                const { [initialId]: _, ...rest } = prev;
+                const { [id]: _, ...rest } = prev;
                 return rest;
             }
-
-            if (initialId !== currentId) {
-                const { [currentId]: existingCurrent, [initialId]: _, ...rest } = prev;
-                return {
-                    ...rest,
-                    [currentId]: {
-                        ...(existingCurrent || {}),
-                        ...merged,
-                        initialId: currentId
-                    }
-                };
-            }
-
-            if (isEqual(existing, merged)) return prev;
-            return { ...prev, [initialId]: merged };
+            return isEqual(existing, merged) ? prev : { ...prev, [id]: merged };
         });
     }, []);
 
