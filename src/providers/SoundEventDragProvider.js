@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
 import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';

@@ -57,6 +57,7 @@ export const DragSelection = () => {
                     if (item.group.locked) {
                         if (groupRect && Konva.Util.haveIntersection(selectionRect, groupRect)) {
                             const { rect } = item.group;
+
                             return [
                                 {
                                     ...item.group,
@@ -80,9 +81,13 @@ export const DragSelection = () => {
                                 y: child.y
                             };
                             if (Konva.Util.haveIntersection(selectionRect, childRect)) {
+                                console.log('         ');
+                                console.log('yoooo 1', item);
+                                console.log('child', child);
+
                                 return {
                                     ...child,
-                                    element: item.element,
+                                    element: child.element,
                                     endX: childRect.x + childRect.width,
                                     endY: childRect.y + childRect.height,
                                     startX: childRect.x,
@@ -95,6 +100,8 @@ export const DragSelection = () => {
                 }
 
                 if (isElement) {
+                    console.log('yoooo 2', item);
+
                     const elementRect = item.clientRect ?? {
                         height: item.height,
                         width: item.width,
@@ -119,6 +126,8 @@ export const DragSelection = () => {
             });
 
             if (intersectedElements.length > 0) {
+                console.log('Intersected elements:', intersectedElements);
+
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY ?? 0));
                 setSelectionBasedOnCoordinates({
                     intersectedElements,
