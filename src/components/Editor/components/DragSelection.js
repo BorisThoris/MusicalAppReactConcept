@@ -81,10 +81,6 @@ export const DragSelection = () => {
                                 y: child.y
                             };
                             if (Konva.Util.haveIntersection(selectionRect, childRect)) {
-                                console.log('         ');
-                                console.log('yoooo 1', item);
-                                console.log('child', child);
-
                                 return {
                                     ...child,
                                     element: child.element,
