@@ -96,8 +96,6 @@ export const DragSelection = () => {
                 }
 
                 if (isElement) {
-                    console.log('yoooo 2', item);
-
                     const elementRect = item.clientRect ?? {
                         height: item.height,
                         width: item.width,
