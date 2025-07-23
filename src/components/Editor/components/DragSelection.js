@@ -120,8 +120,6 @@ export const DragSelection = () => {
             });
 
             if (intersectedElements.length > 0) {
-                console.log('Intersected elements:', intersectedElements);
-
                 const maxYLevel = Math.max(...intersectedElements.map((e) => e.timelineY ?? 0));
                 setSelectionBasedOnCoordinates({
                     intersectedElements,
