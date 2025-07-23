@@ -1,8 +1,7 @@
 import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { Group, Text } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
-import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
@@ -12,12 +11,12 @@ import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
-        const { elements, id, isSelected: dataIsSelected, locked, startTime } = groupData;
+        const { elements, id, locked, startTime } = groupData;
 
         const pixelToSecondRatio = usePixelRatio();
         const groupRef = useRef();
         const portalRef = useRef(null);
-        const hasToggledRef = useRef(false);
+
         const stableInitialIdRef = useRef(id);
         const initialId = stableInitialIdRef.current;
 
@@ -44,10 +43,6 @@ export const GroupElement = React.memo(
             }),
             [groupData, initialId, isSelected]
         );
-
-        const handleToggle = useCallback(() => {
-            toggleItem({ ...selectedGroup, element: groupRef.current });
-        }, [selectedGroup, toggleItem]);
 
         const onLockGroup = useCallback((e) => {
             e.cancelBubble = true;
@@ -79,14 +74,6 @@ export const GroupElement = React.memo(
                 });
             };
         }, [id, initialId, selectedGroup, updateSelectedItemById]);
-
-        useEffect(() => {
-            const shouldToggle = !isSelected && dataIsSelected;
-            if (shouldToggle && !hasToggledRef.current) {
-                toggleItem({ ...selectedGroup, element: groupRef.current });
-                hasToggledRef.current = true;
-            }
-        }, [dataIsSelected, isSelected, selectedGroup, toggleItem]);
 
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
 

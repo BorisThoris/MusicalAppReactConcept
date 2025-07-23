@@ -40,7 +40,7 @@ function normalizeSelection(selected, groupMap) {
     return next;
 }
 
-export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
+export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
     const { processedItems = [] } = useContext(CollisionsContext) || {};
     const [selectedItems, setSelectedItems] = useState({});
     const [highestYLevel, setHighestYLevel] = useState(0);
@@ -63,12 +63,17 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         [processedItems]
     );
 
-    // Recalculate selection when group structure changes
+    // Re-normalize on group changes, but only if it actually differs
     useEffect(() => {
-        setSelectedItems((prev) => normalizeSelection(prev, groupMembership));
+        setSelectedItems((prev) => {
+            const normalized = normalizeSelection(prev, groupMembership);
+            return isEqual(prev, normalized) ? prev : normalized;
+        });
     }, [groupMembership]);
 
-    const clearSelection = useCallback(() => setSelectedItems({}), []);
+    const clearSelection = useCallback(() => {
+        setSelectedItems({});
+    }, []);
 
     const unselectItem = useCallback(
         (input) => {
@@ -87,7 +92,11 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
                             children.forEach((cid) => {
                                 if (cid !== id) {
                                     const parent = prev[gid];
-                                    next[cid] = { element: parent.element, id: cid, ...(parent.elements || {})[cid] };
+                                    next[cid] = {
+                                        element: parent.element,
+                                        id: cid,
+                                        ...(parent.elements || {})[cid]
+                                    };
                                 }
                             });
                         }
@@ -181,11 +190,25 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         setSelectedItems((prev) => {
             const existing = prev[id];
             const merged = { ...existing, ...updates };
+
+            // If they’re explicitly un-selecting, just strip it out:
             if (isSelected === false) {
                 const { [id]: _, ...rest } = prev;
                 return rest;
             }
-            return isEqual(existing, merged) ? prev : { ...prev, [id]: merged };
+
+            const diff = isEqual(existing, merged);
+            console.log('diff', diff);
+
+            // Otherwise, only update if there really *is* a difference:
+            if (diff) {
+                return prev; // no change → React won’t re-render
+            }
+
+            return {
+                ...prev,
+                [id]: merged
+            };
         });
     }, []);
 
@@ -205,4 +228,4 @@ export const useSelectionState = ({ markersAndTrackerOffset = 0 }) => {
         unselectItem,
         updateSelectedItemById
     };
-};
+}
