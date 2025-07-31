@@ -27,6 +27,8 @@ function normalizeSelection(selected, groupMap) {
 
     // collapse fully selected groups
     Object.entries(groupMap).forEach(([groupId, children]) => {
+        console.log('yooooo', groupMap);
+
         const allSelected = children.every((childId) => Boolean(next[childId]));
         if (allSelected) {
             children.forEach((cid) => delete next[cid]);
@@ -53,6 +55,7 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                 processedItems
                     .map((item) => {
                         const rec = getRecordingData(item);
+
                         if (rec?.id && rec.elements && typeof rec.elements === 'object') {
                             return [rec.id, Object.keys(rec.elements)];
                         }
@@ -63,13 +66,13 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
         [processedItems]
     );
 
-    // Re-normalize on group changes, but only if it actually differs
-    useEffect(() => {
-        setSelectedItems((prev) => {
-            const normalized = normalizeSelection(prev, groupMembership);
-            return isEqual(prev, normalized) ? prev : normalized;
-        });
-    }, [groupMembership]);
+    // // Re-normalize on group changes, but only if it actually differs
+    // useEffect(() => {
+    //     setSelectedItems((prev) => {
+    //         const normalized = normalizeSelection(prev, groupMembership);
+    //         return isEqual(prev, normalized) ? prev : normalized;
+    //     });
+    // }, [groupMembership]);
 
     const clearSelection = useCallback(() => {
         setSelectedItems({});
@@ -175,6 +178,8 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
         });
     }, []);
 
+    console.log('', 'Selected Items:', selectedItems);
+
     const isItemSelected = useCallback(
         (id) => {
             if (selectedItems[id]) return true;
@@ -198,7 +203,6 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
             }
 
             const diff = isEqual(existing, merged);
-            console.log('diff', diff);
 
             // Otherwise, only update if there really *is* a difference:
             if (diff) {

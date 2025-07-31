@@ -84,8 +84,8 @@ const SoundEventElement = React.memo((props) => {
     const { withCursor } = useCursorEffects();
 
     const selectedRecording = useMemo(
-        () => ({ ...recording, isSelected: shouldDrag ? isSelected : false }),
-        [recording, shouldDrag, isSelected]
+        () => ({ ...recording, isSelected: isSelected || false }),
+        [recording, isSelected]
     );
 
     const prevRecordingRef = useRef();
@@ -122,15 +122,6 @@ const SoundEventElement = React.memo((props) => {
         }
     }, [isFocused, originalZ]);
 
-    const hasToggledRef = useRef(false);
-    useEffect(() => {
-        const shouldToggle = !isSelected && dataIsSelected;
-        if (shouldToggle && !hasToggledRef.current && notInGroup) {
-            toggleItem({ ...selectedRecording, element: containerRef.current });
-            hasToggledRef.current = true;
-        }
-    }, [dataIsSelected, isSelected, selectedRecording, toggleItem, notInGroup]);
-
     return (
         <Portal selector=".top-layer" enabled={shouldUsePortal} outerRef={portalRef}>
             <Group
@@ -145,7 +136,7 @@ const SoundEventElement = React.memo((props) => {
                 onDragStart={withCursor('grabbing', handleDragStart)}
                 onDragMove={withCursor('grabbing', handleDragMove)}
                 onDragEnd={withCursor('grab', handleDragEnd)}
-                onClick={handleClick}
+                onClick={shouldDrag && handleClick}
                 onDblClick={handleDoubleClick}
                 listening={listening}
                 id={`${ELEMENT_ID_PREFIX}${id}`}
