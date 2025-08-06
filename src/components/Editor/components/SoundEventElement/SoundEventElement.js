@@ -91,7 +91,7 @@ const SoundEventElement = React.memo((props) => {
     const prevRecordingRef = useRef();
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || parentGroupId) return;
         if (!isEqual(prevRecordingRef.current, selectedRecording)) {
             updateSelectedItemById({
                 id,
@@ -100,7 +100,7 @@ const SoundEventElement = React.memo((props) => {
             });
             prevRecordingRef.current = selectedRecording;
         }
-    }, [id, selectedRecording, updateSelectedItemById]);
+    }, [id, parentGroupId, selectedRecording, updateSelectedItemById]);
 
     useEffect(() => {
         if (portalRef.current && !isFocused) {

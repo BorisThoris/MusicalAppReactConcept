@@ -5,9 +5,6 @@ import { useTimeRange } from './useTimeRange';
 
 const EMPTY_SELECTION = {};
 
-/**
- * Extract recording metadata (group id, elements, etc.)
- */
 function getRecordingData(item) {
     const attrFn = item?.element?.getAttr;
     if (typeof attrFn !== 'function') return null;
@@ -20,59 +17,69 @@ function getRecordingData(item) {
 }
 
 /**
- * Normalize selectedItems: collapse full groups and expand invalid groups
+ * Normalize based on internal isSelected flags
  */
-function normalizeSelection(selected, groupMap) {
-    const next = { ...selected };
+function normalizeSelection(selectedItems, groupMembership) {
+    const normalized = { ...selectedItems };
+    const groupedChildren = new Set();
 
-    // collapse fully selected groups
-    Object.entries(groupMap).forEach(([groupId, children]) => {
-        console.log('yooooo', groupMap);
+    // eslint-disable-next-line no-restricted-syntax
+    for (const [groupId, { children, groupData }] of Object.entries(groupMembership)) {
+        const allSelected = children.every((cid) =>
+            Object.values(groupData.elements).some((item) => item.id === cid && item.isSelected === true)
+        );
 
-        const allSelected = children.every((childId) => Boolean(next[childId]));
         if (allSelected) {
-            children.forEach((cid) => delete next[cid]);
-            next[groupId] = selected[groupId] || {
-                elements: children.reduce((acc, cid) => ({ ...acc, [cid]: {} }), {}),
-                id: groupId
+            normalized[groupId] = {
+                ...groupData
             };
+            children.forEach((cid) => groupedChildren.add(cid));
         }
-    });
+    }
 
-    return next;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const [id, item] of Object.entries(selectedItems || {})) {
+        if (groupMembership[id]) break;
+        if (!groupedChildren.has(id)) {
+            normalized[id] = item;
+        }
+    }
+
+    console.log('normalized, normalized', normalized);
+
+    return normalized;
 }
 
 export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
     const { processedItems = [] } = useContext(CollisionsContext) || {};
-    const [selectedItems, setSelectedItems] = useState({});
+    const [selectedItems, setSelectedItems] = useState(() => ({}));
     const [highestYLevel, setHighestYLevel] = useState(0);
     const { groupEndTime, groupStartTime } = useTimeRange(selectedItems);
 
-    // Build group membership map: { groupId: [childId, ...] }
-    const groupMembership = useMemo(
-        () =>
-            Object.fromEntries(
-                processedItems
-                    .map((item) => {
-                        const rec = getRecordingData(item);
+    const groupMembership = useMemo(() => {
+        const groups = {};
 
-                        if (rec?.id && rec.elements && typeof rec.elements === 'object') {
-                            return [rec.id, Object.keys(rec.elements)];
-                        }
-                        return null;
-                    })
-                    .filter(Boolean)
-            ),
-        [processedItems]
-    );
+        // eslint-disable-next-line no-restricted-syntax
+        for (const item of processedItems) {
+            const data = getRecordingData(item);
+            if (data?.elements && typeof data.elements === 'object') {
+                groups[data.id] = {
+                    children: Object.keys(data.elements),
+                    element: item.element,
+                    groupData: data
+                };
+            }
+        }
 
-    // // Re-normalize on group changes, but only if it actually differs
-    // useEffect(() => {
-    //     setSelectedItems((prev) => {
-    //         const normalized = normalizeSelection(prev, groupMembership);
-    //         return isEqual(prev, normalized) ? prev : normalized;
-    //     });
-    // }, [groupMembership]);
+        return groups;
+    }, [processedItems]);
+
+    useEffect(() => {
+        setSelectedItems((prev) => {
+            const normalized = normalizeSelection(prev, groupMembership);
+            return isEqual(prev, normalized) ? prev : normalized;
+        });
+    }, [groupMembership]);
 
     const clearSelection = useCallback(() => {
         setSelectedItems({});
@@ -89,8 +96,9 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                 const next = { ...prev };
                 ids.forEach((id) => {
                     delete next[id];
-                    Object.entries(groupMembership).forEach(([gid, children]) => {
-                        if (children.includes(id) && prev[gid]) {
+
+                    Object.entries(groupMembership).forEach(([gid, { children }]) => {
+                        if (children.includes(id) && prev?.[gid]) {
                             delete next[gid];
                             children.forEach((cid) => {
                                 if (cid !== id) {
@@ -105,7 +113,7 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                         }
                     });
                 });
-                return next;
+                return next ?? {};
             });
         },
         [groupMembership]
@@ -116,10 +124,11 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
             const items = Array.isArray(input) ? input : [input];
             setSelectedItems((prev) => {
                 const next = { ...prev };
+
                 items.forEach((item) => {
                     const { id } = item;
-                    const children = item.elements ? Object.keys(item.elements) : groupMembership[id];
-                    const isGroup = Boolean(children);
+                    const children = item.elements ? Object.keys(item.elements) : groupMembership[id]?.children;
+                    const isGroup = Boolean(children?.length);
 
                     if (isGroup) {
                         if (next[id]) {
@@ -135,14 +144,12 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                             next[id] = item;
                         }
 
-                        Object.entries(groupMembership).forEach(([pid, siblings]) => {
+                        Object.entries(groupMembership).forEach(([pid, { children: siblings, element, groupData }]) => {
                             if (siblings.includes(id)) {
                                 const allSel = siblings.every((cid) => Boolean(next[cid]));
                                 if (allSel) {
                                     siblings.forEach((cid) => delete next[cid]);
-                                    const parentItem = processedItems.find((it) => getRecordingData(it)?.id === pid);
-                                    const rec = getRecordingData(parentItem) || {};
-                                    next[pid] = { ...rec, element: parentItem?.element };
+                                    next[pid] = { ...groupData, element };
                                 } else {
                                     delete next[pid];
                                 }
@@ -150,10 +157,11 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                         });
                     }
                 });
-                return next;
+
+                return next ?? {};
             });
         },
-        [groupMembership, processedItems]
+        [groupMembership]
     );
 
     const setSelectionBasedOnCoordinates = useCallback(
@@ -174,18 +182,16 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
                 delete next[id];
                 element?.destroy?.();
             });
-            return next;
+            return next ?? {};
         });
     }, []);
 
-    console.log('', 'Selected Items:', selectedItems);
-
     const isItemSelected = useCallback(
         (id) => {
-            if (selectedItems[id]) return true;
+            if (selectedItems?.[id]) return true;
 
             return Object.entries(groupMembership).some(
-                ([groupId, children]) => children.includes(id) && Boolean(selectedItems[groupId])
+                ([groupId, { children }]) => children.includes(id) && Boolean(selectedItems?.[groupId])
             );
         },
         [selectedItems, groupMembership]
@@ -193,30 +199,23 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
         setSelectedItems((prev) => {
-            const existing = prev[id];
+            const existing = prev?.[id];
             const merged = { ...existing, ...updates };
 
-            // If they’re explicitly un-selecting, just strip it out:
             if (isSelected === false) {
-                const { [id]: _, ...rest } = prev;
+                const { [id]: _, ...rest } = prev ?? {};
                 return rest;
             }
 
             const diff = isEqual(existing, merged);
-
-            // Otherwise, only update if there really *is* a difference:
-            if (diff) {
-                return prev; // no change → React won’t re-render
-            }
-
-            return {
-                ...prev,
-                [id]: merged
-            };
+            return diff ? prev : { ...prev, [id]: merged };
         });
     }, []);
 
-    const memoizedSelectedItems = Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
+    const memoizedSelectedItems = useMemo(() => {
+        if (!selectedItems || typeof selectedItems !== 'object') return EMPTY_SELECTION;
+        return Object.keys(selectedItems).length === 0 ? EMPTY_SELECTION : selectedItems;
+    }, [selectedItems]);
 
     return {
         clearSelection,
@@ -226,7 +225,6 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
         highestYLevel,
         isItemSelected,
         selectedItems: memoizedSelectedItems,
-        setSelectedItems,
         setSelectionBasedOnCoordinates,
         toggleItem,
         unselectItem,

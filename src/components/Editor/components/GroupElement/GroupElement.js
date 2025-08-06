@@ -65,6 +65,14 @@ export const GroupElement = React.memo(
             if (initialId !== id) {
                 stableInitialIdRef.current = id;
             }
+
+            return () => {
+                updateSelectedItemById({
+                    id,
+                    isSelected: false,
+                    updates: { ...selectedGroup }
+                });
+            };
         }, [id, initialId, selectedGroup, updateSelectedItemById]);
 
         const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};

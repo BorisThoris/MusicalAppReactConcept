@@ -82,10 +82,14 @@ export const CollisionsProvider = ({ children }) => {
     );
 
     const copyEvents = useCallback((events) => {
+        console.log('Copying events:', events);
+
         const list = Array.isArray(events) ? events : [events];
 
         const overlaps = recreateEvents(processOverlaps(list));
         const eventGroups = Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
+
+        console.log('Copied events:', eventGroups);
 
         setCopiedEvents(eventGroups);
     }, []);
