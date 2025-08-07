@@ -120,13 +120,10 @@ const SoundEventElement = React.memo((props) => {
     // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
     const dragBoundFunc = (pos) => {
         const minX = 0;
-        const maxX = Math.max(0, contentWidth - width);
+        const maxX = Math.max(0, (timelineState?.contentWidth ?? timelineState?.width ?? 1e9) - width);
         const x = Math.min(Math.max(pos.x, minX), maxX);
-        // Keep Y controlled by your lane positioning logic
-        const y = isDragging ? timelineY : 0;
-        return { x, y };
+        return { x, y: pos.y }; // ← do NOT clamp/override Y
     };
-
     // Visuals via HTML
     const bg = unifiedDynamicStyles.fill || '#fff';
     const borderColor = isSelected ? '#3b82f6' : '#00000022';
