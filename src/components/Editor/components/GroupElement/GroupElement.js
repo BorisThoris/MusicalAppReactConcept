@@ -91,6 +91,7 @@ export const GroupElement = React.memo(
                     onDragMove={isDraggable ? handleDragMove : undefined}
                     onDragEnd={isDraggable ? handleDragEnd : undefined}
                     {...controlledPositionProps}
+                    fill={'green'}
                 >
                     <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (

@@ -1,30 +1,24 @@
 // SoundEventElement.jsx
 // @ts-nocheck
 
-// External Libraries
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import PropTypes from 'prop-types';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, Group, Rect, Text } from 'react-konva';
-// Internal Dependencies
+import { Group, Rect } from 'react-konva';
 import { ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
+import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
 import { TimelineContext } from '../../../../providers/TimelineProvider';
-// Component-specific Hooks
-import { Lock } from '../Lock/Lock';
 import { useCursorEffects } from './hooks/useCursorEffects';
 import { useUnifiedDynamicStyles } from './hooks/useDynamicStyles';
 import { useEventFocus } from './hooks/useEventFocus';
 import { useClickHandlers } from './useEventClickHandlers';
 
-// Constants
-const RADIUS = 5;
-const SHADOW = { BLUR: 5, OFFSET: { x: 8, y: 5 }, OPACITY: 0.5 };
-const TEXT_STYLE = { fill: 'black', fontSize: 15 };
+const RADIUS = 8;
 const OPACITY = 0.8;
 
 const SoundEventElement = React.memo((props) => {
@@ -50,14 +44,12 @@ const SoundEventElement = React.memo((props) => {
     const { getGroupById } = useContext(CollisionsContext);
     const parent = getGroupById(parentGroupId);
 
-    const elementRef = useRef();
     const containerRef = useRef();
     const portalRef = useRef();
-
     const [originalZ, setOriginalZ] = useState(null);
 
     const { handleMouseEnter, isFocused, restoreZIndex } = useEventFocus(id);
-    const { handleClick, handleContextMenu, handleDelete, handleDoubleClick, handleLock } = useClickHandlers({
+    const { handleClick, handleContextMenu, handleDelete, handleDoubleClick } = useClickHandlers({
         elementContainerRef: containerRef,
         parent,
         recording,
@@ -69,7 +61,7 @@ const SoundEventElement = React.memo((props) => {
     const parentData = groupRef?.current?.attrs['data-overlap-group'];
     const shouldDrag = !parentData?.locked && !parentData?.isSelected;
     const shouldUsePortal = isDragging && !locked && !!groupRef;
-    const notInGroup = !groupRef;
+
     const width = eventLength * pixelToSecondRatio;
     const position = isDragging ? {} : { x: startTime * pixelToSecondRatio, y: 0 };
 
@@ -122,6 +114,24 @@ const SoundEventElement = React.memo((props) => {
         }
     }, [isFocused, originalZ]);
 
+    // Compute horizontal bounds (fallbacks to a very large canvas if unknown)
+    const contentWidth = timelineState?.contentWidth ?? timelineState?.width ?? timelineState?.timelineWidth ?? 1e9;
+
+    // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+    const dragBoundFunc = (pos) => {
+        const minX = 0;
+        const maxX = Math.max(0, contentWidth - width);
+        const x = Math.min(Math.max(pos.x, minX), maxX);
+        // Keep Y controlled by your lane positioning logic
+        const y = isDragging ? timelineY : 0;
+        return { x, y };
+    };
+
+    // Visuals via HTML
+    const bg = unifiedDynamicStyles.fill || '#fff';
+    const borderColor = isSelected ? '#3b82f6' : '#00000022';
+    const cardOpacity = typeof unifiedDynamicStyles.opacity === 'number' ? unifiedDynamicStyles.opacity : OPACITY;
+
     return (
         <Portal selector=".top-layer" enabled={shouldUsePortal} outerRef={portalRef}>
             <Group
@@ -132,34 +142,137 @@ const SoundEventElement = React.memo((props) => {
                 data-recording={selectedRecording}
                 data-group-child={groupRef}
                 draggable={shouldDrag}
+                dragBoundFunc={dragBoundFunc}
                 onContextMenu={handleContextMenu}
                 onDragStart={withCursor('grabbing', handleDragStart)}
                 onDragMove={withCursor('grabbing', handleDragMove)}
                 onDragEnd={withCursor('grab', handleDragEnd)}
                 onClick={shouldDrag && handleClick}
                 onDblClick={handleDoubleClick}
+                onMouseEnter={withCursor('pointer', handleMouseEnter)}
+                onMouseLeave={withCursor('default', restoreZIndex)}
                 listening={listening}
                 id={`${ELEMENT_ID_PREFIX}${id}`}
                 data-portal-parent={portalRef?.current}
                 data-parent-group-id={parentGroupId}
                 {...position}
             >
+                {/* Invisible hit area so Group can be dragged even though visuals are HTML */}
                 <Rect
-                    ref={elementRef}
                     x={0}
                     y={0}
                     width={width}
+                    height={timelineHeight}
+                    fill="rgba(0,0,0,0.01)" // ~invisible but hit-testable
                     cornerRadius={RADIUS}
-                    shadowOffset={SHADOW.OFFSET}
-                    shadowOpacity={SHADOW.OPACITY}
-                    opacity={OPACITY}
-                    {...unifiedDynamicStyles}
-                    onMouseEnter={withCursor('pointer', handleMouseEnter)}
-                    onMouseLeave={withCursor('default', restoreZIndex)}
+                    listening // keep events on
+                    perfectDrawEnabled={false}
                 />
-                <Text x={5} y={5} text={name} {...TEXT_STYLE} />
-                <Text x={5} y={25} text={`${id}`} {...TEXT_STYLE} />
-                <Circle x={width - 10} y={10} radius={8} fill="red" onClick={handleDelete} listening />
+
+                {/* All visible UI is HTML (non-interactive by default to preserve drag) */}
+                <KonvaHtml
+                    transform
+                    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
+                    divProps={{
+                        style: {
+                            height: `${timelineHeight}px`,
+                            pointerEvents: 'none',
+                            width: `${width}px`
+                        }
+                    }}
+                >
+                    <div
+                        style={{
+                            alignItems: 'center',
+                            background: bg,
+                            border: `1px solid ${borderColor}`,
+                            borderRadius: `${RADIUS}px`,
+                            boxShadow: 'rgba(0,0,0,0.5) 8px 5px 5px',
+                            boxSizing: 'border-box',
+                            display: 'flex',
+                            gap: 10,
+                            height: '100%',
+                            opacity: cardOpacity,
+                            outline: isFocused ? '2px solid #3b82f680' : 'none',
+                            overflow: 'hidden',
+                            padding: '8px 12px',
+                            position: 'relative',
+                            userSelect: 'none',
+                            width: '100%'
+                        }}
+                    >
+                        {/* Avatar */}
+                        <img
+                            src="https://i1.sndcdn.com/avatars-000156138298-c54tbb-t240x240.jpg"
+                            alt="Profile"
+                            width={40}
+                            height={40}
+                            style={{ borderRadius: '50%', flex: '0 0 auto', objectFit: 'cover', pointerEvents: 'none' }}
+                        />
+
+                        {/* Texts */}
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, pointerEvents: 'none' }}>
+                            <div
+                                title={name}
+                                style={{
+                                    color: '#111',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {name}
+                            </div>
+                            <div style={{ color: '#555', fontSize: 12 }}>#{id}</div>
+                        </div>
+
+                        <div style={{ flex: 1, pointerEvents: 'none' }} />
+
+                        {/* Delete button is the ONLY interactive DOM control */}
+                        <button
+                            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete?.(e);
+                            }}
+                            title="Delete"
+                            style={{
+                                background: '#ef4444',
+                                border: 'none',
+                                borderRadius: 6,
+                                boxShadow: 'rgba(0,0,0,0.2) 0 1px 2px',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                padding: '6px 8px',
+                                pointerEvents: 'auto'
+                            }}
+                        >
+                            Delete
+                        </button>
+
+                        {locked && (
+                            <div
+                                style={{
+                                    background: '#111',
+                                    borderRadius: 4,
+                                    color: 'white',
+                                    fontSize: 10,
+                                    left: 6,
+                                    opacity: 0.9,
+                                    padding: '2px 6px',
+                                    pointerEvents: 'none',
+                                    position: 'absolute',
+                                    top: 6
+                                }}
+                            >
+                                LOCKED
+                            </div>
+                        )}
+                    </div>
+                </KonvaHtml>
             </Group>
         </Portal>
     );

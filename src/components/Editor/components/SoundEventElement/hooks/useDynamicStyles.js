@@ -58,7 +58,7 @@ export const useUnifiedDynamicStyles = ({
     let fill = 'red';
     if (isSelected) fill = 'blue';
     else if (isFocused) fill = 'green';
-    else if (!shouldDrag) fill = 'orange';
+    else if (!shouldDrag) fill = 'pink';
 
     return useMemo(
         () => ({

@@ -5,19 +5,35 @@ import { Group } from 'react-konva';
 
 const needForceStyle = (el) => {
     const pos = window.getComputedStyle(el).position;
-    const ok = pos === 'absolute' || pos === 'relative';
-    return !ok;
+    return !(pos === 'absolute' || pos === 'relative');
 };
 
 export function useEvent(fn = () => {}) {
     const ref = React.useRef(fn);
     ref.current = fn;
-    return React.useCallback((...args) => {
-        return ref.current.apply(null, args);
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return React.useCallback((...args) => ref.current.apply(null, args), []);
 }
 
-export const KonvaHtml = ({ children, divProps, groupProps, transform, transformFunc }) => {
+/**
+ * KonvaHtml
+ * Props:
+ *  - divProps: DOM props for the overlay div (style merged, not replaced)
+ *  - groupProps: props passed to the anchor <Group/>
+ *  - transform: boolean (default true) – follow Konva transform
+ *  - transformFunc: (attrs) => attrs – override transform attrs
+ *  - interactive: boolean (default false) – allow DOM to receive pointer events
+ *  - zIndex: number|string (default 10) – CSS stacking of the overlay
+ */
+export const KonvaHtml = ({
+    children,
+    divProps,
+    groupProps,
+    interactive = false,
+    transform,
+    transformFunc,
+    zIndex = 10
+}) => {
     const Bridge = useContextBridge();
     const groupRef = React.useRef(null);
     const container = React.useRef();
@@ -28,59 +44,78 @@ export const KonvaHtml = ({ children, divProps, groupProps, transform, transform
     const shouldTransform = transform ?? true;
 
     const handleTransform = useEvent(() => {
-        if (shouldTransform && groupRef.current) {
-            const tr = groupRef.current.getAbsoluteTransform();
+        const group = groupRef.current;
+        if (!group) return;
+
+        // Mirror visibility
+        const visible = group.isVisible();
+        div.style.display = visible ? '' : 'none';
+
+        if (shouldTransform) {
+            const tr = group.getAbsoluteTransform();
             let attrs = tr.decompose();
-            if (transformFunc) {
-                attrs = transformFunc(attrs);
-            }
+            if (transformFunc) attrs = transformFunc(attrs);
+
             div.style.position = 'absolute';
-            div.style.zIndex = '10';
             div.style.top = '0px';
             div.style.left = '0px';
-            div.style.transform = `translate(${attrs.x}px, ${attrs.y}px) rotate(${attrs.rotation}deg) 
-            scaleX(${attrs.scaleX}) scaleY(${attrs.scaleY})`;
+            div.style.zIndex = String(zIndex);
+            div.style.pointerEvents = interactive ? 'auto' : 'none'; // ✅ key fix
+            div.style.transform = `translate(${attrs.x}px, ${attrs.y}px) rotate(${attrs.rotation}deg) scaleX(${attrs.scaleX}) scaleY(${attrs.scaleY})`;
             div.style.transformOrigin = 'top left';
         } else {
             div.style.position = '';
-            div.style.zIndex = '';
             div.style.top = '';
             div.style.left = '';
-            div.style.transform = ``;
+            div.style.transform = '';
             div.style.transformOrigin = '';
+            div.style.zIndex = String(zIndex);
+            div.style.pointerEvents = interactive ? 'auto' : 'none';
         }
+
+        // Merge user styles/props last
         const { style, ...restProps } = divProps || {};
-        // apply deep nesting, because direct assign of "divProps" will overwrite styles above
-        Object.assign(div.style, style);
-        Object.assign(div, restProps);
+        if (style) Object.assign(div.style, style);
+        if (restProps) Object.assign(div, restProps);
     });
 
     React.useLayoutEffect(() => {
         const group = groupRef.current;
-        if (!group) {
-            return;
-        }
-        const parent = group.getStage()?.container();
-        if (!parent) {
-            return;
-        }
-        parent.appendChild(div);
+        if (!group) return;
 
+        const parent = group.getStage()?.container();
+        if (!parent) return;
+
+        parent.appendChild(div);
         if (shouldTransform && needForceStyle(parent)) {
             parent.style.position = 'relative';
         }
 
-        group.on('absoluteTransformChange', handleTransform);
+        // Primary + robust fallbacks
+        const listeners = [
+            'absoluteTransformChange',
+            'transform',
+            'dragmove',
+            'xChange',
+            'yChange',
+            'scaleXChange',
+            'scaleYChange',
+            'rotationChange',
+            'visibleChange'
+        ];
+
+        listeners.forEach((ev) => group.on(ev, handleTransform));
         handleTransform();
+
         return () => {
-            group.off('absoluteTransformChange', handleTransform);
+            listeners.forEach((ev) => group.off(ev, handleTransform));
             div.parentNode?.removeChild(div);
         };
     }, [div, handleTransform, shouldTransform]);
 
     React.useLayoutEffect(() => {
         handleTransform();
-    }, [divProps, handleTransform, transformFunc]);
+    }, [divProps, handleTransform, transformFunc, interactive, zIndex]);
 
     React.useLayoutEffect(() => {
         root.render(<Bridge>{children}</Bridge>);
@@ -88,12 +123,7 @@ export const KonvaHtml = ({ children, divProps, groupProps, transform, transform
 
     React.useLayoutEffect(() => {
         return () => {
-            // I am not really sure why do we need timeout here
-            // but it resolve warnings from react
-            // ref: https://github.com/konvajs/react-konva-utils/issues/26
-            setTimeout(() => {
-                root.unmount();
-            });
+            setTimeout(() => root.unmount());
         };
     }, [root]);
 

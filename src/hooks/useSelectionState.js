@@ -21,6 +21,7 @@ function getRecordingData(item) {
  */
 function normalizeSelection(selectedItems, groupMembership) {
     const normalized = { ...selectedItems };
+    console.log('Passed items', normalized);
     const groupedChildren = new Set();
 
     // eslint-disable-next-line no-restricted-syntax
@@ -45,7 +46,7 @@ function normalizeSelection(selectedItems, groupMembership) {
         }
     }
 
-    console.log('normalized, normalized', normalized);
+    console.log('finalized normalized selection', normalized);
 
     return normalized;
 }
@@ -76,6 +77,9 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
 
     useEffect(() => {
         setSelectedItems((prev) => {
+            console.log('   ');
+            console.log('groupMembership', groupMembership);
+            console.log('prevItems', prev);
             const normalized = normalizeSelection(prev, groupMembership);
             return isEqual(prev, normalized) ? prev : normalized;
         });
@@ -190,11 +194,9 @@ export function useSelectionState({ markersAndTrackerOffset = 0 } = {}) {
         (id) => {
             if (selectedItems?.[id]) return true;
 
-            return Object.entries(groupMembership).some(
-                ([groupId, { children }]) => children.includes(id) && Boolean(selectedItems?.[groupId])
-            );
+            return false;
         },
-        [selectedItems, groupMembership]
+        [selectedItems]
     );
 
     const updateSelectedItemById = useCallback(({ id, isSelected, updates }) => {
