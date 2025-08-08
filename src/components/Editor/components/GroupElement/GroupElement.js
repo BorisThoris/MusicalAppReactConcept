@@ -1,26 +1,38 @@
+// GroupElement.jsx
+// @ts-nocheck
+
 import { isEqual } from 'lodash';
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { Group, Text } from 'react-konva';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Group, Rect } from 'react-konva';
 import { GROUP_ELEMENT_ID_PREFIX } from '../../../../globalConstants/elementIds';
+import { KonvaHtml } from '../../../../globalHelpers/KonvaHtml';
 import { Portal } from '../../../../globalHelpers/Portal';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from '../../../../providers/SelectionsProvider';
-import { TimelineHeight } from '../../../../providers/TimelineProvider';
-import { Lock } from '../Lock/Lock';
+import { TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import SoundEventElement from '../SoundEventElement/SoundEventElement';
+import { GroupTopHeader } from './GroupTopHeader';
+
+/* --------------------------------- CONSTS --------------------------------- */
+const RADIUS = 10;
+const OPACITY = 0.96;
+const HEADER_H = 28; // px
 
 export const GroupElement = React.memo(
     ({ groupData, handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged, timelineY }) => {
-        const { elements, id, locked, startTime } = groupData;
+        const { elements, eventLength, id, locked, startTime } = groupData;
 
         const pixelToSecondRatio = usePixelRatio();
-        const groupRef = useRef();
+        const { isItemSelected, updateSelectedItemById } = useContext(SelectionContext);
+        const { timelineState } = useContext(TimelineContext);
+
+        const groupRef = useRef(null);
         const portalRef = useRef(null);
+
+        const width = eventLength * pixelToSecondRatio;
 
         const stableInitialIdRef = useRef(id);
         const initialId = stableInitialIdRef.current;
-
-        const { isItemSelected, updateSelectedItemById } = useContext(SelectionContext);
 
         const isSelected = isItemSelected(initialId);
         const groupId = `${GROUP_ELEMENT_ID_PREFIX}${id}`;
@@ -31,7 +43,6 @@ export const GroupElement = React.memo(
             () => Object.values(elements).sort((a, b) => a.startTime - b.startTime),
             [elements]
         );
-
         const groupLength = groupEvents.length;
 
         const selectedGroup = useMemo(
@@ -46,53 +57,87 @@ export const GroupElement = React.memo(
 
         const onLockGroup = useCallback((e) => {
             e.cancelBubble = true;
-            if (!groupRef.current) return;
-            const prevData = groupRef.current.attrs['data-overlap-group'];
-            groupRef.current.setAttrs({ 'data-overlap-group': { ...prevData, locked: !prevData.locked } });
-            groupRef.current.getLayer().draw();
+            const node = groupRef.current;
+            if (!node) return;
+            const prevData = node.attrs['data-overlap-group'] || {};
+            node.setAttrs({ 'data-overlap-group': { ...prevData, locked: !prevData.locked } });
+            node.getLayer()?.draw();
         }, []);
 
         useEffect(() => {
             const node = groupRef.current;
             if (!node) return;
-
-            updateSelectedItemById({
-                id,
-                isSelected: selectedGroup.isSelected,
-                updates: selectedGroup
-            });
-
-            if (initialId !== id) {
-                stableInitialIdRef.current = id;
-            }
-
+            updateSelectedItemById({ id, isSelected: selectedGroup.isSelected, updates: selectedGroup });
+            if (initialId !== id) stableInitialIdRef.current = id;
             return () => {
-                updateSelectedItemById({
-                    id,
-                    isSelected: false,
-                    updates: { ...selectedGroup }
-                });
+                updateSelectedItemById({ id, isSelected: false, updates: { ...selectedGroup } });
             };
         }, [id, initialId, selectedGroup, updateSelectedItemById]);
 
-        const controlledPositionProps = !isDragging ? { x: startTime * pixelToSecondRatio, y: 0 } : {};
+        // Let Konva own Y while dragging so you can move between lanes
+        const controlledPositionProps = !isDragging
+            ? { x: startTime * pixelToSecondRatio, y: 0 }
+            : { x: undefined, y: undefined };
+
+        // Clamp X only
+        const contentWidth = timelineState?.contentWidth ?? timelineState?.width ?? timelineState?.timelineWidth ?? 1e9;
+
+        const dragBoundFunc = useCallback(
+            (pos) => {
+                const minX = 0;
+                const maxX = Math.max(0, contentWidth - width);
+                const x = Math.min(Math.max(pos.x, minX), maxX);
+                return { x, y: pos.y };
+            },
+            [contentWidth, width]
+        );
+
+        const baseBg = '#ffffff';
+        const lenLabel = typeof eventLength === 'number' ? `${eventLength.toFixed(2)}s` : `${String(eventLength)}s`;
+        const [expanded, setExpanded] = useState(true);
+
+        const handleChevronClick = useCallback((e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+        }, []);
+
+        const handleLockClick = useCallback(
+            (e) => {
+                e.stopPropagation();
+                onLockGroup(e);
+            },
+            [onLockGroup]
+        );
 
         return (
             <Portal selector=".top-layer" enabled={isDragging} outerRef={portalRef}>
                 <Group
-                    y={isDragging ? timelineY : 0}
                     ref={groupRef}
                     data-overlap-group={selectedGroup}
                     name={groupId}
                     data-group-id={groupId}
                     id={groupId}
                     draggable={isDraggable}
+                    dragBoundFunc={isDraggable ? dragBoundFunc : undefined}
                     onDragStart={isDraggable ? handleDragStart : undefined}
                     onDragMove={isDraggable ? handleDragMove : undefined}
                     onDragEnd={isDraggable ? handleDragEnd : undefined}
                     {...controlledPositionProps}
-                    fill={'green'}
                 >
+                    {/* 0) Hit area */}
+
+                    <Rect
+                        x={0}
+                        y={0}
+                        width={width}
+                        height={TimelineHeight}
+                        fill="rgba(0,0,0,0.01)"
+                        cornerRadius={RADIUS}
+                        listening
+                        perfectDrawEnabled={false}
+                    />
+
+                    {/* 2) Children (between overlays) */}
                     <Group offsetX={startTime * pixelToSecondRatio}>
                         {groupEvents.map((event, index) => (
                             <SoundEventElement
@@ -111,8 +156,18 @@ export const GroupElement = React.memo(
                             />
                         ))}
                     </Group>
-
-                    <Lock isLocked={locked} onClick={onLockGroup} />
+                    {/* 3) Top header (above children) */}
+                    <GroupTopHeader
+                        width={width}
+                        isSelected={isSelected}
+                        locked={locked}
+                        groupId={id}
+                        groupLength={groupLength}
+                        lenLabel={lenLabel}
+                        expanded={expanded}
+                        onToggleExpand={handleChevronClick}
+                        onToggleLock={handleLockClick}
+                    />
                 </Group>
             </Portal>
         );
