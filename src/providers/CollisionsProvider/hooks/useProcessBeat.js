@@ -12,7 +12,7 @@ export const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) =
     const orphanElements = [];
     const mergedOverlapGroups = [];
 
-    // 1. Gather all child elements and record each element’s locked state and original group index.
+    // 1. Gather all child elements and record each element's locked state and original group index.
     const allChildElements = [];
     const lockedMap = {}; // Maps recording id -> locked boolean
     const originalGroupMap = {}; // Maps recording id -> original overlapGroups index
@@ -76,7 +76,7 @@ export const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) =
         groupsByRoot[rep].push(el);
     });
 
-    // 5. Build merged groups with nodes, rects, and persist isSelected
+    // 5. Build merged groups with nodes, rects, and reset selection state
     Object.values(groupsByRoot).forEach((groupArray) => {
         if (groupArray.length > 1) {
             const startTime = Math.min(...groupArray.map((el) => el.recording.startTime));
@@ -86,10 +86,9 @@ export const verifyAndSortOverlapGroup = (overlapGroups, getProcessedElements) =
             const groupLocked = lockedMap[find(newId)];
             const rep = groupArray[0];
 
-            // Preserve previous group selection state
-            const previousGroupIdx = originalGroupMap[newId];
-            const previousGroup = overlapGroups[previousGroupIdx];
-            const groupIsSelected = previousGroup?.isSelected || false;
+            // Reset selection state for new groups - don't auto-select
+            // Groups should only be selected when explicitly chosen by the user
+            const groupIsSelected = false;
 
             // Build group elements with up-to-date rects
             const elements = groupArray.reduce((acc, el) => {

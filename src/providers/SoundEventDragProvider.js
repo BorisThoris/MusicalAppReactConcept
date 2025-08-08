@@ -9,7 +9,7 @@ export const SoundEventDragContext = createContext();
 export const SoundEventDragProvider = ({ children }) => {
     const pixelToSecondRatio = usePixelRatio();
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
-    const { selectedItems } = useContext(SelectionContext);
+    const { clearSelection, selectedItems, toggleItem } = useContext(SelectionContext);
 
     function extractElementIdsFromGroup(groupElm, targetId) {
         const chl = Object.values(groupElm.elements)
@@ -269,9 +269,30 @@ export const SoundEventDragProvider = ({ children }) => {
             currentYRef.current = 0;
             initialPositionsRef.current.clear();
             setDragging({});
+
+            // Maintain selection only for the dragged item
+            const attrs = e?.target?.attrs || {};
+            const selectionPayload = attrs['data-overlap-group'] || attrs['data-recording'] || null;
+
             refreshBeat();
+
+            if (selectionPayload) {
+                // Defer selection update until after the beat refresh
+                setTimeout(() => {
+                    clearSelection();
+                    toggleItem(selectionPayload);
+                }, 0);
+            }
         },
-        [finalizeDrag, processSelectedElements, refreshBeat, selectedElementIds, setDragging]
+        [
+            clearSelection,
+            finalizeDrag,
+            processSelectedElements,
+            refreshBeat,
+            selectedElementIds,
+            setDragging,
+            toggleItem
+        ]
     );
 
     const isElementBeingDragged = useCallback((id) => !!dragging[id], [dragging]);

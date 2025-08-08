@@ -67,12 +67,22 @@ export const GroupElement = React.memo(
         useEffect(() => {
             const node = groupRef.current;
             if (!node) return;
-            updateSelectedItemById({ id, isSelected: selectedGroup.isSelected, updates: selectedGroup });
+
+            // Only update selection state if the group is actually selected
+            // Don't auto-update when ID changes due to moving between timelines
+            if (isSelected) {
+                updateSelectedItemById({ id, isSelected: true, updates: selectedGroup });
+            }
+
             if (initialId !== id) stableInitialIdRef.current = id;
+
             return () => {
-                updateSelectedItemById({ id, isSelected: false, updates: { ...selectedGroup } });
+                // Only clear selection if the group was actually selected
+                if (isSelected) {
+                    updateSelectedItemById({ id, isSelected: false, updates: { ...selectedGroup } });
+                }
             };
-        }, [id, initialId, selectedGroup, updateSelectedItemById]);
+        }, [id, initialId, selectedGroup, updateSelectedItemById, isSelected]);
 
         // Let Konva own Y while dragging so you can move between lanes
         const controlledPositionProps = !isDragging

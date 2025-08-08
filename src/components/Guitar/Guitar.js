@@ -21,8 +21,8 @@ const StyledGuitarNeck = styled.rect`
 
 const Wrapper = styled.div`
     display: flex;
-    flex-direction: collumn;
-    background-color: 'green';
+    flex-direction: column;
+    background-color: green;
     height: 100%;
 `;
 
