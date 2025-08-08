@@ -89,17 +89,21 @@ export const GroupElement = React.memo(
             ? { x: startTime * pixelToSecondRatio, y: 0 }
             : { x: undefined, y: undefined };
 
-        // Clamp X only
+        // Clamp X only - but don't constrain during drag to allow precise positioning
         const contentWidth = timelineState?.contentWidth ?? timelineState?.width ?? timelineState?.timelineWidth ?? 1e9;
 
         const dragBoundFunc = useCallback(
             (pos) => {
+                // Only apply bounds when not actively dragging to allow precise positioning
+                if (isDragging) {
+                    return pos; // Allow free movement during drag
+                }
                 const minX = 0;
                 const maxX = Math.max(0, contentWidth - width);
                 const x = Math.min(Math.max(pos.x, minX), maxX);
                 return { x, y: pos.y };
             },
-            [contentWidth, width]
+            [contentWidth, width, isDragging]
         );
 
         const baseBg = '#ffffff';

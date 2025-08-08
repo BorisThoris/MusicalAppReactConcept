@@ -4,7 +4,7 @@ import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from './SelectionsProvider';
 
-export const SoundEventDragContext = createContext();
+export const SoundEventDragContext = createContext(null);
 
 export const SoundEventDragProvider = ({ children }) => {
     const pixelToSecondRatio = usePixelRatio();
@@ -38,7 +38,8 @@ export const SoundEventDragProvider = ({ children }) => {
     }, [selectedItems]);
 
     const initialXRef = useRef(null);
-    const currentYRef = useRef(0);
+    const initialYRef = useRef(null);
+    const initialPointerRef = useRef({ x: 0, y: 0 });
     const dragRequestRef = useRef(null);
     const highlightedTimelinesRef = useRef(new Set());
     const initialPositionsRef = useRef(new Map());
@@ -117,17 +118,21 @@ export const SoundEventDragProvider = ({ children }) => {
     const updateStartTimeForElement = useCallback(
         ({ designatedStartTime = null, element }) => {
             if (element.attrs['data-recording']) {
-                const start = designatedStartTime ?? element.x() / pixelToSecondRatio;
+                // Use the final element position for precise timing
+                const finalX = element.x();
+                const start = designatedStartTime ?? finalX / pixelToSecondRatio;
                 const rec = { ...element.attrs['data-recording'] };
                 const end = start + rec.eventLength;
                 if (rec.startTime === start && rec.endTime === end) return;
                 element.setAttr('data-recording', { ...rec, endTime: end, startTime: start });
             } else if (element.attrs['data-overlap-group']) {
                 const grp = { ...element.attrs['data-overlap-group'] };
-                const newGroupStart = designatedStartTime ?? element.x() / pixelToSecondRatio;
+                // Use the final element position for precise timing
+                const finalX = element.x();
+                const newGroupStart = designatedStartTime ?? finalX / pixelToSecondRatio;
                 const offset = newGroupStart - grp.startTime;
                 grp.startTime = newGroupStart;
-                grp.endTime = newGroupStart + grp.length;
+                grp.endTime = newGroupStart + grp.eventLength;
                 element.setAttr('data-overlap-group', grp);
                 Object.values(grp.elements).forEach((child) => {
                     const currentChildStart =
@@ -149,6 +154,11 @@ export const SoundEventDragProvider = ({ children }) => {
             });
         },
         [selectedItems]
+    );
+
+    const getPointer = useCallback(
+        (evt) => stageRef.getPointerPosition?.() || { x: evt?.evt?.x ?? 0, y: evt?.evt?.y ?? 0 },
+        [stageRef]
     );
 
     const handleDragStart = useCallback(
@@ -174,11 +184,16 @@ export const SoundEventDragProvider = ({ children }) => {
                 return;
             }
 
+            // Store initial element positions and stage pointer
             initialXRef.current = event.target.x();
-            currentYRef.current = event.evt.y;
+            initialYRef.current = event.target.y();
+            initialPointerRef.current = getPointer(event);
 
             processSelectedElements((element) => {
-                initialPositionsRef.current.set(element.attrs.id, { x: element.x(), y: element.y() });
+                initialPositionsRef.current.set(element.attrs.id, {
+                    x: element.x(),
+                    y: element.y()
+                });
             });
 
             const newDragging = {};
@@ -193,8 +208,9 @@ export const SoundEventDragProvider = ({ children }) => {
 
             setDragging((prev) => ({ ...prev, ...newDragging }));
         },
-        [processSelectedElements, selectedElementIds, setDragging]
+        [getPointer, processSelectedElements, selectedElementIds, setDragging]
     );
+
     const handleDragMove = useCallback(
         (e) => {
             e.evt.stopPropagation();
@@ -205,21 +221,23 @@ export const SoundEventDragProvider = ({ children }) => {
             if (dragRequestRef.current) cancelAnimationFrame(dragRequestRef.current);
 
             dragRequestRef.current = requestAnimationFrame(() => {
-                const curX = e.target.x();
-                const curY = e.evt.y;
-                const totalDX = curX - initialXRef.current;
-                const dY = curY - currentYRef.current;
-                currentYRef.current = curY;
+                // Calculate mouse movement relative to initial stage pointer
+                const pointer = getPointer(e);
+                const mouseDeltaX = pointer.x - initialPointerRef.current.x;
+                const mouseDeltaY = pointer.y - initialPointerRef.current.y;
 
                 const newHighlights = new Set();
                 const mover = (element) => {
                     const init = initialPositionsRef.current.get(element.attrs.id);
                     if (init) {
-                        element.setAttr('x', init.x + totalDX);
-                    }
+                        // Apply mouse delta to initial position
+                        const newX = init.x + mouseDeltaX;
+                        const newY = init.y + mouseDeltaY;
 
-                    element.move({ y: dY });
-                    forceUpdatePosition(element);
+                        element.setAttr('x', newX);
+                        element.setAttr('y', newY);
+                        forceUpdatePosition(element);
+                    }
 
                     const tl = findClosestTimelineRect(element);
                     if (tl) {
@@ -243,7 +261,7 @@ export const SoundEventDragProvider = ({ children }) => {
                 highlightedTimelinesRef.current = newHighlights;
             });
         },
-        [forceUpdatePosition, findClosestTimelineRect, processSelectedElements, selectedElementIds]
+        [forceUpdatePosition, findClosestTimelineRect, getPointer, processSelectedElements, selectedElementIds]
     );
 
     const finalizeDrag = useCallback(
@@ -266,7 +284,8 @@ export const SoundEventDragProvider = ({ children }) => {
             highlightedTimelinesRef.current.forEach(removeHighlightFromTimeline);
             highlightedTimelinesRef.current.clear();
             initialXRef.current = null;
-            currentYRef.current = 0;
+            initialYRef.current = null;
+            initialPointerRef.current = { x: 0, y: 0 };
             initialPositionsRef.current.clear();
             setDragging({});
 

@@ -119,6 +119,10 @@ const SoundEventElement = React.memo((props) => {
 
     // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
     const dragBoundFunc = (pos) => {
+        // Only apply bounds when not actively dragging to allow precise positioning
+        if (isDragging) {
+            return pos; // Allow free movement during drag
+        }
         const minX = 0;
         const maxX = Math.max(0, (timelineState?.contentWidth ?? timelineState?.width ?? 1e9) - width);
         const x = Math.min(Math.max(pos.x, minX), maxX);
@@ -134,8 +138,6 @@ const SoundEventElement = React.memo((props) => {
             <Group
                 ref={containerRef}
                 key={index}
-                y={isDragging ? timelineY : 0}
-                offset={isDragging ? timelineState.panelCompensationOffset : undefined}
                 data-recording={selectedRecording}
                 data-group-child={groupRef}
                 draggable={shouldDrag}
