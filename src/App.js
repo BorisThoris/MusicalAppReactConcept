@@ -10,6 +10,7 @@ import Tambourine from './components/Tambourine/Tambourine';
 import { PanelProvider } from './hooks/usePanelState';
 import { CollisionsProvider } from './providers/CollisionsProvider/CollisionsProvider';
 import { CustomCursorProvider } from './providers/CursorProvider';
+import { NotificationProvider } from './providers/NotificationProvider/NotificationProvider';
 import { PaintingProvider } from './providers/PaintingProvider';
 import { PixelRatioProvider } from './providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
@@ -95,37 +96,42 @@ function App() {
     const handleDurationChange = (e) => setDuration(Number(e.target.value));
 
     return (
-        <PixelRatioProvider durationSec={duration}>
-            <PanelProvider>
-                <CollisionsProvider>
-                    <CustomCursorProvider initialVisibility={false}>
-                        <PaintingProvider>
-                            <TimelineProvider>
-                                <RecordingsPlayerProvider>
-                                    <SelectionProvider>
-                                        <SoundEventDragProvider>
-                                            <Router>
-                                                {/* Pass slider props into navigation */}
-                                                <TopNav duration={duration} onDurationChange={handleDurationChange} />
+        <NotificationProvider>
+            <PixelRatioProvider durationSec={duration}>
+                <PanelProvider>
+                    <CollisionsProvider>
+                        <CustomCursorProvider initialVisibility={false}>
+                            <PaintingProvider>
+                                <TimelineProvider>
+                                    <RecordingsPlayerProvider>
+                                        <SelectionProvider>
+                                            <SoundEventDragProvider>
+                                                <Router>
+                                                    {/* Pass slider props into navigation */}
+                                                    <TopNav
+                                                        duration={duration}
+                                                        onDurationChange={handleDurationChange}
+                                                    />
 
-                                                <Routes>
-                                                    <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                                    <Route path="/guitar" element={<Guitar />} />
-                                                    <Route path="/piano" element={<Piano />} />
-                                                    <Route path="/tambourine" element={<Tambourine />} />
-                                                    <Route path="/drums" element={<Drums />} />
-                                                    <Route path="/editor" element={<Editor />} />
-                                                </Routes>
-                                            </Router>
-                                        </SoundEventDragProvider>
-                                    </SelectionProvider>
-                                </RecordingsPlayerProvider>
-                            </TimelineProvider>
-                        </PaintingProvider>
-                    </CustomCursorProvider>
-                </CollisionsProvider>
-            </PanelProvider>
-        </PixelRatioProvider>
+                                                    <Routes>
+                                                        <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                                        <Route path="/guitar" element={<Guitar />} />
+                                                        <Route path="/piano" element={<Piano />} />
+                                                        <Route path="/tambourine" element={<Tambourine />} />
+                                                        <Route path="/drums" element={<Drums />} />
+                                                        <Route path="/editor" element={<Editor />} />
+                                                    </Routes>
+                                                </Router>
+                                            </SoundEventDragProvider>
+                                        </SelectionProvider>
+                                    </RecordingsPlayerProvider>
+                                </TimelineProvider>
+                            </PaintingProvider>
+                        </CustomCursorProvider>
+                    </CollisionsProvider>
+                </PanelProvider>
+            </PixelRatioProvider>
+        </NotificationProvider>
     );
 }
 

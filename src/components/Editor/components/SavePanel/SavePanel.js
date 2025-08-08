@@ -1,8 +1,8 @@
-import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useState } from 'react';
 import styled from 'styled-components';
 import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
+import { useNotification } from '../../../../providers/NotificationProvider/NotificationProvider';
 import Modal from '../Modal/Modal';
 
 const InputWrapper = styled.div`
@@ -29,10 +29,11 @@ export const SavePanel = () => {
     const [beatName, setBeatName] = useState('');
     const { closeSavePanel } = useContext(PanelContext);
     const { overlapGroups } = useContext(CollisionsContext);
+    const { confirm, showError, showSuccess } = useNotification();
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         if (!beatName.trim()) {
-            alert('Beat name cannot be empty.');
+            showError('Beat name cannot be empty.');
             return;
         }
 
@@ -48,8 +49,7 @@ export const SavePanel = () => {
 
         if (existingIndex !== -1) {
             // Prompt for confirmation if the beat name already exists
-            // eslint-disable-next-line no-alert
-            const confirmOverwrite = window.confirm(
+            const confirmOverwrite = await confirm(
                 `A beat with the name "${newBeat.name}" already exists. Do you want to overwrite it?`
             );
 
@@ -65,9 +65,9 @@ export const SavePanel = () => {
         }
 
         localStorage.setItem('beats', JSON.stringify(savedBeats));
-
+        showSuccess('Beat saved successfully!');
         closeSavePanel();
-    }, [beatName, closeSavePanel, overlapGroups]);
+    }, [beatName, closeSavePanel, overlapGroups, showError, showSuccess, confirm]);
 
     const handleSaveBeat = useCallback((e) => {
         setBeatName(e.target.value);
@@ -81,8 +81,4 @@ export const SavePanel = () => {
             </InputWrapper>
         </Modal>
     );
-};
-
-SavePanel.propTypes = {
-    onClose: PropTypes.func.isRequired
 };

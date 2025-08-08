@@ -1,14 +1,16 @@
 import { useCallback, useContext } from 'react';
 import { CollisionsContext } from '../providers/CollisionsProvider/CollisionsProvider';
 import { findOverlaps } from '../providers/CollisionsProvider/overlapHelpers';
+import { useNotification } from '../providers/NotificationProvider/NotificationProvider';
 
 export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage }) => {
     const { setHasChanged, setOverlapGroups, setSelectedBeat } = useContext(CollisionsContext);
+    const { confirm, showError, showSuccess } = useNotification();
 
     const handleSave = useCallback(
-        (beatName, overlapGroups) => {
+        async (beatName, overlapGroups) => {
             if (!beatName.trim()) {
-                alert('Beat name cannot be empty.');
+                showError('Beat name cannot be empty.');
                 return;
             }
 
@@ -22,36 +24,35 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
             const updatedBeats = [...beats];
 
             if (existingBeatIndex !== -1) {
-                // eslint-disable-next-line no-alert
-                const confirmation = window.confirm(
+                const confirmation = await confirm(
                     'A beat with this name already exists. Do you want to overwrite it?'
                 );
                 if (confirmation) {
                     updatedBeats[existingBeatIndex] = newBeat;
-                    alert('Beat updated successfully.');
+                    showSuccess('Beat updated successfully.');
                 } else {
                     return;
                 }
             } else {
                 updatedBeats.push(newBeat);
-                alert('Beat saved successfully.');
+                showSuccess('Beat saved successfully.');
             }
             saveBeatsToLocalStorage(updatedBeats);
             setHasChanged(false);
         },
-        [beats, saveBeatsToLocalStorage, setHasChanged]
+        [beats, saveBeatsToLocalStorage, setHasChanged, showError, showSuccess, confirm]
     );
 
     const handleDelete = useCallback(
-        (name) => {
-            const confirmation = window.confirm('Are you sure you want to delete this beat?');
+        async (name) => {
+            const confirmation = await confirm('Are you sure you want to delete this beat?');
             if (confirmation) {
                 const updatedBeats = beats.filter((beat) => beat.name !== name);
                 saveBeatsToLocalStorage(updatedBeats);
                 setHasChanged(false);
             }
         },
-        [beats, saveBeatsToLocalStorage, setHasChanged]
+        [beats, saveBeatsToLocalStorage, setHasChanged, confirm]
     );
 
     const handleLoad = useCallback(
@@ -67,10 +68,10 @@ export const useBeatActions = ({ beats, closeLoadPanel, saveBeatsToLocalStorage 
                 setHasChanged(false);
                 closeLoadPanel();
             } else {
-                alert('Beat not found.');
+                showError('Beat not found.');
             }
         },
-        [beats, setOverlapGroups, setSelectedBeat, setHasChanged, closeLoadPanel]
+        [beats, setOverlapGroups, setSelectedBeat, setHasChanged, closeLoadPanel, showError]
     );
 
     const handleDuplicate = useCallback(

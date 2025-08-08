@@ -1,8 +1,9 @@
-/* eslint-disable no-alert */
 import { useCallback, useState } from 'react';
+import { useNotification } from '../../NotificationProvider/NotificationProvider';
 
 export const useSelectedBeat = ({ beats, overlapGroups, saveBeatsToLocalStorage, setHasChanged }) => {
     const [selectedBeat, setSelectedBeat] = useState(null);
+    const { showError, showSuccess } = useNotification();
 
     const updateCurrentBeat = useCallback(() => {
         if (selectedBeat && selectedBeat.name) {
@@ -13,28 +14,28 @@ export const useSelectedBeat = ({ beats, overlapGroups, saveBeatsToLocalStorage,
             };
             const updatedBeats = beats.map((beat) => (beat.name === updatedBeat.name ? updatedBeat : beat));
             saveBeatsToLocalStorage(updatedBeats);
-            alert('Beat updated successfully.');
+            showSuccess('Beat updated successfully.');
             setHasChanged(false);
         } else {
-            alert('No beat selected to update.');
+            showError('No beat selected to update.');
         }
-    }, [selectedBeat, overlapGroups, beats, saveBeatsToLocalStorage, setHasChanged]);
+    }, [selectedBeat, overlapGroups, beats, saveBeatsToLocalStorage, setHasChanged, showSuccess, showError]);
 
     const changeBeatName = useCallback(
         (newName) => {
             if (!newName.trim()) {
-                alert('New name cannot be empty.');
+                showError('New name cannot be empty.');
                 return;
             }
 
             if (!selectedBeat || !selectedBeat.name) {
-                alert('No beat selected to rename.');
+                showError('No beat selected to rename.');
                 return;
             }
 
             const nameExists = beats.some((beat) => beat.name === newName.trim());
             if (nameExists) {
-                alert('A beat with this name already exists.');
+                showError('A beat with this name already exists.');
                 return;
             }
 
@@ -43,10 +44,10 @@ export const useSelectedBeat = ({ beats, overlapGroups, saveBeatsToLocalStorage,
             );
             saveBeatsToLocalStorage(updatedBeats);
             setSelectedBeat((prev) => ({ ...prev, name: newName.trim() })); // Update UI state for the renamed beat
-            alert('Beat renamed successfully.');
+            showSuccess('Beat renamed successfully.');
             setHasChanged(false);
         },
-        [selectedBeat, beats, saveBeatsToLocalStorage, setHasChanged]
+        [selectedBeat, beats, saveBeatsToLocalStorage, setHasChanged, showError, showSuccess]
     );
 
     return {
