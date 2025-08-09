@@ -1,22 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
+import styled from 'styled-components';
 
-const styles = {
-    fpsContainer: {
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        borderRadius: '5px',
-        padding: '10px',
-        position: 'fixed',
-        right: 0,
-        top: 0,
-        zIndex: 1000
-    },
-    fpsText: {
-        color: 'white',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
-        margin: 0
-    }
-};
+const FpsContainer = styled.div`
+    background-color: ${({ theme }) => theme.colors.semantic.background.overlay};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    padding: ${({ theme }) => theme.spacing[2]};
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: ${({ theme }) => theme.zIndex.dropdown};
+`;
+
+const FpsText = styled.p`
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
+    font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.base};
+    margin: 0;
+`;
 
 const FPSMonitor = () => {
     const [fps, setFps] = useState(0);
@@ -49,9 +49,9 @@ const FPSMonitor = () => {
     }, []);
 
     return (
-        <div style={styles.fpsContainer}>
-            <p style={styles.fpsText}>FPS: {fps}</p>
-        </div>
+        <FpsContainer>
+            <FpsText>FPS: {fps}</FpsText>
+        </FpsContainer>
     );
 };
 

@@ -10,24 +10,34 @@ import { useFillClosestTimelines } from './useFillClosestTimelines';
 import { useFindClosestTimelines } from './useFindClosestTimelines';
 
 const MenuItem = styled.div`
-    background: #ece9d8;
+    background: ${({ theme }) => theme.colors.semantic.surface.primary};
     cursor: pointer;
-    padding: 5px;
+    padding: ${({ theme }) => theme.spacing[1]};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    }
 
     &:focus {
         outline: none;
+        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
     }
 `;
 
 const PreviewOverlay = styled.div`
     position: absolute;
-    background: rgba(0, 0, 255, 0.3);
+    background: ${({ theme }) => theme.colors.primary[500]}40;
     height: 50px;
     z-index: 999;
     pointer-events: none;
     left: ${({ position }) => `${position.x}px`};
     top: ${({ position }) => `${position.y}px`};
     width: ${({ width }) => `${width}px`};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
 `;
 
 const PasteButton = ({ copiedEvents, menuPosition }) => {

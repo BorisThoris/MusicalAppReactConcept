@@ -4,17 +4,18 @@ import { CollisionsContext } from '../../../../providers/CollisionsProvider/Coll
 import PasteButton from './PasteButton';
 
 const MenuContainer = styled.div`
-    background: #c3c7cb;
-    border: 2px solid #000;
-    box-shadow: 3px 3px 0 #808080;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    padding: 5px;
+    background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    border: 2px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
+    font-family: ${({ theme }) => theme.typography.fontFamily.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    padding: ${({ theme }) => theme.spacing[1]};
     position: absolute;
     width: 150px;
-    z-index: 1000;
+    z-index: ${({ theme }) => theme.zIndex.dropdown};
     left: ${({ position }) => `${position.x}px`};
     top: ${({ position }) => `${position.y}px`};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
 `;
 
 const MenuList = styled.ul`
@@ -24,12 +25,21 @@ const MenuList = styled.ul`
 `;
 
 const MenuItem = styled.div`
-    background: #ece9d8;
+    background: ${({ theme }) => theme.colors.semantic.surface.primary};
     cursor: pointer;
-    padding: 5px;
+    padding: ${({ theme }) => theme.spacing[1]};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    }
 
     &:focus {
         outline: none;
+        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
     }
 `;
 

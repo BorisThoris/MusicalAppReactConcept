@@ -4,7 +4,15 @@ import { BeatManagementControls } from '../BeatManagementControls/BeatManagement
 import { HistoryControls } from '../HistoryControls/HistoryButtons';
 import { PlaybackControls } from '../PlaybackControls/PlaybackControls';
 
-const HeaderContainer = styled.div``;
+const HeaderContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: ${({ theme }) => theme.spacing[4]};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    border-bottom: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
+`;
 
 export const TimelinesHeader = () => {
     return (

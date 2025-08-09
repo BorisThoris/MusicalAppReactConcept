@@ -15,20 +15,28 @@ import TimeControl from './TimeControl';
 const EventItemContainer = styled.div`
     display: flex;
     flex-direction: column;
-    background-color: ${({ focused }) => (focused ? '#ffcccb' : 'transparent')};
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: ${({ focused, theme }) =>
+        focused ? theme.colors.error[100] : theme.colors.semantic.surface.primary};
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
 `;
 
 const UnselectButton = styled.button`
-    background-color: #f5f5f5;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
     border: none;
-    border-radius: 4px;
+    border-radius: ${({ theme }) => theme.borderRadius.base};
     cursor: pointer;
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
-        background-color: #e0e0e0;
+        background-color: ${({ theme }) => theme.colors.semantic.surface.tertiary};
     }
 `;
 

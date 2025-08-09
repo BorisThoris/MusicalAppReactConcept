@@ -6,31 +6,47 @@ const FileRow = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #ddd;
+    padding: ${({ theme }) => theme.spacing[2]} 0;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
 
     & > div {
         flex: 1;
         text-align: center;
+        color: ${({ theme }) => theme.colors.semantic.text.primary};
+        font-size: ${({ theme }) => theme.typography.fontSize.sm};
     }
 `;
 
 const LoadButton = styled.button`
-    background-color: blue;
-    color: white;
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     border: none;
     cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background-color: ${({ theme }) => theme.colors.primary[600]};
+    }
 `;
 
 const DeleteButton = styled.button`
-    background-color: red;
-    color: white;
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     border: none;
     cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background-color: ${({ theme }) => theme.colors.error[600]};
+    }
 `;
 
 export const BeatFileRow = ({ beat, onDelete, onLoad }) => {

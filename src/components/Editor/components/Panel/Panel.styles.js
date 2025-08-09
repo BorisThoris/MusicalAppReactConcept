@@ -15,30 +15,34 @@ const hoverEffect = css`
 export const Header = styled.div`
     ${flexCenter};
     justify-content: space-between;
-    padding: 5px;
+    padding: ${({ theme }) => theme.spacing[1]};
 `;
 
 const basePressableIcon = css`
     width: 30px;
     height: 20px;
-    margin-right: 10px;
+    margin-right: ${({ theme }) => theme.spacing[2]};
     cursor: pointer;
     ${flexCenter};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    transition: transform ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
 `;
 
 const PressableIcon = styled.button`
     ${basePressableIcon}
-    transition: transform 0.3s ease;
     ${hoverEffect};
 `;
 
 export const PlayIcon = styled(PressableIcon)`
-    background-color: green;
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.success};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     ${hoverEffect};
 `;
 
 export const CopyIcon = styled(PressableIcon)`
-    background-color: green;
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.success};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     ${hoverEffect};
 `;
 
@@ -48,48 +52,49 @@ export const FlexContainer = styled.div`
 `;
 
 export const TrashIcon = styled(PressableIcon)`
-    background-color: #f5f5f5;
-    border: 1px solid black;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
 
     &:hover {
-        transform: scale(1.3); // Combines scaling and rotation
-        transition: transform 0.5s ease;
-        background-color: red;
+        transform: scale(1.3);
+        background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
+        color: ${({ theme }) => theme.colors.semantic.text.inverse};
     }
 `;
 
 export const CloseIcon = styled(PressableIcon)`
-    background-color: gray;
+    background-color: ${({ theme }) => theme.colors.semantic.text.secondary};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     position: absolute;
-    top: 5px; // Adjust as needed
-    right: 5px; // Adjust as needed
-    z-index: 10; // Ensure it's above other content
+    top: ${({ theme }) => theme.spacing[1]};
+    right: ${({ theme }) => theme.spacing[1]};
+    z-index: ${({ theme }) => theme.zIndex.dropdown};
 
     &:hover {
-        transform: scale(1.3); // Combines scaling and rotation
-        transition: transform 0.5s ease;
-        background-color: red;
+        transform: scale(1.3);
+        background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
     }
 `;
 
 export const PanelContainer = styled.div`
-    border: 1px solid black;
-    background-color: green;
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
     position: absolute !important;
     left: ${({ x }) => x}px;
     top: ${({ y }) => y}px;
     transform: ${({ timelinestate }) => `translate(${-timelinestate.panelCompensationOffset.x}px, 0)`};
-
-    border-radius: ${({ isspeechbubble }) => (isspeechbubble ? '8px' : '0')};
+    border-radius: ${({ isspeechbubble, theme }) => (isspeechbubble ? theme.borderRadius.lg : '0')};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
 `;
 
 export const SpeechBubbleArrow = styled.div`
     position: absolute;
-    top: -20px; // Adjust this value as needed
-    left: 0px; // Positioning the arrow - adjust as needed
+    top: -20px;
+    left: 0px;
     width: 0;
     height: 0;
     border-style: solid;
     border-width: 10px;
-    border-color: transparent transparent black transparent;
+    border-color: transparent transparent ${({ theme }) => theme.colors.semantic.border.primary} transparent;
 `;

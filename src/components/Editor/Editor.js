@@ -20,12 +20,17 @@ import Timelines from './components/Timelines/Timelines';
 import { TimelinesHeader } from './components/TimelinesHeader/TimelinesHeader';
 
 const StyledEditorWrapper = styled.div`
-    background-color: white;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    border-radius: ${({ theme }) => theme.borderRadius.xl};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
+    margin: ${({ theme }) => theme.spacing[4]};
+    overflow: hidden;
 `;
 
 const StyledTimeline = styled.div`
     flex-direction: column;
     overflow-y: scroll;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
 `;
 
 const renderPanel = (panel) => {

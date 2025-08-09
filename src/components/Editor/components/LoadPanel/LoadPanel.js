@@ -10,7 +10,8 @@ import { BeatFileRow } from './BeatRow';
 const FileSystem = styled.div`
     display: flex;
     flex-direction: column;
-    margin-top: 20px;
+    margin-top: ${({ theme }) => theme.spacing[5]};
+    gap: ${({ theme }) => theme.spacing[2]};
 `;
 
 export const LoadPanel = () => {
@@ -32,11 +33,10 @@ export const LoadPanel = () => {
             <FileSystem>
                 {beats.map((beat) => (
                     <BeatFileRow
-                        key={beat.name} // ← use a unique, stable key
+                        key={beat.name}
                         beat={beat}
                         onLoad={handleLoadCallback(beat.name)}
                         onDelete={handleDeleteCallback(beat.name)}
-                        onDuplicate={handleDuplicateCallback(beat.name)}
                     />
                 ))}
             </FileSystem>

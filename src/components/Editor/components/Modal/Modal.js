@@ -8,11 +8,11 @@ const Backdrop = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: ${({ theme }) => theme.colors.semantic.background.overlay};
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: ${({ theme }) => theme.zIndex.modal};
 `;
 
 const ModalWrapper = styled.div`
@@ -20,22 +20,27 @@ const ModalWrapper = styled.div`
     flex-direction: column;
     width: 80%;
     max-width: 600px;
-    background-color: #f9f9f9;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    border-radius: 20px;
-    padding: 30px;
-    border: 1px solid #ddd;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    box-shadow: ${({ theme }) => theme.shadows['2xl']};
+    border-radius: ${({ theme }) => theme.borderRadius.xl};
+    padding: ${({ theme }) => theme.spacing[8]};
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
     position: relative;
-    z-index: 1001;
+    z-index: ${({ theme }) => theme.zIndex.modal + 1};
 `;
 
 const CloseIcon = styled.div`
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: ${({ theme }) => theme.spacing[2]};
+    right: ${({ theme }) => theme.spacing[2]};
     cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
+    font-size: ${({ theme }) => theme.typography.fontSize.lg};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+    color: ${({ theme }) => theme.colors.semantic.text.secondary};
+
+    &:hover {
+        color: ${({ theme }) => theme.colors.semantic.text.primary};
+    }
 `;
 
 const Modal = ({ children, onClose }) => {

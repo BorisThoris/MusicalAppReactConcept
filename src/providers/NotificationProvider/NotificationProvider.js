@@ -7,19 +7,19 @@ const NotificationContext = createContext(null);
 
 const NotificationContainer = styled.div`
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
+    top: ${({ theme }) => theme.spacing[5]};
+    right: ${({ theme }) => theme.spacing[5]};
+    z-index: ${({ theme }) => theme.zIndex.toast};
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: ${({ theme }) => theme.spacing[2]};
 `;
 
-const NotificationItem = styled.div`
-    color: white;
-    padding: 12px 20px;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+const BaseNotificationItem = styled.div`
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
+    padding: ${({ theme }) => theme.spacing[3]} ${({ theme }) => theme.spacing[5]};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
     min-width: 300px;
     max-width: 400px;
     animation: slideIn 0.3s ease-out;
@@ -37,24 +37,56 @@ const NotificationItem = styled.div`
     }
 `;
 
+const InfoNotificationItem = styled(BaseNotificationItem)`
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+`;
+
+const SuccessNotificationItem = styled(BaseNotificationItem)`
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.success};
+`;
+
+const WarningNotificationItem = styled(BaseNotificationItem)`
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.warning};
+`;
+
+const ErrorNotificationItem = styled(BaseNotificationItem)`
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
+`;
+
+const getNotificationComponent = (type) => {
+    switch (type) {
+        case 'success':
+            return SuccessNotificationItem;
+        case 'warning':
+            return WarningNotificationItem;
+        case 'error':
+            return ErrorNotificationItem;
+        default:
+            return InfoNotificationItem;
+    }
+};
+
 const CloseButton = styled.button`
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: ${({ theme }) => theme.spacing[2]};
+    right: ${({ theme }) => theme.spacing[2]};
     background: none;
     border: none;
-    color: white;
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
+    font-size: ${({ theme }) => theme.typography.fontSize.base};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
     padding: 0;
     width: 20px;
     height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: ${({ theme }) => theme.borderRadius.full};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
+        background-color: ${({ theme }) => theme.colors.semantic.background.overlay};
         opacity: 0.8;
     }
 `;
@@ -62,24 +94,30 @@ const CloseButton = styled.button`
 const NotificationMessage = styled.div`
     margin-right: 25px;
     word-wrap: break-word;
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    line-height: ${({ theme }) => theme.typography.lineHeight.normal};
 `;
 
 const ConfirmationButtons = styled.div`
-    margin-top: 10px;
+    margin-top: ${({ theme }) => theme.spacing[2]};
     display: flex;
-    gap: 10px;
+    gap: ${({ theme }) => theme.spacing[2]};
 `;
 
 const ConfirmationButton = styled.button`
-    color: white;
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     border: none;
-    padding: 5px 15px;
-    border-radius: 3px;
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[3]};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
     cursor: pointer;
-    font-size: 12px;
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    background-color: ${({ theme }) => theme.colors.semantic.background.overlay};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
-        opacity: 0.8;
+        background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        opacity: 0.9;
     }
 `;
 
@@ -136,111 +174,72 @@ export const NotificationProvider = ({ children }) => {
         [addNotification]
     );
 
-    const handleConfirm = useCallback(
-        (id, result) => {
-            const notification = notifications.find((n) => n.id === id);
-            if (notification && notification.onConfirm) {
-                notification.onConfirm(result);
-            }
-            removeNotification(id);
-        },
-        [notifications, removeNotification]
-    );
-
     const confirm = useCallback(
-        (message) => {
-            return new Promise((resolve) => {
-                const notificationId = Date.now() + Math.random();
-
-                const handleConfirmCallback = (result) => {
-                    removeNotification(notificationId);
-                    resolve(result);
-                };
-
-                const newNotification = {
-                    duration: 0,
-                    id: notificationId,
-                    message,
-                    onConfirm: handleConfirmCallback,
-                    type: 'warning'
-                };
-
-                setNotifications((prev) => [...prev, newNotification]);
-            });
+        (message, onConfirm, onCancel) => {
+            return addNotification(message, 'info', 0, { onCancel, onConfirm });
         },
-        [removeNotification]
-    );
-
-    const styles = useMemo(
-        () => ({
-            cancel: { backgroundColor: '#f44336' },
-            confirm: { backgroundColor: '#4caf50' },
-            error: { backgroundColor: '#f44336' },
-            info: { backgroundColor: '#2196f3' },
-            success: { backgroundColor: '#4caf50' },
-            warning: { backgroundColor: '#ff9800' }
-        }),
-        []
+        [addNotification]
     );
 
     const value = useMemo(
         () => ({
             addNotification,
             confirm,
+            notifications,
             removeNotification,
             showError,
             showInfo,
             showSuccess,
             showWarning
         }),
-        [addNotification, confirm, removeNotification, showError, showInfo, showSuccess, showWarning]
-    );
-
-    const handleConfirmClick = useCallback(
-        (id, result) => {
-            handleConfirm(id, result);
-        },
-        [handleConfirm]
-    );
-
-    const handleCloseClick = useCallback(
-        (id) => {
-            removeNotification(id);
-        },
-        [removeNotification]
+        [addNotification, confirm, notifications, removeNotification, showError, showInfo, showSuccess, showWarning]
     );
 
     return (
         <NotificationContext.Provider value={value}>
             {children}
             <NotificationContainer>
-                {notifications.map((notification) => (
-                    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop, react-perf/jsx-no-new-function-as-prop
-                    <NotificationItem key={notification.id} style={styles[notification.type] || styles.info}>
-                        <NotificationMessage>{notification.message}</NotificationMessage>
-                        {notification.onConfirm ? (
-                            <ConfirmationButtons>
-                                {/* eslint-disable-next-line react-perf/jsx-no-new-function-as-prop */}
-                                <ConfirmationButton
-                                    style={styles.confirm}
-                                    onClick={() => handleConfirmClick(notification.id, true)}
-                                >
-                                    Yes
-                                </ConfirmationButton>
-                                {/* eslint-disable-next-line react-perf/jsx-no-new-function-as-prop */}
-                                <ConfirmationButton
-                                    style={styles.cancel}
-                                    onClick={() => handleConfirmClick(notification.id, false)}
-                                >
-                                    No
-                                </ConfirmationButton>
-                            </ConfirmationButtons>
-                        ) : (
-                            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-                            <CloseButton onClick={() => handleCloseClick(notification.id)}>×</CloseButton>
-                        )}
-                    </NotificationItem>
-                ))}
+                {notifications.map((notification) => {
+                    const NotificationComponent = getNotificationComponent(notification.type);
+                    return (
+                        <NotificationComponent key={notification.id}>
+                            <CloseButton onClick={() => removeNotification(notification.id)}>×</CloseButton>
+                            <NotificationMessage>{notification.message}</NotificationMessage>
+                            {notification.onConfirm && (
+                                <ConfirmationButtons>
+                                    <ConfirmationButton
+                                        onClick={() => {
+                                            const handleConfirmCallback = (result) => {
+                                                if (notification.onConfirm.onConfirm) {
+                                                    notification.onConfirm.onConfirm(result);
+                                                }
+                                                removeNotification(notification.id);
+                                            };
+
+                                            handleConfirmCallback(true);
+                                        }}
+                                    >
+                                        Confirm
+                                    </ConfirmationButton>
+                                    <ConfirmationButton
+                                        onClick={() => {
+                                            const handleCancelCallback = (result) => {
+                                                if (notification.onConfirm.onCancel) {
+                                                    notification.onConfirm.onCancel(result);
+                                                }
+                                                removeNotification(notification.id);
+                                            };
+
+                                            handleCancelCallback(false);
+                                        }}
+                                    >
+                                        Cancel
+                                    </ConfirmationButton>
+                                </ConfirmationButtons>
+                            )}
+                        </NotificationComponent>
+                    );
+                })}
             </NotificationContainer>
         </NotificationContext.Provider>
     );

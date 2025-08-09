@@ -14,75 +14,149 @@ import { NotificationProvider } from './providers/NotificationProvider/Notificat
 import { PixelRatioProvider } from './providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
 import { TimelineProvider } from './providers/TimelineProvider';
+import { GlobalStyles, theme as appTheme, ThemeProvider } from './theme';
+import { Box, Flex, Nav, NavContainer, NavItem, NavLink, NavList } from './theme/styledComponents';
 
-// Styled components for navigation and controls
-const NavContainer = styled.nav`
-    background-color: yellow;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    font-size: 24px;
-    padding: 0 16px;
+// Styled components for navigation and controls using theme
+const StyledNavContainer = styled(Nav)`
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    border-bottom: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
 `;
 
-const NavList = styled.ul`
+const StyledNavContainerInner = styled(NavContainer)`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: ${({ theme }) => theme.spacing[4]} 0;
+`;
+
+const StyledNavList = styled(NavList)`
     display: flex;
     list-style: none;
     margin: 0;
     padding: 0;
+    gap: ${({ theme }) => theme.spacing[4]};
 `;
 
-const NavItem = styled.li`
-    margin-right: 16px;
+const StyledNavItem = styled(NavItem)`
+    margin: 0;
 `;
 
-const ControlContainer = styled.div`
+const StyledNavLink = styled(NavLink)`
+    color: ${({ theme }) => theme.colors.semantic.text.secondary};
+    text-decoration: none;
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[3]};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    font-size: ${({ theme }) => theme.typography.fontSize.lg};
+
+    &:hover {
+        color: ${({ theme }) => theme.colors.semantic.text.primary};
+        background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    }
+
+    &.active {
+        color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+        background-color: ${({ theme }) => theme.colors.primary[50]};
+    }
+`;
+
+const ControlContainer = styled(Flex)`
     margin-left: auto;
-    display: flex;
     align-items: center;
-    font-size: 18px;
+    gap: ${({ theme }) => theme.spacing[3]};
+    font-size: ${({ theme }) => theme.typography.fontSize.lg};
 `;
 
 const Slider = styled.input`
-    margin-left: 8px;
+    margin-left: ${({ theme }) => theme.spacing[2]};
+    width: 200px;
+    height: 6px;
+    border-radius: ${({ theme }) => theme.borderRadius.full};
+    background: ${({ theme }) => theme.colors.semantic.border.primary};
+    outline: none;
+    -webkit-appearance: none;
+
+    &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: ${({ theme }) => theme.colors.semantic.interactive.primary};
+        cursor: pointer;
+        box-shadow: ${({ theme }) => theme.shadows.sm};
+    }
+
+    &::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: ${({ theme }) => theme.colors.semantic.interactive.primary};
+        cursor: pointer;
+        border: none;
+        box-shadow: ${({ theme }) => theme.shadows.sm};
+    }
+`;
+
+const DurationLabel = styled.label`
+    color: ${({ theme }) => theme.colors.semantic.text.secondary};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    white-space: nowrap;
 `;
 
 // Top navigation with duration slider
 const TopNav = ({ duration, onDurationChange }) => {
     return (
-        <NavContainer>
-            <NavList>
-                <NavItem>
-                    <Link to="/">Home</Link>
-                </NavItem>
-                <NavItem>
-                    <Link to="/editor">Editor</Link>
-                </NavItem>
-                <NavItem>
-                    <Link to="/guitar">Guitar</Link>
-                </NavItem>
-                <NavItem>
-                    <Link to="/piano">Piano</Link>
-                </NavItem>
-                <NavItem>
-                    <Link to="/tambourine">Tambourine</Link>
-                </NavItem>
-                <NavItem>
-                    <Link to="/drums">Drums</Link>
-                </NavItem>
-            </NavList>
-            <ControlContainer>
-                <label htmlFor="duration-slider">Duration: {duration}s</label>
-                <Slider
-                    id="duration-slider"
-                    type="range"
-                    min="10"
-                    max="300"
-                    value={duration}
-                    onChange={onDurationChange}
-                />
-            </ControlContainer>
-        </NavContainer>
+        <StyledNavContainer>
+            <StyledNavContainerInner>
+                <StyledNavList>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/">
+                            Home
+                        </StyledNavLink>
+                    </StyledNavItem>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/editor">
+                            Editor
+                        </StyledNavLink>
+                    </StyledNavItem>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/guitar">
+                            Guitar
+                        </StyledNavLink>
+                    </StyledNavItem>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/piano">
+                            Piano
+                        </StyledNavLink>
+                    </StyledNavItem>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/tambourine">
+                            Tambourine
+                        </StyledNavLink>
+                    </StyledNavItem>
+                    <StyledNavItem>
+                        <StyledNavLink as={Link} to="/drums">
+                            Drums
+                        </StyledNavLink>
+                    </StyledNavItem>
+                </StyledNavList>
+                <ControlContainer>
+                    <DurationLabel htmlFor="duration-slider">Duration: {duration}s</DurationLabel>
+                    <Slider
+                        id="duration-slider"
+                        type="range"
+                        min="10"
+                        max="300"
+                        value={duration}
+                        onChange={onDurationChange}
+                    />
+                </ControlContainer>
+            </StyledNavContainerInner>
+        </StyledNavContainer>
     );
 };
 
@@ -93,37 +167,40 @@ function App() {
     const handleDurationChange = (e) => setDuration(Number(e.target.value));
 
     return (
-        // Core providers (most stable, least likely to change)
-        <NotificationProvider>
-            <PixelRatioProvider durationSec={duration}>
-                {/* UI state providers */}
-                <PanelProvider>
-                    <CustomCursorProvider initialVisibility={false}>
-                        {/* Timeline and playback providers */}
-                        <TimelineProvider>
-                            <RecordingsPlayerProvider>
-                                {/* Combined editor state providers */}
-                                <EditorStateProvider>
-                                    <Router>
-                                        {/* Pass slider props into navigation */}
-                                        <TopNav duration={duration} onDurationChange={handleDurationChange} />
+        <ThemeProvider theme={appTheme}>
+            <GlobalStyles />
+            {/* Core providers (most stable, least likely to change) */}
+            <NotificationProvider>
+                <PixelRatioProvider durationSec={duration}>
+                    {/* UI state providers */}
+                    <PanelProvider>
+                        <CustomCursorProvider initialVisibility={false}>
+                            {/* Timeline and playback providers */}
+                            <TimelineProvider>
+                                <RecordingsPlayerProvider>
+                                    {/* Combined editor state providers */}
+                                    <EditorStateProvider>
+                                        <Router>
+                                            {/* Pass slider props into navigation */}
+                                            <TopNav duration={duration} onDurationChange={handleDurationChange} />
 
-                                        <Routes>
-                                            <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                            <Route path="/guitar" element={<Guitar />} />
-                                            <Route path="/piano" element={<Piano />} />
-                                            <Route path="/tambourine" element={<Tambourine />} />
-                                            <Route path="/drums" element={<Drums />} />
-                                            <Route path="/editor" element={<Editor />} />
-                                        </Routes>
-                                    </Router>
-                                </EditorStateProvider>
-                            </RecordingsPlayerProvider>
-                        </TimelineProvider>
-                    </CustomCursorProvider>
-                </PanelProvider>
-            </PixelRatioProvider>
-        </NotificationProvider>
+                                            <Routes>
+                                                <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                                <Route path="/guitar" element={<Guitar />} />
+                                                <Route path="/piano" element={<Piano />} />
+                                                <Route path="/tambourine" element={<Tambourine />} />
+                                                <Route path="/drums" element={<Drums />} />
+                                                <Route path="/editor" element={<Editor />} />
+                                            </Routes>
+                                        </Router>
+                                    </EditorStateProvider>
+                                </RecordingsPlayerProvider>
+                            </TimelineProvider>
+                        </CustomCursorProvider>
+                    </PanelProvider>
+                </PixelRatioProvider>
+            </NotificationProvider>
+        </ThemeProvider>
     );
 }
 

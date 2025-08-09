@@ -4,16 +4,26 @@ import styled from 'styled-components';
 import { createAndPlayEventIntance } from '../../fmodLogic/eventInstanceHelpers';
 
 const DrumButton = styled.button`
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[5]};
+    font-size: ${({ theme }) => theme.typography.fontSize.base};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
     cursor: pointer;
-    border: 2px solid #000;
-    border-radius: 8px;
-    background-color: #fff;
-    transition: background-color 0.3s;
+    border: 2px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
-        background-color: #f0f0f0;
+        background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        border-color: ${({ theme }) => theme.colors.semantic.border.secondary};
+        transform: translateY(-2px);
+        box-shadow: ${({ theme }) => theme.shadows.md};
+    }
+
+    &:active {
+        background-color: ${({ theme }) => theme.colors.semantic.surface.tertiary};
+        transform: translateY(0);
     }
 `;
 

@@ -9,24 +9,26 @@ const HEADER_H = 28;
 
 const Container = styled.div`
     align-items: center;
-    background: ${({ isSelected }) => (isSelected ? '#eef4ff' : '#f7f7f9')};
-    border-bottom: 1px solid #e5e7eb;
+    background: ${({ isSelected, theme }) =>
+        isSelected ? theme.colors.primary[50] : theme.colors.semantic.surface.secondary};
+    border-bottom: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
     border-top-left-radius: ${RADIUS}px;
     border-top-right-radius: ${RADIUS}px;
     box-sizing: border-box;
     display: flex;
-    gap: 10px;
+    gap: ${({ theme }) => theme.spacing[2]};
     height: ${HEADER_H}px;
-    padding: 6px 10px 6px 12px;
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[1]}
+        ${({ theme }) => theme.spacing[3]};
     position: relative;
     user-select: none;
     width: 100%;
 `;
 
 const Title = styled.div`
-    color: #111;
-    font-size: 13px;
-    font-weight: 700;
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
     overflow: hidden;
     pointer-events: none;
     text-overflow: ellipsis;
@@ -34,13 +36,13 @@ const Title = styled.div`
 `;
 
 const Badge = styled.div`
-    background: #e5e7eb;
-    border: 1px solid #d1d5db;
+    background: ${({ theme }) => theme.colors.semantic.surface.tertiary};
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.secondary};
     border-radius: 999px;
-    color: #111;
-    font-size: 11px;
-    margin-left: 8px;
-    padding: 2px 8px;
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
+    margin-left: ${({ theme }) => theme.spacing[2]};
+    padding: ${({ theme }) => theme.spacing[0]} ${({ theme }) => theme.spacing[2]};
     pointer-events: none;
 `;
 
@@ -49,22 +51,29 @@ const Spacer = styled.div`
 `;
 
 const LengthLabel = styled.div`
-    color: #6b7280;
-    font-size: 12px;
+    color: ${({ theme }) => theme.colors.semantic.text.secondary};
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
     pointer-events: none;
 `;
 
 const LockButton = styled.button`
-    background: ${({ locked }) => (locked ? '#6b7280' : '#10b981')};
+    background: ${({ locked, theme }) =>
+        locked ? theme.colors.semantic.text.secondary : theme.colors.semantic.interactive.success};
     border: none;
-    border-radius: 6px;
-    box-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;
-    color: white;
+    border-radius: ${({ theme }) => theme.borderRadius.md};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
     cursor: pointer;
-    font-size: 12px;
-    margin-left: 10px;
-    padding: 6px 8px;
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
+    margin-left: ${({ theme }) => theme.spacing[2]};
+    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
     pointer-events: auto;
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background: ${({ locked, theme }) => (locked ? theme.colors.semantic.text.primary : theme.colors.success[600])};
+    }
 `;
 
 export const GroupTopHeader = React.memo(function GroupTopHeader({

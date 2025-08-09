@@ -7,12 +7,12 @@ import GroupItem from '../Panel/GroupItem';
 
 // Styled components
 const EventContainer = styled.div`
-    border: 1px solid #ccc;
-    margin: 8px;
-    padding: 5px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    margin: ${({ theme }) => theme.spacing[2]};
+    padding: ${({ theme }) => theme.spacing[1]};
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
 `;
 
 // Recursive function to render event items

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useInstrumentRecordingsOperations } from '../../../../hooks/useInstrumentRecordingsOperations';
 import { PanelContext } from '../../../../hooks/usePanelState';
 
-const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '�', Piano: '🎹', Tambourine: '🎵' };
+const INSTRUMENT_NAMES = { Drum: '🥁', Guitar: '', Piano: '🎹', Tambourine: '🎵' };
 
 const ParentWrapper = styled.div`
     position: relative;
@@ -17,11 +17,11 @@ const InstrumentLayerWrapper = styled.div`
     justify-content: space-around;
     align-items: center;
     width: 80%;
-    background-color: #f9f9f9;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    border-radius: 20px;
-    padding: 30px;
-    border: 1px solid #ddd;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    box-shadow: ${({ theme }) => theme.shadows['2xl']};
+    border-radius: ${({ theme }) => theme.borderRadius.xl};
+    padding: ${({ theme }) => theme.spacing[8]};
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
 
     position: absolute;
     top: 50%;
@@ -35,17 +35,18 @@ const InstrumentIcon = styled.div`
     align-items: center;
     width: 100px;
     height: 100px;
-    background-color: #ffffff;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
     border-radius: 50%;
-    margin: 0 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    margin: 0 ${({ theme }) => theme.spacing[5]};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
     transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
+        transform ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease},
+        box-shadow ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    cursor: pointer;
 
     &:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: ${({ theme }) => theme.shadows['2xl']};
     }
 `;
 

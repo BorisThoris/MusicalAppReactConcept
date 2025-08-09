@@ -20,7 +20,14 @@ src/
 ├── utils/               # Utility functions
 ├── globalHelpers/       # Global helper functions
 ├── globalConstants/     # Global constants
-└── fmodLogic/          # FMOD audio integration
+├── fmodLogic/          # FMOD audio integration
+└── theme/              # Theme system (NEW)
+    ├── index.js        # Theme exports
+    ├── theme.js        # Theme configuration
+    ├── GlobalStyles.js # Global styles
+    ├── themeUtils.js   # Theme utilities
+    ├── styledComponents.js # Pre-built components
+    └── README.md       # Theme documentation
 ```
 
 ## 🎵 **Key Components**
@@ -36,33 +43,108 @@ src/
 - **ActionsMenu**: Context menu for actions
 - **FPSMonitor**: Performance monitoring
 
+## 🎨 **Theme System** (NEW)
+
+### **Theme Architecture**
+The project now includes a comprehensive theme system following modern design system best practices:
+
+#### **Design Tokens**
+- **Colors**: Semantic color system with primary, secondary, accent, success, warning, error, and neutral palettes
+- **Typography**: Font families, sizes, weights, line heights, and letter spacing
+- **Spacing**: Consistent spacing scale (4px base unit)
+- **Border Radius**: Standardized border radius values
+- **Shadows**: Elevation and depth system
+- **Transitions**: Duration and easing functions
+- **Z-Index**: Layering system
+- **Breakpoints**: Responsive design breakpoints
+
+#### **Theme Structure**
+```javascript
+theme = {
+  colors: {
+    primary: { 50: '#eff6ff', 500: '#3b82f6', 950: '#172554' },
+    semantic: {
+      background: { primary: '#ffffff', secondary: '#f8fafc' },
+      text: { primary: '#0f172a', secondary: '#475569' },
+      interactive: { primary: '#3b82f6', success: '#22c55e' }
+    }
+  },
+  typography: {
+    fontFamily: { primary: 'Inter, sans-serif' },
+    fontSize: { base: '1rem', lg: '1.125rem' },
+    fontWeight: { normal: 400, medium: 500, bold: 700 }
+  },
+  spacing: { 0: '0', 1: '0.25rem', 4: '1rem' },
+  borderRadius: { base: '0.25rem', lg: '0.5rem' },
+  shadows: { sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }
+}
+```
+
+#### **Pre-built Components**
+- **Typography**: `Heading1`-`Heading6`, `BodyText`, `CaptionText`, `CodeText`
+- **Buttons**: `Button`, `PrimaryButton`, `SecondaryButton`, `SuccessButton`, `WarningButton`, `ErrorButton`
+- **Forms**: `Input`, `TextArea`, `Select`, `Label`, `FormError`, `FormHelp`
+- **Layout**: `Container`, `Flex`, `Grid`, `Box`
+- **Cards**: `Card`, `CardHeader`, `CardBody`, `CardFooter`
+- **Navigation**: `Nav`, `NavContainer`, `NavList`, `NavItem`, `NavLink`
+- **Modals**: `ModalOverlay`, `ModalContent`, `ModalHeader`, `ModalBody`, `ModalFooter`
+
+#### **Theme Utilities**
+- `getColor()` - Get color with fallback
+- `getSpacing()` - Get spacing value
+- `getTypography()` - Get typography value
+- `createButtonStyle()` - Create button styles
+- `createInputStyle()` - Create input styles
+- `createCardStyle()` - Create card styles
+
+### **Usage Examples**
+```jsx
+// Using theme in styled components
+const StyledButton = styled.button`
+  background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+  padding: ${({ theme }) => theme.spacing[3]} ${({ theme }) => theme.spacing[6]};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+`;
+
+// Using pre-built components
+import { PrimaryButton, Card, Heading1 } from './theme/styledComponents';
+
+<Card>
+  <Heading1>Welcome</Heading1>
+  <PrimaryButton>Click me</PrimaryButton>
+</Card>
+```
+
 ## 🔄 **Provider Hierarchy**
 
 ### **Optimized Provider Structure**
 ```jsx
-<NotificationProvider>                    // Global notifications (stable)
-  <PixelRatioProvider>                    // Screen dimensions (stable)
-    <PanelProvider>                       // UI panels (moderate)
-      <CustomCursorProvider>              // Cursor state (frequent)
-        <TimelineProvider>                // Timeline dimensions (stable)
-          <RecordingsPlayerProvider>      // Playback state (moderate)
-            <EditorStateProvider>         // Combined editor state
-              <CollisionsProvider>        // Core collisions (optimized)
-                <PaintingProvider>        // Painting functionality
-                  <SelectionProvider>     // Selection state (optimized)
-                    <SoundEventDragProvider> // Drag and drop (optimized)
-                      {children}
-                    </SoundEventDragProvider>
-                  </SelectionProvider>
-                </PaintingProvider>
-              </CollisionsProvider>
-            </EditorStateProvider>
-          </RecordingsPlayerProvider>
-        </TimelineProvider>
-      </CustomCursorProvider>
-    </PanelProvider>
-  </PixelRatioProvider>
-</NotificationProvider>
+<ThemeProvider theme={theme}>           // Theme system (NEW)
+  <GlobalStyles />                      // Global styles (NEW)
+  <NotificationProvider>                // Global notifications (stable)
+    <PixelRatioProvider>                // Screen dimensions (stable)
+      <PanelProvider>                   // UI panels (moderate)
+        <CustomCursorProvider>          // Cursor state (frequent)
+          <TimelineProvider>            // Timeline dimensions (stable)
+            <RecordingsPlayerProvider>  // Playback state (moderate)
+              <EditorStateProvider>     // Combined editor state
+                <CollisionsProvider>    // Core collisions (optimized)
+                  <PaintingProvider>    // Painting functionality
+                    <SelectionProvider> // Selection state (optimized)
+                      <SoundEventDragProvider> // Drag and drop (optimized)
+                        {children}
+                      </SoundEventDragProvider>
+                    </SelectionProvider>
+                  </PaintingProvider>
+                </CollisionsProvider>
+              </EditorStateProvider>
+            </RecordingsPlayerProvider>
+          </TimelineProvider>
+        </CustomCursorProvider>
+      </PanelProvider>
+    </PixelRatioProvider>
+  </NotificationProvider>
+</ThemeProvider>
 ```
 
 ## 🎯 **Key Providers**
@@ -225,6 +307,7 @@ const beatProperties = {
 ### **Styled Components**
 - **Framework**: styled-components v6.0.8
 - **Usage**: Consistent styling across components
+- **Theme Integration**: Full theme system integration
 
 ### **Konva Integration**
 - **Purpose**: Canvas-based graphics and interactions
@@ -247,11 +330,13 @@ const beatProperties = {
 3. **Constants Organization**: Centralized constants
 4. **Memoization**: Optimized re-renders with useMemo/useCallback
 5. **Context Hierarchy**: Organized providers by change frequency
+6. **Theme System**: Consistent design tokens and styling
 
 ### **Key Performance Files**
 - **dragHelpers.js**: Extracted drag utilities
 - **timeline.js**: Timeline constants
 - **usePainting.js**: Painting hook extraction
+- **theme/**: Complete theme system
 
 ## 🎯 **Development Tools**
 
@@ -288,6 +373,10 @@ const beatProperties = {
 - **Issue**: Large providers causing re-renders
 - **Solution**: Provider breakdown and memoization
 
+### **Theme Integration**
+- **Issue**: Hardcoded styles throughout components
+- **Solution**: Comprehensive theme system with design tokens
+
 ## 📝 **Documentation Files**
 
 ### **Analysis Documents**
@@ -295,22 +384,25 @@ const beatProperties = {
 - **CONTEXT_OPTIMIZATION.md**: Optimization guide
 - **FIXES_SUMMARY.md**: Recent fixes and solutions
 - **OPTIMIZATION_SUMMARY.md**: Completed optimizations
+- **theme/README.md**: Comprehensive theme system documentation
 
 ## 🎯 **Quick Reference**
 
 ### **Key Files to Check**
-1. **App.js**: Main application structure
+1. **App.js**: Main application structure with theme integration
 2. **TimelineProvider.js**: Timeline management
 3. **Editor.js**: Main editor interface
 4. **constants/timeline.js**: Timeline constants
 5. **hooks/useBeatManager.js**: Beat management
 6. **providers/CollisionsProvider/**: Core collision logic
+7. **theme/**: Complete theme system
 
 ### **Common Patterns**
 - **Provider Pattern**: Context-based state management
 - **Hook Pattern**: Custom hooks for reusable logic
 - **Component Pattern**: Functional components with hooks
-- **Styled Components**: CSS-in-JS styling
+- **Styled Components**: CSS-in-JS styling with theme integration
+- **Theme Pattern**: Design token system for consistent styling
 
 ## 🚀 **Development Workflow**
 
@@ -320,12 +412,14 @@ const beatProperties = {
 3. Extract utilities to appropriate files
 4. Update documentation
 5. Test performance impact
+6. Use theme system for consistent styling
 
 ### **Debugging**
 1. Check provider hierarchy
 2. Verify context access patterns
 3. Review performance optimizations
 4. Check for circular dependencies
+5. Ensure theme integration
 
 ## 🔄 **Data Flow Patterns**
 
@@ -346,4 +440,10 @@ const beatProperties = {
 3. **Processing**: Events are processed for overlaps and grouping
 4. **Rendering**: Events are rendered as Konva elements
 
-This cache file provides a comprehensive overview of the project structure, key components, data structures, and important patterns for efficient development and debugging.
+### **Theme Integration**
+1. **Design Tokens**: Consistent colors, typography, spacing, and other design values
+2. **Component Styling**: Styled components use theme tokens
+3. **Global Styles**: Consistent base styling across the application
+4. **Customization**: Easy theme extension and customization
+
+This cache file provides a comprehensive overview of the project structure, key components, data structures, theme system, and important patterns for efficient development and debugging.

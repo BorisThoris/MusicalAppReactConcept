@@ -11,31 +11,56 @@ const Container = styled.div`
 
 const ButtonGroup = styled.div`
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    gap: ${({ theme }) => theme.spacing[2]};
+    margin-top: ${({ theme }) => theme.spacing[2]};
 `;
 
 const StyledButton = styled.button`
-    padding: 10px 15px;
-    font-size: 16px;
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[3]};
+    font-size: ${({ theme }) => theme.typography.fontSize.base};
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
+    border: none;
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    cursor: pointer;
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background-color: ${({ theme }) => theme.colors.primary[600]};
+    }
 `;
 
 const Title = styled.h2`
-    margin-bottom: 20px;
+    margin-bottom: ${({ theme }) => theme.spacing[5]};
     cursor: pointer;
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize['2xl']};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
 `;
 
 const EditableSpan = styled.span`
-    border-bottom: 1px dashed #000;
+    border-bottom: 1px dashed ${({ theme }) => theme.colors.semantic.text.primary};
     cursor: pointer;
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
 `;
 
 const Input = styled.input`
-    padding: 10px;
-    font-size: 16px;
-    margin-bottom: 10px;
+    padding: ${({ theme }) => theme.spacing[2]};
+    font-size: ${({ theme }) => theme.typography.fontSize.base};
+    margin-bottom: ${({ theme }) => theme.spacing[2]};
     max-width: 200px;
     width: 100%;
+    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+
+    &:focus {
+        outline: none;
+        border-color: ${({ theme }) => theme.colors.semantic.border.focus};
+        box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.semantic.border.focus}20;
+    }
 `;
 
 export const BeatManagementControls = () => {

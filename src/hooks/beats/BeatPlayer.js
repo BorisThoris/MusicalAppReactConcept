@@ -10,9 +10,30 @@ import { useInstrumentRecordingsOperations } from '../useInstrumentRecordingsOpe
 const ButtonContainer = styled.div`
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: ${({ theme }) => theme.spacing[2]};
     justify-content: center;
-    margin: 20px 0;
+    margin: ${({ theme }) => theme.spacing[5]} 0;
+    padding: ${({ theme }) => theme.spacing[4]};
+    background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
+`;
+
+const ControlButton = styled.button`
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
+    color: ${({ theme }) => theme.colors.semantic.text.inverse};
+    border: none;
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[4]};
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    cursor: pointer;
+    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
+        ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background-color: ${({ theme }) => theme.colors.primary[600]};
+    }
 `;
 
 const schedulePattern = (category, layerName, pattern, { addRecording, devicePxPerSec, resetRecordings }) => {
@@ -185,10 +206,10 @@ export const BeatPlayer = () => {
 
     return (
         <ButtonContainer>
-            <button onClick={handleTestFire}>Test Fire (0, 1, 2, 3s)</button>
-            <button onClick={playSmokeOnTheWater}>Play “Smoke on the Water” Drum Beat</button>
-            <button onClick={playNiceBeat}>Play 4-Bar Rock Drum Beat</button>
-            <button onClick={playSmokeRiff}>Play “Smoke” Guitar Riff</button>
+            <ControlButton onClick={handleTestFire}>Test Fire (0, 1, 2, 3s)</ControlButton>
+            <ControlButton onClick={playSmokeOnTheWater}>Play “Smoke on the Water” Drum Beat</ControlButton>
+            <ControlButton onClick={playNiceBeat}>Play 4-Bar Rock Drum Beat</ControlButton>
+            <ControlButton onClick={playSmokeRiff}>Play “Smoke” Guitar Riff</ControlButton>
         </ButtonContainer>
     );
 };

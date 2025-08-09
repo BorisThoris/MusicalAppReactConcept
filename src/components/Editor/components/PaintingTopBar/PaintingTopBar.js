@@ -35,9 +35,9 @@ const TopBarWrapper = styled.div`
     align-items: center;
     width: 100%;
     height: 60px;
-    background-color: #333;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 0 20px;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.inverse};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
+    padding: 0 ${({ theme }) => theme.spacing[5]};
     position: relative;
 `;
 
@@ -47,9 +47,9 @@ const MenuWrapper = styled.div`
     align-items: center;
     width: 100%;
     height: 60px;
-    background-color: #333;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 0 20px;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.inverse};
+    box-shadow: ${({ theme }) => theme.shadows.lg};
+    padding: 0 ${({ theme }) => theme.spacing[5]};
     overflow: hidden;
     flex-wrap: wrap;
 `;
@@ -60,43 +60,43 @@ const InstrumentButton = styled.div`
     align-items: center;
     width: 40px;
     height: 40px;
-    background-color: #444;
-    border-radius: 5px;
-    margin: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    margin: ${({ theme }) => theme.spacing[2]};
+    box-shadow: ${({ theme }) => theme.shadows.md};
     cursor: pointer;
     transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
+        transform ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease},
+        box-shadow ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
         transform: scale(1.1);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        background-color: #555;
+        box-shadow: ${({ theme }) => theme.shadows.lg};
+        background-color: ${({ theme }) => theme.colors.semantic.surface.tertiary};
     }
 
     & > svg {
-        fill: #ccc;
+        fill: ${({ theme }) => theme.colors.semantic.text.secondary};
     }
 
     &:hover > svg {
-        fill: #fff;
+        fill: ${({ theme }) => theme.colors.semantic.text.primary};
     }
 `;
 
 const BackButton = styled(InstrumentButton)`
-    background-color: #555;
+    background-color: ${({ theme }) => theme.colors.semantic.surface.tertiary};
 
     &:hover {
-        background-color: #666;
+        background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
     }
 `;
 
 const StopPaintingButton = styled(InstrumentButton)`
-    background-color: #d9534f;
+    background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
 
     &:hover {
-        background-color: #c9302c;
+        background-color: ${({ theme }) => theme.colors.error[600]};
     }
 `;
 
