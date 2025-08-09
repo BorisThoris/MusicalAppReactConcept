@@ -1,72 +1,46 @@
-import { isNaN } from 'lodash';
-import PropTypes from 'prop-types';
-import React, { useCallback, useEffect, useState } from 'react';
+/* eslint-disable jsx-a11y/label-has-associated-control */
+import React, { useCallback, useMemo } from 'react';
+import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 
 const TimeControl = ({ endTime, onModifyStartTime, startTime }) => {
-    const [tempStartTime, setTempStartTime] = useState(0);
-
-    useEffect(() => {
-        setTempStartTime(startTime && startTime !== null ? startTime.toFixed(2) : 0);
-    }, [startTime]);
-
-    useEffect(() => {}, [endTime]);
+    const pixelToSecondRatio = usePixelRatio();
 
     const handleStartTimeChange = useCallback(
         (e) => {
-            const { value } = e.target;
-            if (/^\d*\.?\d{0,2}$/.test(value)) {
-                setTempStartTime(value);
-                const numericValue = parseFloat(value);
-                if (!isNaN(numericValue)) {
-                    onModifyStartTime({ delta: numericValue - startTime });
-                }
+            const newStartTime = parseFloat(e.target.value);
+            if (!Number.isNaN(newStartTime)) {
+                const delta = newStartTime - startTime / pixelToSecondRatio;
+                onModifyStartTime({ delta });
             }
         },
-        [onModifyStartTime, startTime]
+        [onModifyStartTime, startTime, pixelToSecondRatio]
     );
 
-    const incrementStartTime = useCallback(() => {
-        const value = parseFloat(tempStartTime) + 0.01;
-        setTempStartTime(value.toFixed(2));
-
-        const delta = 0.01;
-
-        onModifyStartTime({ delta });
-    }, [onModifyStartTime, tempStartTime]);
-
-    const decrementStartTime = useCallback(() => {
-        const value = parseFloat(tempStartTime) - 0.01;
-        setTempStartTime(value.toFixed(2));
-
-        const delta = -0.01;
-        onModifyStartTime({ delta });
-    }, [onModifyStartTime, tempStartTime]);
+    // Memoize the time input style to avoid creating new objects on every render
+    const timeInputStyle = useMemo(
+        () => ({
+            textAlign: 'center',
+            width: '50px'
+        }),
+        []
+    );
 
     return (
         <div>
             <div>
                 <span>Start:</span>
-                <button onClick={decrementStartTime}>-</button>
                 <input
                     type="text"
-                    value={tempStartTime}
+                    value={startTime ? (startTime / pixelToSecondRatio).toFixed(2) : '0.00'}
                     onChange={handleStartTimeChange}
-                    style={{ textAlign: 'center', width: '50px' }}
+                    style={timeInputStyle}
                 />
-                <button onClick={incrementStartTime}>+</button>
             </div>
             <div>
-                <div>End: {endTime}</div>
+                <div>End: {endTime ? (endTime / pixelToSecondRatio).toFixed(2) : '0.00'}</div>
             </div>
         </div>
     );
-};
-
-TimeControl.propTypes = {
-    endTime: PropTypes.number.isRequired,
-    onModifyEndTime: PropTypes.func.isRequired,
-    onModifyStartTime: PropTypes.func.isRequired,
-    startTime: PropTypes.number.isRequired
 };
 
 export default TimeControl;

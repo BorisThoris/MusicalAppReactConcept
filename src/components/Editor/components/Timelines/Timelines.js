@@ -6,7 +6,7 @@ import { PanelContext } from '../../../../hooks/usePanelState';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { markersHeight, TimelineHeight } from '../../../../providers/TimelineProvider';
+import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
@@ -64,8 +64,11 @@ const Timelines = memo(() => {
         hideActionsMenu();
     }, [hideActionsMenu]);
 
+    // Memoize the button style to avoid creating new objects on every render
+    const buttonStyle = useMemo(() => ({ all: 'unset', display: 'block', width: '100%' }), []);
+
     return (
-        <button onClick={handleClick} style={{ all: 'unset', display: 'block', width: '100%' }}>
+        <button onClick={handleClick} style={buttonStyle}>
             <PaintingTopBar />
 
             <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { INSTRUMENTS_PANEL_ID, PanelContext } from '../../../../hooks/usePanelState';
 import { TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import Drums from '../../../Drums/Drums';
@@ -14,14 +14,22 @@ export const PlayInstrumentsPanel = () => {
 
     const instrumentName = instrumentLayer?.split(' ')[0];
 
+    const handleClose = useCallback(() => {
+        closePanel(INSTRUMENTS_PANEL_ID);
+    }, [closePanel]);
+
+    const handlePaste = useCallback(() => {
+        // Handle paste functionality
+    }, []);
+
     const renderInstrument = useCallback(() => {
         switch (instrumentName) {
-            case 'Drum':
-                return <Drums />;
             case 'Guitar':
                 return <Guitar />;
             case 'Piano':
                 return <Piano />;
+            case 'Drums':
+                return <Drums />;
             case 'Tambourine':
                 return <Tambourine />;
             default:
@@ -29,15 +37,8 @@ export const PlayInstrumentsPanel = () => {
         }
     }, [instrumentName]);
 
-    const handleClose = useCallback(() => {
-        closePanel(INSTRUMENTS_PANEL_ID);
-    }, [closePanel]);
-
-    const handlePaste = useCallback(() => {
-        if (instrumentName) {
-            // sad
-        }
-    }, [instrumentName]);
+    // Memoize the panel style to avoid creating new objects on every render
+    const panelStyle = useMemo(() => ({ height: TimelineHeight }), []);
 
     if (!instrumentName) {
         return null;
@@ -48,8 +49,7 @@ export const PlayInstrumentsPanel = () => {
             x={x}
             y={y}
             panelCompensationOffset={panelCompensationOffset}
-            // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-            style={{ height: TimelineHeight }}
+            style={panelStyle}
             isSpeechBubble
             handleClose={handleClose}
         >

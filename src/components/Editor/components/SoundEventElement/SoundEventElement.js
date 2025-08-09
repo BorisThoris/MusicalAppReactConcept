@@ -133,6 +133,117 @@ const SoundEventElement = React.memo((props) => {
     const borderColor = isSelected ? '#3b82f6' : '#00000022';
     const cardOpacity = typeof unifiedDynamicStyles.opacity === 'number' ? unifiedDynamicStyles.opacity : OPACITY;
 
+    // Memoize styles to avoid creating new objects on every render
+    const avatarStyle = useMemo(
+        () => ({
+            borderRadius: '50%',
+            flex: '0 0 auto',
+            objectFit: 'cover',
+            pointerEvents: 'none'
+        }),
+        []
+    );
+
+    const textContainerStyle = useMemo(
+        () => ({
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 0,
+            pointerEvents: 'none'
+        }),
+        []
+    );
+
+    const idStyle = useMemo(
+        () => ({
+            color: '#555',
+            fontSize: 12
+        }),
+        []
+    );
+
+    const spacerStyle = useMemo(
+        () => ({
+            flex: 1,
+            pointerEvents: 'none'
+        }),
+        []
+    );
+
+    const divPropsStyle = useMemo(
+        () => ({
+            height: `${timelineHeight}px`,
+            pointerEvents: 'none',
+            width: `${width}px`
+        }),
+        [timelineHeight, width]
+    );
+
+    const mainContainerStyle = useMemo(
+        () => ({
+            alignItems: 'center',
+            background: bg,
+            border: `1px solid ${borderColor}`,
+            borderRadius: `${RADIUS}px`,
+            boxShadow: 'rgba(0,0,0,0.5) 8px 5px 5px',
+            boxSizing: 'border-box',
+            display: 'flex',
+            gap: 10,
+            height: '100%',
+            opacity: cardOpacity,
+            outline: isFocused ? '2px solid #3b82f680' : 'none',
+            overflow: 'hidden',
+            padding: '8px 12px',
+            position: 'relative',
+            userSelect: 'none',
+            width: '100%'
+        }),
+        [bg, borderColor, cardOpacity, isFocused]
+    );
+
+    const titleStyle = useMemo(
+        () => ({
+            color: '#111',
+            fontSize: 14,
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+        }),
+        []
+    );
+
+    const deleteButtonStyle = useMemo(
+        () => ({
+            background: '#ef4444',
+            border: 'none',
+            borderRadius: 6,
+            boxShadow: 'rgba(0,0,0,0.2) 0 1px 2px',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: 12,
+            padding: '6px 8px',
+            pointerEvents: 'auto'
+        }),
+        []
+    );
+
+    const lockedStyle = useMemo(
+        () => ({
+            background: '#111',
+            borderRadius: 4,
+            color: 'white',
+            fontSize: 10,
+            left: 6,
+            opacity: 0.9,
+            padding: '2px 6px',
+            pointerEvents: 'none',
+            position: 'absolute',
+            top: 6
+        }),
+        []
+    );
+
     return (
         <Portal selector=".top-layer" enabled={shouldUsePortal} outerRef={portalRef}>
             <Group
@@ -173,61 +284,28 @@ const SoundEventElement = React.memo((props) => {
                     transform
                     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
                     divProps={{
-                        style: {
-                            height: `${timelineHeight}px`,
-                            pointerEvents: 'none',
-                            width: `${width}px`
-                        }
+                        style: divPropsStyle
                     }}
                 >
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            background: bg,
-                            border: `1px solid ${borderColor}`,
-                            borderRadius: `${RADIUS}px`,
-                            boxShadow: 'rgba(0,0,0,0.5) 8px 5px 5px',
-                            boxSizing: 'border-box',
-                            display: 'flex',
-                            gap: 10,
-                            height: '100%',
-                            opacity: cardOpacity,
-                            outline: isFocused ? '2px solid #3b82f680' : 'none',
-                            overflow: 'hidden',
-                            padding: '8px 12px',
-                            position: 'relative',
-                            userSelect: 'none',
-                            width: '100%'
-                        }}
-                    >
+                    <div style={mainContainerStyle}>
                         {/* Avatar */}
                         <img
                             src="https://i1.sndcdn.com/avatars-000156138298-c54tbb-t240x240.jpg"
                             alt="Profile"
                             width={40}
                             height={40}
-                            style={{ borderRadius: '50%', flex: '0 0 auto', objectFit: 'cover', pointerEvents: 'none' }}
+                            style={avatarStyle}
                         />
 
                         {/* Texts */}
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, pointerEvents: 'none' }}>
-                            <div
-                                title={name}
-                                style={{
-                                    color: '#111',
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
+                        <div style={textContainerStyle}>
+                            <div title={name} style={titleStyle}>
                                 {name}
                             </div>
-                            <div style={{ color: '#555', fontSize: 12 }}>#{id}</div>
+                            <div style={idStyle}>#{id}</div>
                         </div>
 
-                        <div style={{ flex: 1, pointerEvents: 'none' }} />
+                        <div style={spacerStyle} />
 
                         {/* Delete button is the ONLY interactive DOM control */}
                         <button
@@ -237,39 +315,12 @@ const SoundEventElement = React.memo((props) => {
                                 handleDelete?.(e);
                             }}
                             title="Delete"
-                            style={{
-                                background: '#ef4444',
-                                border: 'none',
-                                borderRadius: 6,
-                                boxShadow: 'rgba(0,0,0,0.2) 0 1px 2px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: 12,
-                                padding: '6px 8px',
-                                pointerEvents: 'auto'
-                            }}
+                            style={deleteButtonStyle}
                         >
                             Delete
                         </button>
 
-                        {locked && (
-                            <div
-                                style={{
-                                    background: '#111',
-                                    borderRadius: 4,
-                                    color: 'white',
-                                    fontSize: 10,
-                                    left: 6,
-                                    opacity: 0.9,
-                                    padding: '2px 6px',
-                                    pointerEvents: 'none',
-                                    position: 'absolute',
-                                    top: 6
-                                }}
-                            >
-                                LOCKED
-                            </div>
-                        )}
+                        {locked && <div style={lockedStyle}>LOCKED</div>}
                     </div>
                 </KonvaHtml>
             </Group>

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CloseIcon, PanelContainer, SpeechBubbleArrow } from './Panel.styles';
 
 export const PanelWrapper = ({
@@ -11,21 +11,31 @@ export const PanelWrapper = ({
     style,
     x,
     y
-}) => (
-    <PanelContainer
-        x={x}
-        y={y}
-        style={style}
-        // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-        timelinestate={{ panelCompensationOffset }}
-        isspeechbubble={isSpeechBubble}
-    >
-        {handleClose && <CloseIcon onClick={handleClose}>X</CloseIcon>}
-        {isSpeechBubble && <SpeechBubbleArrow />}
-        {onClose && <CloseIcon onClick={onClose}>X</CloseIcon>}
-        {children}
-    </PanelContainer>
-);
+}) => {
+    // Memoize the timeline state object to avoid creating new objects on every render
+    const timelineState = useMemo(() => ({ panelCompensationOffset }), [panelCompensationOffset]);
+
+    // Memoize the panel container props to avoid creating new objects on every render
+    const panelContainerProps = useMemo(
+        () => ({
+            isspeechbubble: isSpeechBubble,
+            style,
+            timelinestate: timelineState,
+            x,
+            y
+        }),
+        [x, y, style, timelineState, isSpeechBubble]
+    );
+
+    return (
+        <PanelContainer {...panelContainerProps}>
+            {handleClose && <CloseIcon onClick={handleClose}>X</CloseIcon>}
+            {isSpeechBubble && <SpeechBubbleArrow />}
+            {onClose && <CloseIcon onClick={onClose}>X</CloseIcon>}
+            {children}
+        </PanelContainer>
+    );
+};
 
 // Define PropTypes
 PanelWrapper.propTypes = {

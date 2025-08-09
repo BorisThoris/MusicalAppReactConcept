@@ -43,9 +43,12 @@ export function PixelRatioProvider({ children, durationSec }) {
     // multiply once to get device-px per second
     const devicePxPerSec = useMemo(() => cssPxPerSec * dpr, [cssPxPerSec, dpr]);
 
+    // Memoize the wrapper style to avoid creating new objects on every render
+    const wrapperStyle = useMemo(() => ({ width: '100%' }), []);
+
     return (
         <PixelRatioContext.Provider value={devicePxPerSec}>
-            <div ref={wrapperRef} style={{ width: '100%' }}>
+            <div ref={wrapperRef} style={wrapperStyle}>
                 {children}
             </div>
         </PixelRatioContext.Provider>

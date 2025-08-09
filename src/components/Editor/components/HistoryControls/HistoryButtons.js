@@ -1,13 +1,28 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 
 export const HistoryControls = () => {
-    const { history, redo, redoHistory, undo } = useContext(CollisionsContext);
+    const { history, redo, undo } = useContext(CollisionsContext);
+
+    const handleUndo = useCallback(() => {
+        undo();
+    }, [undo]);
+
+    const handleRedo = useCallback(() => {
+        redo();
+    }, [redo]);
+
+    // Memoize the container style to avoid creating new objects on every render
+    const containerStyle = useMemo(() => ({ display: 'inline-flex' }), []);
 
     return (
-        <div style={{ display: 'inline-flex' }}>
-            {history?.length > 0 && <button onClick={undo}>Undo</button>}
-            {redoHistory?.length > 0 && <button onClick={redo}>Redo</button>}
+        <div style={containerStyle}>
+            <button onClick={handleUndo} disabled={!history.length}>
+                Undo
+            </button>
+            <button onClick={handleRedo} disabled={!history.length}>
+                Redo
+            </button>
         </div>
     );
 };
