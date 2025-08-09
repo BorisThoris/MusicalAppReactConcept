@@ -15,6 +15,23 @@ import { findOverlaps, processOverlaps } from './overlapHelpers';
 
 export const CollisionsContext = createContext();
 
+// Extracted helper function
+const calculateOverlapGroups = (currentBeat, isDragging, prevBeat) => {
+    if (!currentBeat || isDragging) return null;
+
+    const beatDiff = !isEqual(prevBeat, currentBeat);
+    if (!beatDiff) return null;
+
+    return findOverlaps(currentBeat);
+};
+
+// Extracted helper function
+const processCopyEvents = (events) => {
+    const list = Array.isArray(events) ? events : [events];
+    const overlaps = recreateEvents(processOverlaps(list));
+    return Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
+};
+
 export const CollisionsProvider = ({ children }) => {
     /** * STATE & REFS ** */
     const [processedItems, setProcessedItems] = useState([]);
@@ -54,10 +71,9 @@ export const CollisionsProvider = ({ children }) => {
     const [beats, saveBeatsToLocalStorage] = useBeats();
 
     const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
+        calculateOverlapsForAllInstruments: processBeat,
         overlapGroups,
-        processBeat: () => {},
-        setOverlapGroups,
-        stageRef
+        setOverlapGroups
     });
 
     const { changeBeatName, selectedBeat, setSelectedBeat, updateCurrentBeat } = useSelectedBeat({
@@ -82,11 +98,7 @@ export const CollisionsProvider = ({ children }) => {
     );
 
     const copyEvents = useCallback((events) => {
-        const list = Array.isArray(events) ? events : [events];
-
-        const overlaps = recreateEvents(processOverlaps(list));
-        const eventGroups = Object.values(overlaps).flatMap((instGroup) => Object.values(instGroup));
-
+        const eventGroups = processCopyEvents(events);
         setCopiedEvents(eventGroups);
     }, []);
 
@@ -94,12 +106,9 @@ export const CollisionsProvider = ({ children }) => {
     const { addTimeline } = useTimelineManager(setOverlapGroups);
 
     /** * OVERLAP GROUPS CALCULATION ** */
-    const prevBeat = prevProcessBeatResultRef.current;
-    const beatDiff = !isEqual(prevBeat, currentBeat);
-    if (beatDiff && !isDragging) {
-        const newOverlapGroups = findOverlaps(currentBeat);
+    const newOverlapGroups = calculateOverlapGroups(currentBeat, isDragging, prevProcessBeatResultRef.current);
+    if (newOverlapGroups) {
         setOverlapGroups(newOverlapGroups);
-
         prevProcessBeatResultRef.current = currentBeat;
     }
 
