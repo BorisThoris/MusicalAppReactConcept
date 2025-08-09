@@ -4,7 +4,7 @@ import { PaintingProvider } from './PaintingProvider';
 import { SelectionProvider } from './SelectionsProvider';
 import { SoundEventDragProvider } from './SoundEventDragProvider';
 
-const EditorStateContext = createContext();
+const EditorStateContext = createContext(null);
 
 export const useEditorState = () => {
     const context = useContext(EditorStateContext);

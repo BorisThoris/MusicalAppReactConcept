@@ -6,7 +6,7 @@ import { TimelineContext } from '../../../../providers/TimelineProvider';
 
 const TimeMarker = ({ duration, height, pixelToSecond }) => {
     const pixelToSecondRatio = usePixelRatio();
-    const { timelineState } = useContext(TimelineContext);
+    const { panelCompensationOffset } = useContext(TimelineContext);
 
     const [width, setWidth] = useState(180 * pixelToSecondRatio);
     const markerHeight = 10;
@@ -52,7 +52,7 @@ const TimeMarker = ({ duration, height, pixelToSecond }) => {
     }, [createMarker, duration, pixelToSecond, width]);
 
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-    return <Layer offset={timelineState.panelCompensationOffset}>{markers}</Layer>;
+    return <Layer offset={panelCompensationOffset}>{markers}</Layer>;
 };
 
 TimeMarker.propTypes = {

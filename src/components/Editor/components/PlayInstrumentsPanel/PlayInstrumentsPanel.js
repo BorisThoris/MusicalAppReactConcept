@@ -8,7 +8,7 @@ import Tambourine from '../../../Tambourine/Tambourine';
 import { PanelWrapper } from '../Panel/PanelWrapper';
 
 export const PlayInstrumentsPanel = () => {
-    const { timelineState } = useContext(TimelineContext);
+    const { panelCompensationOffset } = useContext(TimelineContext);
     const { closePanel, panels } = useContext(PanelContext);
     const { instrumentLayer, x, y } = panels[INSTRUMENTS_PANEL_ID];
 
@@ -47,7 +47,7 @@ export const PlayInstrumentsPanel = () => {
         <PanelWrapper
             x={x}
             y={y}
-            timelineState={timelineState}
+            panelCompensationOffset={panelCompensationOffset}
             // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
             style={{ height: TimelineHeight }}
             isSpeechBubble

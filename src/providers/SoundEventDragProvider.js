@@ -1,5 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { ELEMENT_ID_PREFIX, GROUP_ELEMENT_ID_PREFIX } from '../globalConstants/elementIds';
+import {
+    applyHighlightToTimeline,
+    extractElementIdsFromGroup,
+    findClosestTimelineEvents,
+    findClosestTimelineRect,
+    removeHighlightFromTimeline
+} from '../utils/dragHelpers';
 import { CollisionsContext } from './CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 import { SelectionContext } from './SelectionsProvider';
@@ -10,13 +17,6 @@ export const SoundEventDragProvider = ({ children }) => {
     const pixelToSecondRatio = usePixelRatio();
     const { dragging, refreshBeat, setDragging, stageRef } = useContext(CollisionsContext);
     const { clearSelection, selectedItems, toggleItem } = useContext(SelectionContext);
-
-    function extractElementIdsFromGroup(groupElm, targetId) {
-        const chl = Object.values(groupElm.elements)
-            .filter((child) => targetId === child.id)
-            .map((child) => child.id);
-        return chl;
-    }
 
     const selectedElementIds = useMemo(() => {
         const result = [];
@@ -48,55 +48,13 @@ export const SoundEventDragProvider = ({ children }) => {
         el.setAttrs({ x: el.x(), y: el.y() });
     }, []);
 
-    const applyHighlightToTimeline = (timeline) => {
-        if (timeline) {
-            timeline.fill('yellow');
-            timeline.getLayer().draw();
-        }
-    };
-
-    const removeHighlightFromTimeline = (timeline) => {
-        if (timeline) {
-            timeline.fill('white');
-            timeline.getLayer().draw();
-        }
-    };
-
-    const findClosestTimelineEvents = useCallback(
-        (element) => {
-            const pos = element.getAbsolutePosition();
-            let closest = null;
-            let minDist = Infinity;
-            const all = stageRef.find((n) => n.attrs?.id?.includes('-events'));
-            all.forEach((el) => {
-                const box = el.parent.getAbsolutePosition();
-                const d = Math.abs(pos.y - box.y);
-                if (d < minDist) {
-                    minDist = d;
-                    closest = el;
-                }
-            });
-            return closest;
-        },
+    const findClosestTimelineEventsCallback = useCallback(
+        (element) => findClosestTimelineEvents(element, stageRef),
         [stageRef]
     );
 
-    const findClosestTimelineRect = useCallback(
-        (element) => {
-            const boxEl = element.getClientRect();
-            let closest = null;
-            let minDist = Infinity;
-            const all = stageRef.find((n) => n.attrs?.id?.includes('timelineRect'));
-            all.forEach((el) => {
-                const box = el.getClientRect();
-                const d = Math.abs(boxEl.y - box.y);
-                if (d < minDist) {
-                    minDist = d;
-                    closest = el;
-                }
-            });
-            return closest;
-        },
+    const findClosestTimelineRectCallback = useCallback(
+        (element) => findClosestTimelineRect(element, stageRef),
         [stageRef]
     );
 
@@ -138,13 +96,22 @@ export const SoundEventDragProvider = ({ children }) => {
                     const currentChildStart =
                         child.element.attrs['data-recording']?.startTime ?? child.element.x() / pixelToSecondRatio;
                     const newChildStart = currentChildStart + offset;
-                    updateStartTimeForElement({ designatedStartTime: newChildStart, element: child.element });
-                    const tl = findClosestTimelineEvents(child.element);
+                    // Update child element start time directly
+                    if (child.element.attrs['data-recording']) {
+                        const childRec = { ...child.element.attrs['data-recording'] };
+                        const childEnd = newChildStart + childRec.eventLength;
+                        child.element.setAttr('data-recording', {
+                            ...childRec,
+                            endTime: childEnd,
+                            startTime: newChildStart
+                        });
+                    }
+                    const tl = findClosestTimelineEventsCallback(child.element);
                     insertElementIntoTimeline({ closestTimeline: tl, element: child.element });
                 });
             }
         },
-        [findClosestTimelineEvents, insertElementIntoTimeline, pixelToSecondRatio]
+        [findClosestTimelineEventsCallback, insertElementIntoTimeline, pixelToSecondRatio]
     );
 
     const processSelectedElements = useCallback(
@@ -239,7 +206,7 @@ export const SoundEventDragProvider = ({ children }) => {
                         forceUpdatePosition(element);
                     }
 
-                    const tl = findClosestTimelineRect(element);
+                    const tl = findClosestTimelineRectCallback(element);
                     if (tl) {
                         newHighlights.add(tl);
                     }
@@ -261,16 +228,16 @@ export const SoundEventDragProvider = ({ children }) => {
                 highlightedTimelinesRef.current = newHighlights;
             });
         },
-        [forceUpdatePosition, findClosestTimelineRect, getPointer, processSelectedElements, selectedElementIds]
+        [forceUpdatePosition, findClosestTimelineRectCallback, getPointer, processSelectedElements, selectedElementIds]
     );
 
     const finalizeDrag = useCallback(
         (element) => {
-            const tl = findClosestTimelineEvents(element);
+            const tl = findClosestTimelineEventsCallback(element);
             insertElementIntoTimeline({ closestTimeline: tl, element });
             updateStartTimeForElement({ element });
         },
-        [findClosestTimelineEvents, insertElementIntoTimeline, updateStartTimeForElement]
+        [findClosestTimelineEventsCallback, insertElementIntoTimeline, updateStartTimeForElement]
     );
 
     const handleDragEnd = useCallback(
@@ -319,19 +286,31 @@ export const SoundEventDragProvider = ({ children }) => {
     const value = useMemo(
         () => ({
             applyHighlightToTimeline,
+            findClosestTimelineEvents: findClosestTimelineEventsCallback,
+            findClosestTimelineRect: findClosestTimelineRectCallback,
+            forceUpdatePosition,
             handleDragEnd,
             handleDragMove,
             handleDragStart,
             insertElementIntoTimeline,
             isElementBeingDragged,
-            removeHighlightFromTimeline
+            removeHighlightFromTimeline,
+            selectedElementIds
         }),
-        [handleDragStart, handleDragMove, handleDragEnd, insertElementIntoTimeline, isElementBeingDragged]
+        [
+            handleDragStart,
+            handleDragMove,
+            handleDragEnd,
+            insertElementIntoTimeline,
+            isElementBeingDragged,
+            selectedElementIds,
+            forceUpdatePosition,
+            findClosestTimelineEventsCallback,
+            findClosestTimelineRectCallback
+        ]
     );
 
     return <SoundEventDragContext.Provider value={value}>{children}</SoundEventDragContext.Provider>;
 };
 
-const useDrag = () => useContext(SoundEventDragContext);
-
-export default useDrag;
+export const useDrag = () => useContext(SoundEventDragContext);

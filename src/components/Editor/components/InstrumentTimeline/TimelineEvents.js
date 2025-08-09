@@ -10,7 +10,7 @@ import SoundEventElement from '../SoundEventElement/SoundEventElement';
 
 export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelineHeight, timelineY }) => {
     const pixelToSecondRatio = usePixelRatio();
-    const { timelineState } = useContext(TimelineContext);
+    const { panelCompensationOffset } = useContext(TimelineContext);
     const { addTimelineRef, removeTimelineRef } = useContext(CollisionsContext);
     const { handleDragEnd, handleDragMove, handleDragStart, isElementBeingDragged } = useContext(SoundEventDragContext);
     const { paintEvent, paintingTarget } = usePaintings();
@@ -71,7 +71,7 @@ export const TimelineEvents = React.memo(({ eventGroups, instrumentName, timelin
     };
 
     return (
-        <Group offset={timelineState.panelCompensationOffset} id={`${instrumentName}-events`} ref={timelineRef}>
+        <Group offset={panelCompensationOffset} id={`${instrumentName}-events`} ref={timelineRef}>
             {/* Background rect to capture click events for painting */}
             {paintingTarget && (
                 <Rect

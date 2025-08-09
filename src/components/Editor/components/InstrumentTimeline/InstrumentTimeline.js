@@ -14,7 +14,7 @@ import { TimelineEvents } from './TimelineEvents';
 const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersHeight }) => {
     const pixelToSecondRatio = usePixelRatio();
     const { isLocked, mutedInstruments, replayInstrumentRecordings, toggleMute } = useContext(RecordingsPlayerContext);
-    const { calculatedStageWidth, timelineState, updateTimelineState } = useContext(TimelineContext);
+    const { calculatedStageWidth, panelCompensationOffset, updateTimelineState } = useContext(TimelineContext);
     const { handleContextMenu } = useContextMenu();
     const { playbackStatus: currentPlayingInstrument } = useContext(RecordingsPlayerContext);
 
@@ -30,11 +30,9 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
     useEffect(() => {
         if (timelineRef.current) {
             const canvasOffsetY = timelineRef.current.parent?.attrs?.container?.getBoundingClientRect()?.y || 0;
-            if (timelineState.canvasOffsetY !== canvasOffsetY) {
-                updateTimelineState({ canvasOffsetY, timelineY });
-            }
+            updateTimelineState({ canvasOffsetY, timelineY });
         }
-    }, [index, markersHeight, timelineState.canvasOffsetY, timelineY, updateTimelineState]);
+    }, [index, markersHeight, timelineY, updateTimelineState]);
 
     return (
         <Group
@@ -54,7 +52,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
             />
 
             <Rect
-                offset={timelineState.panelCompensationOffset}
+                offset={panelCompensationOffset}
                 height={TimelineHeight}
                 width={calculatedStageWidth}
                 fill={isMuted ? 'red' : fillColor}
@@ -71,9 +69,7 @@ const InstrumentTimeline = React.memo(({ events, index, instrumentName, markersH
                 instrumentName={instrumentName}
             />
 
-            {isLocked && (
-                <Rect offset={timelineState.panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />
-            )}
+            {isLocked && <Rect offset={panelCompensationOffset} height={TimelineHeight} width={timelineWidth} />}
         </Group>
     );
 }, isEqual);

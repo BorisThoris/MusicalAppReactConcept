@@ -36,7 +36,7 @@ const GroupControlsLabel = styled.div`
 export const SelectionsPanel = () => {
     const pixelToSecondRatio = usePixelRatio();
     const { closePanel } = useContext(PanelContext);
-    const { timelineState } = useContext(TimelineContext);
+    const { panelCompensationOffset } = useContext(TimelineContext);
     const { clearSelection, deleteSelections, endTime, selectedValues, startTime } = useContext(SelectionContext);
 
     const { copyEvents, stageRef } = useContext(CollisionsContext);
@@ -106,7 +106,11 @@ export const SelectionsPanel = () => {
 
     if (selectedValues.length > 0) {
         return (
-            <PanelWrapper x={startTime * pixelToSecondRatio} y={panelYPosition} timelineState={timelineState}>
+            <PanelWrapper
+                x={startTime * pixelToSecondRatio}
+                y={panelYPosition}
+                panelCompensationOffset={panelCompensationOffset}
+            >
                 <button onClick={onCopyClick}>Copy</button>
                 <CloseIcon onClick={handleClose}>X</CloseIcon>
 

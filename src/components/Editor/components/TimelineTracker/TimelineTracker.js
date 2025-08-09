@@ -10,11 +10,11 @@ import { useCollisionDetection } from './useTrackerCollisionDetection';
 
 const TimelineTracker = () => {
     const pixelToSecondRatio = usePixelRatio();
-    const trackerRef = useRef();
+    const trackerRef = useRef(null);
     const { changePlaybackStatus, mutedInstruments, playbackStatus, setTrackerPosition, trackerPosition } =
         useRecordingPlayerContext();
     const { furthestEndTime, processedItems } = useContext(CollisionsContext);
-    const { timelineState } = useContext(TimelineContext);
+    const { panelCompensationOffset } = useContext(TimelineContext);
 
     const totalDurationInPixels = useMemo(
         () => furthestEndTime * pixelToSecondRatio,
@@ -46,18 +46,24 @@ const TimelineTracker = () => {
     useEffect(() => {
         if (playbackStatus.isPlaying) {
             moveTracker();
-        } else {
+        } else if (trackerRef.current) {
             setTrackerPosition(trackerRef.current.x());
         }
     }, [playbackStatus.isPlaying, moveTracker, setTrackerPosition]);
 
-    const restrictVerticalMovement = useCallback(
-        (pos) => ({
-            x: Math.max(0, pos.x),
-            y: get(trackerRef, 'current.getAbsolutePosition().y', 0)
-        }),
-        []
-    );
+    const restrictVerticalMovement = useCallback((pos) => {
+        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+            return {
+                x: Math.max(0, pos.x),
+                y: pos.y
+            };
+        }
+        const currentY = trackerRef.current?.getAbsolutePosition?.()?.y || 0;
+        return {
+            x: Math.max(0, pos?.x || 0),
+            y: currentY
+        };
+    }, []);
 
     const handleDragEndCallback = useCallback(
         (e) => {
@@ -71,7 +77,7 @@ const TimelineTracker = () => {
 
     return (
         <Line
-            offset={timelineState.panelCompensationOffset}
+            offset={panelCompensationOffset}
             ref={trackerRef}
             x={trackerPosition}
             draggable

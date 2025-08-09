@@ -4,22 +4,11 @@ import { PanelContext, SELECTIONS_PANEL_ID } from '../hooks/usePanelState';
 import { useSelectionState } from '../hooks/useSelectionState';
 import { TimelineContext } from './TimelineProvider';
 
-export const SelectionContext = createContext({
-    clearSelection: () => {},
-    duplicateSelections: (startTime = '') => null,
-    handleCloseSelectionsPanel: () => {},
-    isItemSelected: (id) => false,
-    selectedItems: {},
-    selectedValues: [{}],
-    setSelectionBasedOnCoordinates: ({ intersectedElements, yLevel }) => {},
-    toggleItem: (id) => {}
-});
+export const SelectionContext = createContext(null);
 
 export const SelectionProvider = ({ children }) => {
-    const { timelineState } = useContext(TimelineContext);
+    const { markersAndTrackerOffset } = useContext(TimelineContext);
     const { closeSelectionsPanel, openSelectionsPanel, panels } = useContext(PanelContext);
-
-    const markersAndTrackerOffset = useMemo(() => timelineState.markersAndTrackerOffset, [timelineState]);
 
     const {
         clearSelection,
@@ -38,6 +27,7 @@ export const SelectionProvider = ({ children }) => {
 
     const { handleSelectionBoxMove } = useBoxMove({ selectedItems });
 
+    // Panel integration logic
     useEffect(() => {
         const isSelectedItemsNotEmpty = Object.keys(selectedItems).length > 0;
         const panelNotOpen = !panels[SELECTIONS_PANEL_ID];
