@@ -9,7 +9,7 @@ import {
 
 // Background Components
 export const BackgroundContainer = styled.div`
-    background-image: ${({ theme }) => theme.background.images.primary};
+    background-image: url('./assets/windows-xp-bliss-4k-lu-1920x1080.jpg');
     background-size: ${({ theme }) => theme.background.properties.primary.size};
     background-repeat: ${({ theme }) => theme.background.properties.primary.repeat};
     background-attachment: ${({ theme }) => theme.background.properties.primary.attachment};
@@ -20,7 +20,7 @@ export const BackgroundContainer = styled.div`
 `;
 
 export const BackgroundOverlay = styled.div`
-    background-image: ${({ theme }) => theme.background.images.primary};
+    background-image: url('./assets/windows-xp-bliss-4k-lu-1920x1080.jpg');
     background-size: ${({ theme }) => theme.background.properties.primary.size};
     background-repeat: ${({ theme }) => theme.background.properties.primary.repeat};
     background-attachment: ${({ theme }) => theme.background.properties.primary.attachment};
@@ -44,6 +44,75 @@ export const BackgroundOverlay = styled.div`
     & > * {
         position: relative;
         z-index: 2;
+    }
+`;
+
+// Enhanced Glass Morphism Components
+export const GlassContainer = styled.div`
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    border-radius: ${({ theme }) => theme.borderRadius.lg};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.02) 100%
+        );
+        pointer-events: none;
+        border-radius: inherit;
+    }
+
+    &:hover {
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+        border-color: ${({ theme }) => theme.colors.primary[400]};
+        transform: translateY(-2px);
+    }
+`;
+
+export const GlassElevated = styled(GlassContainer)`
+    background: ${({ theme }) => theme.colors.glass.elevated};
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    box-shadow: ${({ theme }) => theme.shadows.glassLg};
+
+    &:hover {
+        box-shadow: ${({ theme }) => theme.shadows.glassXl};
+        transform: translateY(-4px);
+    }
+`;
+
+export const GlassUltra = styled(GlassContainer)`
+    background: ${({ theme }) => theme.colors.glass.tertiary};
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    box-shadow: ${({ theme }) => theme.shadows.glassXl};
+
+    &:hover {
+        box-shadow: ${({ theme }) => theme.shadows.glassXl};
+        transform: translateY(-6px);
+    }
+`;
+
+export const GlassInverse = styled(GlassContainer)`
+    background: ${({ theme }) => theme.colors.glass.inverse};
+    border-color: ${({ theme }) => theme.colors.glass.borderSecondary};
+
+    &:hover {
+        border-color: ${({ theme }) => theme.colors.primary[400]};
     }
 `;
 
@@ -116,6 +185,54 @@ export const ErrorButton = styled(Button)`
     ${({ theme }) => createButtonStyle(theme, 'error', 'md')}
 `;
 
+// Glass Morphism Button Variants
+export const GlassButton = styled(Button)`
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.6s ease;
+    }
+
+    &:hover::before {
+        left: 100%;
+    }
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.primary[400]};
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+        transform: translateY(-2px);
+    }
+`;
+
+export const GlassElevatedButton = styled(GlassButton)`
+    background: ${({ theme }) => theme.colors.glass.elevated};
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    box-shadow: ${({ theme }) => theme.shadows.glassLg};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.glass.primary};
+        box-shadow: ${({ theme }) => theme.shadows.glassXl};
+        transform: translateY(-3px);
+    }
+`;
+
 // Input Components
 export const Input = styled.input`
     ${({ hasError = false, size = 'md', theme }) => createInputStyle(theme, size, hasError)}
@@ -130,6 +247,33 @@ export const TextArea = styled.textarea`
 export const Select = styled.select`
     ${({ hasError = false, size = 'md', theme }) => createInputStyle(theme, size, hasError)}
     cursor: pointer;
+`;
+
+// Glass Morphism Input Variants
+export const GlassInput = styled(Input)`
+    background: ${({ theme }) => theme.colors.glass.secondary};
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid ${({ theme }) => theme.colors.glass.borderSecondary};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+
+    &:focus {
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.primary[400]};
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+        outline: none;
+    }
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+    }
+
+    &::placeholder {
+        color: ${({ theme }) => theme.colors.semantic.text.tertiary};
+    }
 `;
 
 // Card Components
@@ -155,6 +299,41 @@ export const CardFooter = styled.div`
     background-color: ${({ theme }) => theme.colors.semantic.surface.secondary};
     border-bottom-left-radius: ${({ theme }) => theme.borderRadius.lg};
     border-bottom-right-radius: ${({ theme }) => theme.borderRadius.lg};
+`;
+
+// Glass Morphism Card Variants
+export const GlassCard = styled(Card)`
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.02) 100%
+        );
+        pointer-events: none;
+        border-radius: inherit;
+    }
+
+    &:hover {
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+        border-color: ${({ theme }) => theme.colors.primary[400]};
+        transform: translateY(-4px);
+    }
 `;
 
 // Layout Components

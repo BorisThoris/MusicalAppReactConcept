@@ -10,27 +10,35 @@ import { useFillClosestTimelines } from './useFillClosestTimelines';
 import { useFindClosestTimelines } from './useFindClosestTimelines';
 
 const MenuItem = styled.div`
-    background: ${({ theme }) => theme.colors.semantic.surface.primary};
+    background: ${({ theme }) => theme.colors.glass.secondary};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
     padding: ${({ theme }) => theme.spacing[1]};
     border-radius: ${({ theme }) => theme.borderRadius.sm};
-    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
-        ${({ theme }) => theme.transitions.easing.ease};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
     color: ${({ theme }) => theme.colors.semantic.text.primary};
+    border: 1px solid transparent;
 
     &:hover {
-        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
     }
 
     &:focus {
         outline: none;
-        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
     }
 `;
 
 const PreviewOverlay = styled.div`
     position: absolute;
-    background: ${({ theme }) => theme.colors.primary[500]}40;
+    background: ${({ theme }) => theme.colors.glass.elevated};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     height: 50px;
     z-index: 999;
     pointer-events: none;
@@ -38,6 +46,8 @@ const PreviewOverlay = styled.div`
     top: ${({ position }) => `${position.y}px`};
     width: ${({ width }) => `${width}px`};
     border-radius: ${({ theme }) => theme.borderRadius.sm};
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
 `;
 
 const PasteButton = ({ copiedEvents, menuPosition }) => {

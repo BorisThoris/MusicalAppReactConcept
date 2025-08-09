@@ -4,9 +4,11 @@ import { CollisionsContext } from '../../../../providers/CollisionsProvider/Coll
 import PasteButton from './PasteButton';
 
 const MenuContainer = styled.div`
-    background: ${({ theme }) => theme.colors.semantic.surface.secondary};
-    border: 2px solid ${({ theme }) => theme.colors.semantic.border.primary};
-    box-shadow: ${({ theme }) => theme.shadows.lg};
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    box-shadow: ${({ theme }) => theme.shadows.glassLg};
     font-family: ${({ theme }) => theme.typography.fontFamily.primary};
     font-size: ${({ theme }) => theme.typography.fontSize.sm};
     padding: ${({ theme }) => theme.spacing[1]};
@@ -25,21 +27,27 @@ const MenuList = styled.ul`
 `;
 
 const MenuItem = styled.div`
-    background: ${({ theme }) => theme.colors.semantic.surface.primary};
+    background: ${({ theme }) => theme.colors.glass.secondary};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
     padding: ${({ theme }) => theme.spacing[1]};
     border-radius: ${({ theme }) => theme.borderRadius.sm};
-    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
-        ${({ theme }) => theme.transitions.easing.ease};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
     color: ${({ theme }) => theme.colors.semantic.text.primary};
+    border: 1px solid transparent;
 
     &:hover {
-        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
     }
 
     &:focus {
         outline: none;
-        background: ${({ theme }) => theme.colors.semantic.surface.secondary};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
     }
 `;
 

@@ -3,13 +3,15 @@ import React, { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef 
 import { Layer, Stage, useStrictMode } from 'react-konva';
 import threeMinuteMs from '../../../../globalConstants/songLimit';
 import { PanelContext } from '../../../../hooks/usePanelState';
+import { useTimeline } from '../../../../hooks/useTimeline';
 import { CollisionsContext } from '../../../../providers/CollisionsProvider/CollisionsProvider';
 import { usePixelRatio } from '../../../../providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerContext } from '../../../../providers/RecordingsPlayerProvider';
-import { markersHeight, TimelineContext, TimelineHeight } from '../../../../providers/TimelineProvider';
 import { DragSelection } from '../DragSelection';
 import InstrumentTimeline from '../InstrumentTimeline/InstrumentTimeline';
 import PaintingTopBar from '../PaintingTopBar/PaintingTopBar';
+import { TimelineControls } from '../TimelineControls';
+import { TimelineDemo } from '../TimelineDemo';
 import TimelineMarker from '../TimelineMarker/TimelineMarker';
 import TimelineTracker from '../TimelineTracker/TimelineTracker';
 
@@ -22,6 +24,10 @@ const Timelines = memo(() => {
     const { playbackStatus } = useContext(RecordingsPlayerContext);
     const { hideActionsMenu } = useContext(PanelContext);
 
+    // Use the enhanced timeline functionality
+    const { calculatedStageWidth, effectiveStageWidth, markersHeight, scrollPosition, TimelineHeight, zoomLevel } =
+        useTimeline();
+
     // Dynamically set Konva canvas pixel ratio to 1 after mount
     useLayoutEffect(() => {
         const stage = stageRef.current;
@@ -31,15 +37,10 @@ const Timelines = memo(() => {
         }
     }, []);
 
-    // Calculate stage width using the current window width.
-    // Note: This value won't update on window resize unless you trigger a re-render.
-    const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
-    const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
-
     const recordingsArr = useMemo(() => Object.entries(overlapGroups), [overlapGroups]);
     const EditorHeight = useMemo(
         () => (recordingsArr.length ? recordingsArr.length * TimelineHeight + markersHeight : 500),
-        [recordingsArr]
+        [recordingsArr, TimelineHeight, markersHeight]
     );
 
     useLayoutEffect(() => {
@@ -71,7 +72,10 @@ const Timelines = memo(() => {
         <button onClick={handleClick} style={buttonStyle}>
             <PaintingTopBar />
 
-            <Stage width={calculatedStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1}>
+            <TimelineControls />
+            <TimelineDemo />
+
+            <Stage width={effectiveStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1} x={-scrollPosition}>
                 <Layer ref={topLayerRef} name="top-layer">
                     {recordingsArr.map(([parentGroupName, events], index) => (
                         <InstrumentTimeline
@@ -88,7 +92,7 @@ const Timelines = memo(() => {
                     <TimelineTracker furthestEndTime={playbackStatus.currentInstrument || 0} />
                 </Layer>
 
-                <DragSelection stageRef={stageRef} width={calculatedStageWidth} height={EditorHeight} />
+                <DragSelection stageRef={stageRef} width={effectiveStageWidth} height={EditorHeight} />
 
                 <TimelineMarker duration={threeMinuteMs} height={markersHeight} pixelToSecond={pixelToSecondRatio} />
             </Stage>

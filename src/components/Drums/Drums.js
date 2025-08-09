@@ -11,25 +11,44 @@ const DrumSetContainer = styled.div`
     gap: ${({ theme }) => theme.spacing[2]};
     justify-content: center;
     padding: ${({ theme }) => theme.spacing[8]};
-    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: ${({ theme }) => theme.borderRadius.xl};
-    box-shadow: ${({ theme }) => theme.shadows.lg};
+    box-shadow: ${({ theme }) => theme.shadows.glassLg};
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
+    margin: ${({ theme }) => theme.spacing[4]};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        box-shadow: ${({ theme }) => theme.shadows.glassXl};
+        border-color: ${({ theme }) => theme.colors.warning[400]};
+    }
 `;
 
 const ControlButton = styled.button`
-    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
-    color: ${({ theme }) => theme.colors.semantic.text.inverse};
-    border: none;
+    background: ${({ theme }) => theme.colors.glass.elevated};
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
     border-radius: ${({ theme }) => theme.borderRadius.base};
     padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[4]};
     font-size: ${({ theme }) => theme.typography.fontSize.sm};
     font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
     cursor: pointer;
-    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
-        ${({ theme }) => theme.transitions.easing.ease};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
 
     &:hover {
-        background-color: ${({ theme }) => theme.colors.primary[600]};
+        background: ${({ theme }) => theme.colors.glass.primary};
+        border-color: ${({ theme }) => theme.colors.warning[400]};
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
     }
 `;
 

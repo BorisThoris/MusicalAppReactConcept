@@ -8,7 +8,9 @@ const Backdrop = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: ${({ theme }) => theme.colors.semantic.background.overlay};
+    background: ${({ theme }) => theme.colors.glass.backdrop};
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -20,11 +22,13 @@ const ModalWrapper = styled.div`
     flex-direction: column;
     width: 80%;
     max-width: 600px;
-    background-color: ${({ theme }) => theme.colors.semantic.surface.primary};
-    box-shadow: ${({ theme }) => theme.shadows['2xl']};
+    background: ${({ theme }) => theme.colors.glass.primary};
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: ${({ theme }) => theme.shadows.glassXl};
     border-radius: ${({ theme }) => theme.borderRadius.xl};
     padding: ${({ theme }) => theme.spacing[8]};
-    border: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
     position: relative;
     z-index: ${({ theme }) => theme.zIndex.modal + 1};
 `;
@@ -36,10 +40,24 @@ const CloseIcon = styled.div`
     cursor: pointer;
     font-size: ${({ theme }) => theme.typography.fontSize.lg};
     font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
-    color: ${({ theme }) => theme.colors.semantic.text.secondary};
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    background: ${({ theme }) => theme.colors.glass.secondary};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: ${({ theme }) => theme.borderRadius.full};
+    border: 1px solid ${({ theme }) => theme.colors.glass.borderSecondary};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
 
     &:hover {
-        color: ${({ theme }) => theme.colors.semantic.text.primary};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
+        transform: scale(1.1);
     }
 `;
 

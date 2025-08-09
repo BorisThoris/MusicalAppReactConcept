@@ -1,7 +1,7 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useTimelineRefs } from './CollisionsProvider/hooks/useTimelineRefs';
 
-const TimelineRefsContext = createContext();
+export const TimelineRefsContext = createContext();
 
 export const useTimelineRefsContext = () => {
     const context = useContext(TimelineRefsContext);
@@ -28,21 +28,38 @@ export const TimelineRefsProvider = ({ children }) => {
         timelineRefs
     } = useTimelineRefs({ setHasChanged: () => {} }); // This will be provided by parent
 
-    const value = {
-        addStageRef,
-        addTimelineRef,
-        deleteAllTimelines,
-        findAllSoundEventElements,
-        getGroupById,
-        getProcessedElements,
-        getProcessedGroups,
-        getProcessedItems,
-        getSoundEventById,
-        removeStageRef,
-        removeTimelineRef,
-        stageRef,
-        timelineRefs
-    };
+    const contextValue = useMemo(
+        () => ({
+            addStageRef,
+            addTimelineRef,
+            deleteAllTimelines,
+            findAllSoundEventElements,
+            getGroupById,
+            getProcessedElements,
+            getProcessedGroups,
+            getProcessedItems,
+            getSoundEventById,
+            removeStageRef,
+            removeTimelineRef,
+            stageRef,
+            timelineRefs
+        }),
+        [
+            addStageRef,
+            addTimelineRef,
+            deleteAllTimelines,
+            findAllSoundEventElements,
+            getGroupById,
+            getProcessedElements,
+            getProcessedGroups,
+            getProcessedItems,
+            getSoundEventById,
+            removeStageRef,
+            removeTimelineRef,
+            stageRef,
+            timelineRefs
+        ]
+    );
 
-    return <TimelineRefsContext.Provider value={value}>{children}</TimelineRefsContext.Provider>;
+    return <TimelineRefsContext.Provider value={contextValue}>{children}</TimelineRefsContext.Provider>;
 };

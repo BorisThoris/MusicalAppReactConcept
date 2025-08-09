@@ -1,45 +1,29 @@
 // Design System Theme Configuration
-// Following modern design system best practices with semantic naming
+// Windows 7/Vista Aero Glass inspired theme with accessible contrast
 
 export const theme = {
     // Background Configuration
     background: {
-        // Background Images
-        // Paths are relative to the src folder when used in GlobalStyles
         images: {
             primary: 'url("./assets/windows-xp-bliss-4k-lu-1920x1080.jpg")',
             website: 'url("./assets/websiteBackground.jpg")'
-            // Add more background images as needed
         },
-        // Background Properties
         properties: {
-            primary: {
-                attachment: 'fixed',
-                position: 'center',
-                repeat: 'no-repeat',
-                size: 'cover'
-            },
-            website: {
-                attachment: 'fixed',
-                position: 'center',
-                repeat: 'no-repeat',
-                size: 'cover'
-            }
+            primary: { attachment: 'fixed', position: 'center', repeat: 'no-repeat', size: 'cover' },
+            website: { attachment: 'fixed', position: 'center', repeat: 'no-repeat', size: 'cover' }
         }
     },
 
     // Border Radius
     borderRadius: {
-        // 12px
         '2xl': '1rem',
-        // 16px
-        '3xl': '1.5rem', // 2px
-        base: '0.25rem', // 24px
-        full: '9999px', // 6px
-        lg: '0.5rem', // 4px
+        '3xl': '1.5rem',
+        base: '0.25rem',
+        full: '9999px',
+        lg: '0.5rem',
         md: '0.375rem',
         none: '0',
-        sm: '0.125rem', // 8px
+        sm: '0.125rem',
         xl: '0.75rem'
     },
 
@@ -53,70 +37,50 @@ export const theme = {
         xs: '0px'
     },
 
-    // Color Palette
+    // Color Palette - tuned for accessibility (WCAG-friendly contrasts)
     colors: {
-        // Accent Colors
         accent: {
-            50: '#fef7ee',
-            100: '#fdedd4',
-            200: '#fbd7a9',
-            300: '#f8bb72',
-            400: '#f59537',
-            500: '#f2750d',
-            600: '#e35d08',
-            700: '#bc450b',
-            800: '#96370f',
-            900: '#792f0f',
-            950: '#411505'
+            50: '#edf6ff',
+            100: '#d7ebff',
+            200: '#a8d4ff',
+            300: '#78bbff',
+            400: '#4aa3ff',
+            500: '#1d8bff',
+            600: '#006ed1',
+            700: '#0052a3',
+            800: '#003875',
+            900: '#00224a',
+            950: '#00132a'
         },
-
-        // Error Colors
         error: {
-            50: '#fef2f2',
-            100: '#fee2e2',
-            200: '#fecaca',
-            300: '#fca5a5',
-            400: '#f87171',
-            500: '#ef4444',
-            600: '#dc2626',
-            700: '#b91c1c',
-            800: '#991b1b',
-            900: '#7f1d1d',
-            950: '#450a0a'
+            50: '#fff1f2',
+            100: '#ffd9db',
+            200: '#ffb3b8',
+            300: '#fb8a92',
+            400: '#ef5a66',
+            500: '#dc3545',
+            600: '#b81f30',
+            700: '#931824',
+            800: '#6d141c',
+            900: '#4e0f15',
+            950: '#31090d'
         },
 
-        // Neutral Colors
+        // Glass Morphism (use deep-blue tint but neutral shadows/borders for clarity)
+        glass: {
+            backdrop: 'rgba(23, 41, 79, 0.12)',
+            border: 'rgba(23, 41, 79, 0.28)',
+            borderSecondary: 'rgba(23, 41, 79, 0.18)',
+            elevated: 'rgba(23, 41, 79, 0.20)',
+            inverse: 'rgba(0, 0, 0, 0.22)',
+            primary: 'rgba(42, 140, 255, 0.16)',
+            secondary: 'rgba(23, 41, 79, 0.10)',
+            shadow: 'rgba(2, 6, 23, 0.35)',
+            tertiary: 'rgba(23, 41, 79, 0.06)'
+        },
+
+        // Neutral (legible on light & glass backgrounds)
         neutral: {
-            50: '#fafafa',
-            100: '#f5f5f5',
-            200: '#e5e5e5',
-            300: '#d4d4d4',
-            400: '#a3a3a3',
-            500: '#737373',
-            600: '#525252',
-            700: '#404040',
-            800: '#262626',
-            900: '#171717',
-            950: '#0a0a0a'
-        },
-
-        // Primary Colors
-        primary: {
-            50: '#eff6ff',
-            100: '#dbeafe',
-            200: '#bfdbfe',
-            300: '#93c5fd',
-            400: '#60a5fa',
-            500: '#3b82f6',
-            600: '#2563eb',
-            700: '#1d4ed8',
-            800: '#1e40af',
-            900: '#1e3a8a',
-            950: '#172554'
-        },
-
-        // Secondary Colors
-        secondary: {
             50: '#f8fafc',
             100: '#f1f5f9',
             200: '#e2e8f0',
@@ -125,166 +89,164 @@ export const theme = {
             500: '#64748b',
             600: '#475569',
             700: '#334155',
-            800: '#1e293b',
-            900: '#0f172a',
-            950: '#020617'
+            800: '#1f2937',
+            900: '#0b1220',
+            950: '#070c15'
         },
 
-        // Semantic Colors
+        // Primary/Accent Blues (cooler, deeper steps for contrast)
+        primary: {
+            50: '#eef6ff',
+            100: '#d9ecff',
+            200: '#b9dbff',
+            300: '#8ec5ff',
+            400: '#5eaaff',
+            500: '#2a8cff', // default brand
+            600: '#1a6dd6', // meets contrast with white text
+            700: '#1355a6',
+            800: '#0e3f79',
+            900: '#0a2b52',
+            950: '#071b33'
+        },
+        // Secondary (slate/steel)
+        secondary: {
+            50: '#f7f8fb',
+            100: '#eef1f6',
+            200: '#dfe5ee',
+            300: '#c6d1e0',
+            400: '#93a4bf',
+            500: '#6a7a98',
+            600: '#4e5a74',
+            700: '#39455b',
+            800: '#273346',
+            900: '#182334',
+            950: '#101827'
+        },
+        // Semantic tokens (bridge UI intent -> surfaces/text)
         semantic: {
-            // Background Colors
             background: {
-                inverse: '#0f172a',
-                overlay: 'rgba(0, 0, 0, 0.5)',
-                primary: '#ffffff',
-                secondary: '#f8fafc',
-                tertiary: '#f1f5f9'
+                inverse: '#0b1220',
+                overlay: 'rgba(2, 6, 23, 0.45)',
+                primary: 'rgba(255, 255, 255, 0.72)', // frosted light card
+                secondary: 'rgba(255, 255, 255, 0.58)',
+                tertiary: 'rgba(255, 255, 255, 0.40)'
             },
-
-            // Border Colors
             border: {
-                error: '#ef4444',
-                focus: '#3b82f6',
-                primary: '#e2e8f0',
-                secondary: '#cbd5e1',
-                success: '#22c55e',
-                tertiary: '#f1f5f9',
-                warning: '#f59e0b'
+                error: '#dc3545',
+                focus: '#2a8cff',
+                primary: 'rgba(2, 6, 23, 0.18)',
+                secondary: 'rgba(2, 6, 23, 0.12)',
+                success: '#16c172',
+                tertiary: 'rgba(2, 6, 23, 0.08)',
+                warning: '#f2ae1a'
             },
-
-            // Interactive Colors
             interactive: {
-                disabled: '#94a3b8',
-                error: '#ef4444',
-                primary: '#3b82f6',
-                secondary: '#64748b',
-                success: '#22c55e',
-                warning: '#f59e0b'
+                disabled: 'rgba(2, 6, 23, 0.32)',
+                error: '#dc3545',
+                primary: '#2a8cff',
+                secondary: '#6a7a98',
+                success: '#16c172',
+                warning: '#f2ae1a'
             },
-
-            // Surface Colors
             surface: {
-                elevated: '#ffffff',
-                inverse: '#0f172a',
-                primary: '#ffffff',
-                secondary: '#f8fafc',
-                tertiary: '#f1f5f9'
+                elevated: 'rgba(255, 255, 255, 0.78)',
+                inverse: 'rgba(2, 6, 23, 0.75)',
+                primary: 'rgba(255, 255, 255, 0.72)',
+                secondary: 'rgba(255, 255, 255, 0.58)',
+                tertiary: 'rgba(255, 255, 255, 0.40)'
             },
-
-            // Text Colors
             text: {
-                disabled: '#94a3b8',
+                disabled: 'rgba(11, 18, 32, 0.38)',
                 inverse: '#ffffff',
-                placeholder: '#94a3b8',
-                primary: '#0f172a',
-                secondary: '#475569',
-                tertiary: '#64748b'
+                placeholder: 'rgba(11, 18, 32, 0.50)',
+                primary: '#0b1220',
+                // main dark text
+                secondary: 'rgba(11, 18, 32, 0.75)',
+                // body/subtle
+                tertiary: 'rgba(11, 18, 32, 0.60)'
             }
         },
 
-        // Success Colors
+        // Status palettes (darker mids for text contrast)
         success: {
-            50: '#f0fdf4',
-            100: '#dcfce7',
-            200: '#bbf7d0',
-            300: '#86efac',
-            400: '#4ade80',
-            500: '#22c55e',
-            600: '#16a34a',
-            700: '#15803d',
-            800: '#166534',
-            900: '#14532d',
-            950: '#052e16'
+            50: '#effdf5',
+            100: '#d6f7e4',
+            200: '#a9eec9',
+            300: '#79e3ac',
+            400: '#3dd786',
+            500: '#16c172',
+            600: '#0e9a5c',
+            700: '#0b7649',
+            800: '#08573a',
+            900: '#063e2c',
+            950: '#04281e'
         },
 
-        // Warning Colors
         warning: {
-            50: '#fffbeb',
-            100: '#fef3c7',
-            200: '#fde68a',
-            300: '#fcd34d',
-            400: '#fbbf24',
-            500: '#f59e0b',
-            600: '#d97706',
-            700: '#b45309',
-            800: '#92400e',
-            900: '#78350f',
-            950: '#451a03'
+            50: '#fff8eb',
+            100: '#feefc6',
+            200: '#fddf8a',
+            300: '#f8c84a',
+            400: '#f2ae1a',
+            500: '#d98f07',
+            600: '#b27105',
+            700: '#875404',
+            800: '#643f05',
+            900: '#4a3006',
+            950: '#2c1c03'
         }
     },
 
     // Component-specific tokens
     components: {
-        // Button
         button: {
-            height: {
-                lg: '3rem',
-                md: '2.5rem',
-                sm: '2rem'
-            },
-            padding: {
-                lg: '1rem 2rem',
-                md: '0.75rem 1.5rem',
-                sm: '0.5rem 1rem'
-            }
+            height: { lg: '3rem', md: '2.5rem', sm: '2rem' },
+            padding: { lg: '1rem 2rem', md: '0.75rem 1.5rem', sm: '0.5rem 1rem' }
         },
-
-        // Card
         card: {
-            padding: {
-                lg: '2rem',
-                md: '1.5rem',
-                sm: '1rem'
-            }
+            padding: { lg: '2rem', md: '1.5rem', sm: '1rem' }
         },
-
-        // Input
         input: {
-            height: {
-                lg: '3rem',
-                md: '2.5rem',
-                sm: '2rem'
-            },
-            padding: {
-                lg: '1rem 1.25rem',
-                md: '0.75rem 1rem',
-                sm: '0.5rem 0.75rem'
-            }
+            height: { lg: '3rem', md: '2.5rem', sm: '2rem' },
+            padding: { lg: '1rem 1.25rem', md: '0.75rem 1rem', sm: '0.5rem 0.75rem' }
         }
     },
 
-    // Shadows
+    // Shadows (neutral, readable drop shadows)
     shadows: {
-        '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-        base: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
-        lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        '2xl': '0 25px 50px -12px rgba(2, 6, 23, 0.35)',
+        base: '0 1px 3px 0 rgba(2, 6, 23, 0.10), 0 1px 2px -1px rgba(2, 6, 23, 0.08)',
+        glass: '0 8px 32px 0 rgba(2, 6, 23, 0.25)',
+        glassLg: '0 16px 64px 0 rgba(2, 6, 23, 0.28)',
+        glassXl: '0 24px 96px 0 rgba(2, 6, 23, 0.30)',
+        inner: 'inset 0 2px 4px 0 rgba(2, 6, 23, 0.06)',
+        lg: '0 10px 15px -3px rgba(2, 6, 23, 0.15), 0 4px 6px -4px rgba(2, 6, 23, 0.12)',
+        md: '0 4px 6px -1px rgba(2, 6, 23, 0.14), 0 2px 4px -2px rgba(2, 6, 23, 0.10)',
         none: 'none',
-        sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+        sm: '0 1px 2px 0 rgba(2, 6, 23, 0.08)',
+        xl: '0 20px 25px -5px rgba(2, 6, 23, 0.16), 0 8px 10px -6px rgba(2, 6, 23, 0.12)'
     },
 
     // Spacing
     spacing: {
         0: '0',
-        1: '0.25rem', // 4px
-        2: '0.5rem', // 8px
-        3: '0.75rem', // 12px
-        4: '1rem', // 16px
-        5: '1.25rem', // 20px
-        6: '1.5rem', // 24px
-        8: '2rem', // 32px
-        10: '2.5rem', // 40px
-        12: '3rem', // 48px
-        16: '4rem', // 64px
-        20: '5rem', // 80px
-        24: '6rem', // 96px
-        32: '8rem', // 128px
-        40: '10rem', // 160px
-        48: '12rem', // 192px
-        56: '14rem', // 224px
-        64: '16rem' // 256px
+        1: '0.25rem',
+        2: '0.5rem',
+        3: '0.75rem',
+        4: '1rem',
+        5: '1.25rem',
+        6: '1.5rem',
+        8: '2rem',
+        10: '2.5rem',
+        12: '3rem',
+        16: '4rem',
+        20: '5rem',
+        24: '6rem',
+        32: '8rem',
+        40: '10rem',
+        48: '12rem',
+        56: '14rem',
+        64: '16rem'
     },
 
     // Transitions
@@ -305,31 +267,25 @@ export const theme = {
 
     // Typography
     typography: {
-        // Font Families
         fontFamily: {
             mono: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', monospace",
             primary:
-                "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
             secondary:
-                "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
+                "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
         },
-
-        // Font Sizes
         fontSize: {
-            // 20px
-            '2xl': '1.5rem', // 24px
-            '3xl': '1.875rem', // 30px
-            '4xl': '2.25rem', // 36px
-            '5xl': '3rem', // 48px
-            '6xl': '3.75rem', // 14px
-            base: '1rem', // 16px
-            lg: '1.125rem', // 12px
-            sm: '0.875rem', // 18px
+            '2xl': '1.5rem',
+            '3xl': '1.875rem',
+            '4xl': '2.25rem',
+            '5xl': '3rem',
+            '6xl': '3.75rem',
+            base: '1rem',
+            lg: '1.125rem',
+            sm: '0.875rem',
             xl: '1.25rem',
-            xs: '0.75rem' // 60px
+            xs: '0.75rem'
         },
-
-        // Font Weights
         fontWeight: {
             black: 900,
             bold: 700,
@@ -341,8 +297,6 @@ export const theme = {
             semibold: 600,
             thin: 100
         },
-
-        // Letter Spacing
         letterSpacing: {
             normal: '0em',
             tight: '-0.025em',
@@ -351,8 +305,6 @@ export const theme = {
             wider: '0.05em',
             widest: '0.1em'
         },
-
-        // Line Heights
         lineHeight: {
             loose: 2,
             none: 1,

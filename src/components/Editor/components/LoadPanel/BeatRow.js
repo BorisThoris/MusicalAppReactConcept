@@ -6,46 +6,82 @@ const FileRow = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: ${({ theme }) => theme.spacing[2]} 0;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.semantic.border.primary};
+    padding: ${({ theme }) => theme.spacing[3]} ${({ theme }) => theme.spacing[4]};
+    border-bottom: 1px solid ${({ theme }) => theme.colors.glass.borderSecondary};
+    background: ${({ theme }) => theme.colors.glass.secondary};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: ${({ theme }) => theme.borderRadius.base};
+    margin-bottom: ${({ theme }) => theme.spacing[2]};
+    border: 1px solid ${({ theme }) => theme.colors.glass.borderSecondary};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+
+    &:hover {
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        box-shadow: ${({ theme }) => theme.shadows.glass};
+        transform: translateY(-1px);
+    }
 
     & > div {
         flex: 1;
         text-align: center;
         color: ${({ theme }) => theme.colors.semantic.text.primary};
         font-size: ${({ theme }) => theme.typography.fontSize.sm};
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 `;
 
 const LoadButton = styled.button`
-    background-color: ${({ theme }) => theme.colors.semantic.interactive.primary};
-    color: ${({ theme }) => theme.colors.semantic.text.inverse};
-    border: none;
+    background: ${({ theme }) => theme.colors.glass.elevated};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    border: 1px solid ${({ theme }) => theme.colors.glass.border};
     cursor: pointer;
-    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[3]};
     border-radius: ${({ theme }) => theme.borderRadius.base};
     font-size: ${({ theme }) => theme.typography.fontSize.sm};
-    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
-        ${({ theme }) => theme.transitions.easing.ease};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    margin-left: ${({ theme }) => theme.spacing[2]};
 
     &:hover {
-        background-color: ${({ theme }) => theme.colors.primary[600]};
+        background: ${({ theme }) => theme.colors.glass.primary};
+        transform: translateY(-1px);
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+    }
+
+    &:active {
+        transform: translateY(0);
     }
 `;
 
 const DeleteButton = styled.button`
-    background-color: ${({ theme }) => theme.colors.semantic.interactive.error};
-    color: ${({ theme }) => theme.colors.semantic.text.inverse};
-    border: none;
+    background: ${({ theme }) => theme.colors.glass.inverse};
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: ${({ theme }) => theme.colors.semantic.text.primary};
+    border: 1px solid ${({ theme }) => theme.colors.glass.borderSecondary};
     cursor: pointer;
-    padding: ${({ theme }) => theme.spacing[1]} ${({ theme }) => theme.spacing[2]};
+    padding: ${({ theme }) => theme.spacing[2]} ${({ theme }) => theme.spacing[3]};
     border-radius: ${({ theme }) => theme.borderRadius.base};
     font-size: ${({ theme }) => theme.typography.fontSize.sm};
-    transition: background-color ${({ theme }) => theme.transitions.duration.fast}
-        ${({ theme }) => theme.transitions.easing.ease};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+    transition: all ${({ theme }) => theme.transitions.duration.fast} ${({ theme }) => theme.transitions.easing.ease};
+    box-shadow: ${({ theme }) => theme.shadows.glass};
+    margin-left: ${({ theme }) => theme.spacing[2]};
 
     &:hover {
-        background-color: ${({ theme }) => theme.colors.error[600]};
+        background: ${({ theme }) => theme.colors.glass.elevated};
+        border-color: ${({ theme }) => theme.colors.glass.border};
+        transform: translateY(-1px);
+        box-shadow: ${({ theme }) => theme.shadows.glassLg};
+    }
+
+    &:active {
+        transform: translateY(0);
     }
 `;
 

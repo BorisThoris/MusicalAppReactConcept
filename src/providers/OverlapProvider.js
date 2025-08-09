@@ -2,8 +2,9 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 import { useFurthestEndTime } from './CollisionsProvider/hooks/useFurthestEndTime';
 import { useProcessBeat } from './CollisionsProvider/hooks/useProcessBeat';
 import { findOverlaps } from './CollisionsProvider/overlapHelpers';
+import { TimelineRefsContext } from './TimelineRefsProvider';
 
-const OverlapContext = createContext();
+export const OverlapContext = createContext();
 
 export const useOverlapContext = () => {
     const context = useContext(OverlapContext);
@@ -15,30 +16,30 @@ export const useOverlapContext = () => {
 
 export const OverlapProvider = ({ children }) => {
     const [overlapGroups, setOverlapGroups] = useState({});
-    const [processedItems, setProcessedItems] = useState([]);
-    const [hasChanged, setHasChanged] = useState(false);
+    const [processedItems, setProcessedItems] = useState({});
 
-    // This will be provided by TimelineRefsProvider
-    const { getProcessedElements, getProcessedGroups, timelineRefs } =
-        useContext(require('./TimelineRefsProvider').TimelineRefsContext) || {};
+    const { findAllSoundEventElements, getProcessedElements, getProcessedGroups, timelineRefs } =
+        useContext(TimelineRefsContext) || {};
 
-    const { processBeat } = useProcessBeat({ getProcessedElements, getProcessedGroups, timelineRefs });
-    const { furthestEndTime, totalDurationInPixels } = useFurthestEndTime(() => []); // This will be provided by TimelineRefsProvider
+    const { furthestEndTime } = useFurthestEndTime(findAllSoundEventElements || (() => []));
+    const { processBeat } = useProcessBeat({
+        getProcessedElements,
+        getProcessedGroups,
+        timelineRefs
+    });
 
-    const value = useMemo(
+    const contextValue = useMemo(
         () => ({
+            findOverlaps,
             furthestEndTime,
-            hasChanged,
             overlapGroups,
             processBeat,
             processedItems,
-            setHasChanged,
             setOverlapGroups,
-            setProcessedItems,
-            totalDurationInPixels
+            setProcessedItems
         }),
-        [overlapGroups, processedItems, hasChanged, processBeat, furthestEndTime, totalDurationInPixels]
+        [overlapGroups, setOverlapGroups, processedItems, setProcessedItems, furthestEndTime, processBeat]
     );
 
-    return <OverlapContext.Provider value={value}>{children}</OverlapContext.Provider>;
+    return <OverlapContext.Provider value={contextValue}>{children}</OverlapContext.Provider>;
 };

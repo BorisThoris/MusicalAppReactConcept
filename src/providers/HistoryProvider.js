@@ -1,5 +1,7 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useHistory } from './CollisionsProvider/hooks/useHistory';
+import { OverlapContext } from './OverlapProvider';
+import { TimelineRefsContext } from './TimelineRefsProvider';
 
 const HistoryContext = createContext();
 
@@ -13,23 +15,26 @@ export const useHistoryContext = () => {
 
 export const HistoryProvider = ({ children }) => {
     // These will be provided by other providers
-    const { overlapGroups, setOverlapGroups } = useContext(require('./OverlapProvider').OverlapContext) || {};
-    const { processBeat } = useContext(require('./OverlapProvider').OverlapContext) || {};
-    const { stageRef } = useContext(require('./TimelineRefsProvider').TimelineRefsContext) || {};
+    const { overlapGroups, setOverlapGroups } = useContext(OverlapContext) || {};
+    const { processBeat } = useContext(OverlapContext) || {};
+    const { stageRef } = useContext(TimelineRefsContext) || {};
 
-    const { history, pushToHistory, redo, redoHistory, undo } = useHistory({
-        calculateOverlapsForAllInstruments: processBeat || (() => {}),
-        overlapGroups: overlapGroups || {},
-        setOverlapGroups: setOverlapGroups || (() => {})
+    const { canRedo, canUndo, redo, undo } = useHistory({
+        overlapGroups,
+        processBeat,
+        setOverlapGroups,
+        stageRef
     });
 
-    const value = {
-        history,
-        pushToHistory,
-        redo,
-        redoHistory,
-        undo
-    };
+    const contextValue = useMemo(
+        () => ({
+            canRedo,
+            canUndo,
+            redo,
+            undo
+        }),
+        [canRedo, canUndo, redo, undo]
+    );
 
-    return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
+    return <HistoryContext.Provider value={contextValue}>{children}</HistoryContext.Provider>;
 };
