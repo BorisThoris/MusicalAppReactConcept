@@ -5,8 +5,10 @@
     "jest": true
   },
   "extends": [
-    "eslint:recommended",
-    "plugin:react/recommended",
+    "react-app",
+    "react-app/jest",
+    "plugin:jsx-a11y/recommended",
+    "plugin:import/recommended",
     "prettier"
   ],
   "parserOptions": {
@@ -17,7 +19,9 @@
     "sourceType": "module"
   },
   "plugins": [
-    "react",
+    "jsx-a11y",
+    "import",
+    "react-perf",
     "prettier"
   ],
   "rules": {
@@ -37,9 +41,6 @@
         "trailingComma": "none"
       }
     ],
-    "react/jsx-uses-react": "error",
-    "react/jsx-uses-vars": "error",
-    "react/react-in-jsx-scope": "error",
     "no-unused-vars": "off",
     "max-len": [
       "warn",
@@ -51,37 +52,14 @@
       }
     ],
     "jsx-quotes": 1,
-    "react/display-name": 0,
-    "react/forbid-prop-types": 0,
-    "react/jsx-boolean-value": 1,
-    "react/jsx-closing-bracket-location": 1,
-    "react/jsx-curly-spacing": 1,
-    "react/jsx-handler-names": 1,
-    "react/jsx-indent-props": 1,
-    "react/jsx-indent": 1,
-    "react/jsx-key": 1,
-    "react/jsx-max-props-per-line": 0,
-    "react/jsx-no-bind": 0,
-    "react/jsx-no-duplicate-props": 1,
-    "react/jsx-no-literals": 0,
-    "react/jsx-no-undef": 1,
-    "react/jsx-pascal-case": 1,
-    "react/jsx-sort-prop-types": 0,
-    "react/jsx-sort-props": 0,
-    "react/no-danger": 1,
-    "react/no-deprecated": 1,
-    "react/no-did-mount-set-state": 1,
-    "react/no-did-update-set-state": 1,
-    "react/no-direct-mutation-state": 1,
-    "react/no-is-mounted": 1,
-    "react/no-multi-comp": 0,
-    "react/no-set-state": 1,
-    "react/no-string-refs": 0,
-    "react/no-unknown-property": 1,
-    "react/prefer-es6-class": 1,
-    "react/prop-types": 1,
-    "react/self-closing-comp": 1,
-    "react/sort-comp": 1
+    "jsx-a11y/anchor-is-valid": "warn",
+    "jsx-a11y/label-has-associated-control": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "import/prefer-default-export": "warn",
+    "import/no-mutable-exports": "warn",
+    "react-perf/jsx-no-new-function-as-prop": "warn",
+    "react-perf/jsx-no-new-object-as-prop": "warn"
   },
   "settings": {
     "react": {
