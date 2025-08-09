@@ -38,7 +38,6 @@ export const TimelineProvider = ({ children }) => {
     const pixelToSecondRatio = usePixelRatio();
     const [timelineState, setTimelineState] = useState(DEFAULT_TIMELINE_STATE);
     const [scrollPosition, setScrollPosition] = useState(0);
-    const [zoomLevel, setZoomLevel] = useState(1);
     const [isDragging, setIsDragging] = useState(false);
     const containerRef = useRef(null);
 
@@ -59,32 +58,19 @@ export const TimelineProvider = ({ children }) => {
         setScrollPosition(Math.max(0, newPosition));
     }, []);
 
-    // Function to update zoom level
-    const updateZoomLevel = useCallback((newZoom) => {
-        const clampedZoom = Math.max(0.1, Math.min(5, newZoom));
-        setZoomLevel(clampedZoom);
-    }, []);
-
-    // Handle mouse wheel zoom
+    // Handle mouse wheel scroll (horizontal only)
     const handleWheel = useCallback(
         (event) => {
             event.preventDefault();
 
-            const delta = event.deltaY > 0 ? 0.9 : 1.1;
-            const newZoom = zoomLevel * delta;
+            // Only allow horizontal scrolling, no zoom
+            const deltaX = event.deltaY; // Use deltaY for horizontal scroll
+            const scrollSpeed = 50; // Adjust scroll speed as needed
+            const newScrollX = scrollPosition - deltaX * scrollSpeed;
 
-            // Zoom towards mouse position
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (rect) {
-                const mouseX = event.clientX - rect.left;
-                const zoomRatio = newZoom / zoomLevel;
-                const newScrollX = scrollPosition + mouseX - mouseX * zoomRatio;
-
-                updateZoomLevel(newZoom);
-                updateScrollPosition(newScrollX);
-            }
+            updateScrollPosition(newScrollX);
         },
-        [zoomLevel, scrollPosition, updateZoomLevel, updateScrollPosition]
+        [scrollPosition, updateScrollPosition]
     );
 
     // Handle mouse down for panning
@@ -123,29 +109,9 @@ export const TimelineProvider = ({ children }) => {
     // Handle keyboard shortcuts
     const handleKeyDown = useCallback(
         (event) => {
-            const { ctrlKey, key, shiftKey } = event;
+            const { key, shiftKey } = event;
 
             switch (key) {
-                case '0':
-                    if (ctrlKey) {
-                        event.preventDefault();
-                        // Reset zoom to 100%
-                        updateZoomLevel(1);
-                    }
-                    break;
-                case '=':
-                case '+':
-                    if (ctrlKey) {
-                        event.preventDefault();
-                        updateZoomLevel(zoomLevel * 1.2);
-                    }
-                    break;
-                case '-':
-                    if (ctrlKey) {
-                        event.preventDefault();
-                        updateZoomLevel(zoomLevel / 1.2);
-                    }
-                    break;
                 case 'Home':
                     event.preventDefault();
                     updateScrollPosition(0);
@@ -155,7 +121,7 @@ export const TimelineProvider = ({ children }) => {
                     // Go to end of timeline
                     break;
                 case ' ':
-                    if (!ctrlKey && !shiftKey) {
+                    if (!shiftKey) {
                         event.preventDefault();
                         // Toggle play/pause if implemented
                     }
@@ -164,28 +130,8 @@ export const TimelineProvider = ({ children }) => {
                     break;
             }
         },
-        [zoomLevel, updateZoomLevel, updateScrollPosition]
+        [updateScrollPosition]
     );
-
-    // Add event listeners for timeline interactions
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        container.addEventListener('wheel', handleWheel, { passive: false });
-        container.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            container.removeEventListener('wheel', handleWheel);
-            container.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleKeyDown]);
 
     // Update cursor style based on interaction state
     useEffect(() => {
@@ -199,22 +145,17 @@ export const TimelineProvider = ({ children }) => {
         }
     }, []);
 
-    // Function to reset zoom and scroll
+    // Function to reset view
     const resetView = useCallback(() => {
-        setZoomLevel(1);
         setScrollPosition(0);
     }, []);
 
     // Function to fit timeline to view
     const fitToView = useCallback(() => {
         if (containerRef.current) {
-            const containerWidth = containerRef.current.offsetWidth;
-            const timelineWidth = calculateStageWidth(pixelToSecondRatio);
-            const newZoom = containerWidth / timelineWidth;
-            updateZoomLevel(newZoom);
             setScrollPosition(0);
         }
-    }, [pixelToSecondRatio, updateZoomLevel]);
+    }, []);
 
     // Function to center on specific time
     const centerOnTime = useCallback(
@@ -234,10 +175,10 @@ export const TimelineProvider = ({ children }) => {
         return calculateStageWidth(pixelToSecondRatio);
     }, [pixelToSecondRatio]);
 
-    // Calculate effective stage width with zoom
+    // Calculate effective stage width (no zoom)
     const effectiveStageWidth = useMemo(() => {
-        return calculatedStageWidth * zoomLevel;
-    }, [calculatedStageWidth, zoomLevel]);
+        return calculatedStageWidth;
+    }, [calculatedStageWidth]);
 
     // Handle window resize
     useEffect(() => {
@@ -263,20 +204,16 @@ export const TimelineProvider = ({ children }) => {
             scrollPosition,
             setIsDragging,
             updateScrollPosition,
-            updateTimelineState,
-            updateZoomLevel,
-            zoomLevel
+            updateTimelineState
         }),
         [
             timelineState,
             calculatedStageWidth,
             effectiveStageWidth,
             scrollPosition,
-            zoomLevel,
             isDragging,
             updateTimelineState,
             updateScrollPosition,
-            updateZoomLevel,
             resetView,
             fitToView,
             centerOnTime,

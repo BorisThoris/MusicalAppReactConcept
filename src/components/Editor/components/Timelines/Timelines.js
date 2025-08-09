@@ -73,7 +73,7 @@ const Timelines = memo(() => {
             <PaintingTopBar />
 
             <TimelineControls />
-            <TimelineDemo />
+            {/* <TimelineDemo /> */}
 
             <Stage width={effectiveStageWidth} height={EditorHeight} ref={stageRef} pixelRatio={1} x={-scrollPosition}>
                 <Layer ref={topLayerRef} name="top-layer">
