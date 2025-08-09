@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 export const RecordingsPlayerContext = React.createContext(null);
 
@@ -28,33 +28,34 @@ export const RecordingsPlayerProvider = ({ children }) => {
     );
 
     const togglePlayback = useCallback(() => {
-        changePlaybackStatus(!playbackStatus.isPlaying);
-    }, [playbackStatus.isPlaying, changePlaybackStatus]);
+        setPlaybackStatus((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
+    }, []);
 
     const playAllOrSpecificInstrumentRecordings = useCallback(
         (instrumentName = null) => {
-            // If it's already playing, stop the playback
-            if (playbackStatus.isPlaying && playbackStatus.currentInstrument === instrumentName) {
-                setPlaybackStatus({
-                    currentInstrument: null,
-                    isPlaying: false
-                });
+            setPlaybackStatus((prev) => {
+                // If it's already playing, stop the playback
+                if (prev.isPlaying && prev.currentInstrument === instrumentName) {
+                    return {
+                        currentInstrument: null,
+                        isPlaying: false
+                    };
+                }
 
-                return;
-            }
+                // Otherwise, start playback
+                const shouldPlay = !prev.isPlaying && (!instrumentName || !mutedInstruments.includes(instrumentName));
 
-            // Otherwise, start playback
-            const shouldPlay =
-                !playbackStatus.isPlaying && (!instrumentName || !mutedInstruments.includes(instrumentName));
+                if (shouldPlay) {
+                    return {
+                        currentInstrument: instrumentName,
+                        isPlaying: true
+                    };
+                }
 
-            if (shouldPlay) {
-                setPlaybackStatus({
-                    currentInstrument: instrumentName,
-                    isPlaying: true
-                });
-            }
+                return prev;
+            });
         },
-        [playbackStatus.isPlaying, playbackStatus.currentInstrument, mutedInstruments]
+        [mutedInstruments]
     );
 
     const value = useMemo(() => {

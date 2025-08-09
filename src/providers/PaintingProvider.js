@@ -27,6 +27,10 @@ const PaintingProviderComponent = ({ children }) => {
 
     const paintEvent = useCallback(
         ({ renderEvent, target, x }) => {
+            if (!paintingTarget?.instrument || !paintingTarget?.event) {
+                return;
+            }
+
             const eventInstance = createAndPlayEventIntance(`${paintingTarget.instrument}/${paintingTarget.event}`);
 
             const startTime = x / pixelToSecondRatio;

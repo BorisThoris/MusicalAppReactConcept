@@ -8,14 +8,11 @@ import Guitar from './components/Guitar/Guitar';
 import Piano from './components/Piano/Piano';
 import Tambourine from './components/Tambourine/Tambourine';
 import { PanelProvider } from './hooks/usePanelState';
-import { CollisionsProvider } from './providers/CollisionsProvider/CollisionsProvider';
 import { CustomCursorProvider } from './providers/CursorProvider';
+import { EditorStateProvider } from './providers/EditorStateProvider';
 import { NotificationProvider } from './providers/NotificationProvider/NotificationProvider';
-import { PaintingProvider } from './providers/PaintingProvider';
 import { PixelRatioProvider } from './providers/PixelRatioProvider/PixelRatioProvider';
 import { RecordingsPlayerProvider } from './providers/RecordingsPlayerProvider';
-import { SelectionProvider } from './providers/SelectionsProvider';
-import { SoundEventDragProvider } from './providers/SoundEventDragProvider';
 import { TimelineProvider } from './providers/TimelineProvider';
 
 // Styled components for navigation and controls
@@ -96,39 +93,34 @@ function App() {
     const handleDurationChange = (e) => setDuration(Number(e.target.value));
 
     return (
+        // Core providers (most stable, least likely to change)
         <NotificationProvider>
             <PixelRatioProvider durationSec={duration}>
+                {/* UI state providers */}
                 <PanelProvider>
-                    <CollisionsProvider>
-                        <CustomCursorProvider initialVisibility={false}>
-                            <PaintingProvider>
-                                <TimelineProvider>
-                                    <RecordingsPlayerProvider>
-                                        <SelectionProvider>
-                                            <SoundEventDragProvider>
-                                                <Router>
-                                                    {/* Pass slider props into navigation */}
-                                                    <TopNav
-                                                        duration={duration}
-                                                        onDurationChange={handleDurationChange}
-                                                    />
+                    <CustomCursorProvider initialVisibility={false}>
+                        {/* Timeline and playback providers */}
+                        <TimelineProvider>
+                            <RecordingsPlayerProvider>
+                                {/* Combined editor state providers */}
+                                <EditorStateProvider>
+                                    <Router>
+                                        {/* Pass slider props into navigation */}
+                                        <TopNav duration={duration} onDurationChange={handleDurationChange} />
 
-                                                    <Routes>
-                                                        <Route path="/" element={<h1>Welcome to the App</h1>} />
-                                                        <Route path="/guitar" element={<Guitar />} />
-                                                        <Route path="/piano" element={<Piano />} />
-                                                        <Route path="/tambourine" element={<Tambourine />} />
-                                                        <Route path="/drums" element={<Drums />} />
-                                                        <Route path="/editor" element={<Editor />} />
-                                                    </Routes>
-                                                </Router>
-                                            </SoundEventDragProvider>
-                                        </SelectionProvider>
-                                    </RecordingsPlayerProvider>
-                                </TimelineProvider>
-                            </PaintingProvider>
-                        </CustomCursorProvider>
-                    </CollisionsProvider>
+                                        <Routes>
+                                            <Route path="/" element={<h1>Welcome to the App</h1>} />
+                                            <Route path="/guitar" element={<Guitar />} />
+                                            <Route path="/piano" element={<Piano />} />
+                                            <Route path="/tambourine" element={<Tambourine />} />
+                                            <Route path="/drums" element={<Drums />} />
+                                            <Route path="/editor" element={<Editor />} />
+                                        </Routes>
+                                    </Router>
+                                </EditorStateProvider>
+                            </RecordingsPlayerProvider>
+                        </TimelineProvider>
+                    </CustomCursorProvider>
                 </PanelProvider>
             </PixelRatioProvider>
         </NotificationProvider>

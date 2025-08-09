@@ -34,13 +34,24 @@ export const CustomCursorProvider = ({ children, initialVisibility = false }) =>
     }, []);
 
     const handleClick = useCallback(() => {
-        setIsClicked(!isClicked);
-    }, [isClicked]);
+        setIsClicked((prev) => !prev);
+    }, []);
 
-    const pointerPath = isClicked ? 'M10 0 L10 20 L20 10 L0 10 Z' : 'M10 0 L0 20 L10 10 L20 20 Z';
+    const pointerPath = useMemo(
+        () => (isClicked ? 'M10 0 L10 20 L20 10 L0 10 Z' : 'M10 0 L0 20 L10 10 L20 20 Z'),
+        [isClicked]
+    );
 
     const value = useMemo(() => {
-        return { cursorPos, handleClick, handleMouseEnter, handleMouseLeave, handleMouseMove, isVisible, pointerPath };
+        return {
+            cursorPos,
+            handleClick,
+            handleMouseEnter,
+            handleMouseLeave,
+            handleMouseMove,
+            isVisible,
+            pointerPath
+        };
     }, [cursorPos, handleClick, handleMouseEnter, handleMouseLeave, handleMouseMove, isVisible, pointerPath]);
 
     return <CustomCursorContext.Provider value={value}>{children}</CustomCursorContext.Provider>;

@@ -1,4 +1,4 @@
-import React, { createContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useMemo, useState } from 'react';
 import threeMinuteMs from '../globalConstants/songLimit';
 import { usePixelRatio } from './PixelRatioProvider/PixelRatioProvider';
 
@@ -23,16 +23,18 @@ export const TimelineProvider = ({ children }) => {
     const [timelineState, setTimelineState] = useState(defaultTimelineState);
 
     // Function to update the timeline state
-    const updateTimelineState = (updates) => {
+    const updateTimelineState = useCallback((updates) => {
         setTimelineState((prevState) => ({
             ...prevState,
             ...updates
         }));
-    };
+    }, []);
 
     // Pre-calculate a width based on the maximum allowed sound duration
-    const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
-    const calculatedStageWidth = window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+    const calculatedStageWidth = useMemo(() => {
+        const widthBasedOnLastSound = threeMinuteMs / pixelToSecondRatio;
+        return window.innerWidth > widthBasedOnLastSound ? window.innerWidth : widthBasedOnLastSound;
+    }, [pixelToSecondRatio]);
 
     // Memoize the context value to avoid unnecessary re-renders
     const value = useMemo(
@@ -41,7 +43,7 @@ export const TimelineProvider = ({ children }) => {
             timelineState,
             updateTimelineState
         }),
-        [calculatedStageWidth, timelineState]
+        [calculatedStageWidth, timelineState, updateTimelineState]
     );
 
     return <TimelineContext.Provider value={value}>{children}</TimelineContext.Provider>;
